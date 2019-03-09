@@ -189,7 +189,6 @@ public class MainController implements Initializable {
     }
 
     private void populatePlayerDetailsTable(final SourceServerInfo info) {
-        log.info("Retrieving player info of server '{}'", info);
         serverQueryClient.getPlayersCached(info.getAddress()).thenAccept(sourcePlayers -> {
             ObservableList<SourcePlayerInfo> playerInfoList = sourcePlayers
                     .stream()
@@ -198,7 +197,6 @@ public class MainController implements Initializable {
 
             tvServerPlayerInfo.itemsProperty().bind(info.playersProperty());
             info.setPlayers(playerInfoList);
-            log.info("Updated player list: {}", playerInfoList.size());
         });
     }
 
