@@ -1,5 +1,6 @@
 package com.ibasco.sourcebuddy.sourcebuddy;
 
+import com.ibasco.sourcebuddy.sourcebuddy.config.AppConfig;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Rectangle2D;
@@ -7,6 +8,8 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -14,7 +17,9 @@ import org.springframework.context.ConfigurableApplicationContext;
 import java.net.URL;
 
 @SpringBootApplication
-public class SourcebuddyApplication extends Application {
+public class Bootstrap extends Application {
+
+    private static final Logger log = LoggerFactory.getLogger(Bootstrap.class);
 
     private ConfigurableApplicationContext context;
 
@@ -22,7 +27,7 @@ public class SourcebuddyApplication extends Application {
 
     @Override
     public void init() throws Exception {
-        SpringApplicationBuilder builder = new SpringApplicationBuilder(SourcebuddyApplication.class);
+        SpringApplicationBuilder builder = new SpringApplicationBuilder(Bootstrap.class).sources(AppConfig.class);
         context = builder.run(getParameters().getRaw().toArray(new String[0]));
         URL resource = getClass().getResource("/main.fxml");
         FXMLLoader loader = new FXMLLoader(resource);
@@ -42,6 +47,7 @@ public class SourcebuddyApplication extends Application {
 
     @Override
     public void stop() throws Exception {
+        log.info("Stopping application");
         context.close();
     }
 }

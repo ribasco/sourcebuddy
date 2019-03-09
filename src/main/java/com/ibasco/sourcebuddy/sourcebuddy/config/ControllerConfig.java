@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ControllerConfig {
 
-    @Bean
+    @Bean(name = "mainController")
     public MainController mainController() {
         return new MainController();
     }
