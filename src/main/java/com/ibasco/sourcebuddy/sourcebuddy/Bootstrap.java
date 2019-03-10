@@ -35,6 +35,7 @@ public class Bootstrap extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
+        stage.setTitle("Source Buddy");
         stage.setScene(new Scene(rootNode));
         stage.centerOnScreen();
         stage.show();

@@ -13,8 +13,9 @@ module sourcebuddy {
     requires javafx.controls;
     requires logback.classic;
     requires slf4j.api;
-    requires transitive agql.source.query;
-    requires transitive agql.steam.master;
+    requires agql.source.query;
+    requires agql.steam.master;
+    requires gson;
     requires spring.beans;
     requires agql.lib.core;
 }

@@ -132,7 +132,7 @@
                                             <content>
                                                 <VBox prefHeight="108.0" prefWidth="1159.0">
                                                     <children>
-                                                        <TextArea fx:id="taServerLog" prefHeight="129.0" prefWidth="1159.0" VBox.vgrow="ALWAYS">
+                                                        <TextArea fx:id="taServerLog" editable="false" prefHeight="129.0" prefWidth="1159.0" VBox.vgrow="ALWAYS">
                                                             <font>
                                                                 <Font name="Monospaced Regular" size="12.0"/>
                                                             </font>

@@ -1,6 +1,11 @@
 package com.ibasco.sourcebuddy.sourcebuddy.controllers;
 
+import com.google.gson.Gson;
 import com.ibasco.agql.protocols.valve.source.query.client.SourceQueryClient;
+import com.ibasco.agql.protocols.valve.source.query.client.SourceRconClient;
+import com.ibasco.agql.protocols.valve.source.query.exceptions.RconNotYetAuthException;
+import com.ibasco.agql.protocols.valve.source.query.logger.SourceLogEntry;
+import com.ibasco.agql.protocols.valve.source.query.logger.SourceLogListenService;
 import com.ibasco.agql.protocols.valve.steam.master.MasterServerFilter;
 import com.ibasco.agql.protocols.valve.steam.master.client.MasterServerQueryClient;
 import com.ibasco.agql.protocols.valve.steam.master.enums.MasterServerRegion;
@@ -8,6 +13,7 @@ import com.ibasco.agql.protocols.valve.steam.master.enums.MasterServerType;
 import com.ibasco.sourcebuddy.sourcebuddy.model.SourceKeyValueInfo;
 import com.ibasco.sourcebuddy.sourcebuddy.model.SourcePlayerInfo;
 import com.ibasco.sourcebuddy.sourcebuddy.model.SourceServerInfo;
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,14 +23,16 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URL;
-import java.util.ResourceBundle;
-import java.util.Vector;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -62,17 +70,29 @@ public class MainController implements Initializable {
     private ProgressIndicator piMasterServer;
     //endregion
 
+    private Gson gson = new Gson();
+
     private SourceQueryClient serverQueryClient;
 
     private MasterServerQueryClient masterQueryClient;
+
+    private SourceRconClient rconClient;
+
+    private SourceLogListenService sourceLogListenService;
 
     private ObservableList<SourceServerInfo> masterServerList = FXCollections.observableArrayList();
 
     private FilteredList<SourceServerInfo> filteredMasterServers = masterServerList.filtered(p -> true);
 
+    private CompletableFuture<SourceServerInfo> serverInfoFuture = null;
+
     private CompletableFuture<Vector<InetSocketAddress>> masterServerListFuture = null;
 
+    private Map<InetSocketAddress, Integer> rconAttempts = new HashMap<>();
+
     private final Object lock = new Object();
+
+    private InetAddress publicIp;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -82,6 +102,106 @@ public class MainController implements Initializable {
         setupPlayerInfoTable();
         setupKeyValueTable(tvServerDetails);
         setupKeyValueTable(tvServerRules);
+        setupMasterServerContextMenu();
+
+        tfRcon.addEventHandler(KeyEvent.KEY_RELEASED, event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                SourceServerInfo info = tvServerList.getSelectionModel().getSelectedItem();
+                if (info != null) {
+                    String command = tfRcon.getText();
+                    if (command == null || command.isBlank()) {
+                        log.warn("No command entered");
+                        return;
+                    }
+                    executeRconCommand(command).thenAccept(s -> tfRcon.setText(""));
+                }
+            }
+        });
+    }
+
+    private void setupMasterServerContextMenu() {
+        tvServerList.setRowFactory(param -> {
+            final TableRow<SourceServerInfo> row = new TableRow<>();
+            final ContextMenu rowMenu = new ContextMenu();
+            MenuItem miRcon = new MenuItem("RCON connect");
+            miRcon.setOnAction(event -> {
+
+            });
+            MenuItem miRefresh = new MenuItem("Refresh Server");
+            rowMenu.getItems().addAll(miRcon, miRefresh);
+            // only display context menu for non-null items:
+            row.contextMenuProperty().bind(Bindings.when(Bindings.isNotNull(row.itemProperty())).then(rowMenu).otherwise((ContextMenu) null));
+            return row;
+        });
+    }
+
+    private CompletableFuture<String> executeRconCommand(String command) {
+        SourceServerInfo selectedServer = tvServerList.getSelectionModel().getSelectedItem();
+        if (selectedServer == null)
+            return CompletableFuture.failedFuture(new IllegalStateException("No server selected"));
+
+        try {
+            return rconClient.execute(selectedServer.getAddress(), command).thenApply(s -> {
+                taServerLog.appendText(s);
+                return s;
+            });
+        } catch (RconNotYetAuthException e) {
+            //not yet authenticated
+            log.error("You are not yet authenticated");
+            authenticateRcon();
+            return CompletableFuture.failedFuture(e);
+        }
+    }
+
+    private void authenticateRcon() {
+        SourceServerInfo info = tvServerList.getSelectionModel().getSelectedItem();
+
+        if (rconClient.isAuthenticated(info.getAddress())) {
+            log.warn("Address {} is already authenticated", info.getAddress());
+            return;
+        }
+
+        log.info("Authenticating address: {}", info.getAddress());
+
+        TextInputDialog passDialog = new TextInputDialog();
+        passDialog.setHeaderText("Enter rcon password");
+        passDialog.setContentText("Password");
+        Optional<String> password = passDialog.showAndWait();
+
+        if (password.isPresent()) {
+            rconClient.authenticate(info.getAddress(), password.get()).whenComplete((status, throwable) -> {
+                if (throwable != null) {
+                    log.error("Problem authenticating with server {}", info.getAddress());
+                    return;
+                }
+                if (!status.isAuthenticated()) {
+                    log.warn("RCON Authentication failed for server {} (Reason: {})", info.getAddress(), status.getReason());
+                    return;
+                }
+
+                log.info("Successfully authenticated with server: {}", info.getAddress());
+
+                String logCommand = "logaddress_add " + sourceLogListenService.getListenAddress().getAddress().getHostAddress() + ":" + sourceLogListenService.getListenAddress().getPort();
+
+                //Start listening to logs
+                executeRconCommand(logCommand).thenAccept(s -> {
+                    try {
+                        sourceLogListenService.setLogEventCallback(MainController.this::onLogReceive);
+                        log.info("Attempting to listen to server logs on {}", sourceLogListenService.getListenAddress());
+                        sourceLogListenService.listen();
+                        log.info("Listening for server log events : {}", sourceLogListenService.getListenAddress());
+                    } catch (InterruptedException e) {
+                        log.error("Error during listen service initialization", e);
+                    }
+                });
+            });
+            log.info("Authenticating with server: {}", info.getAddress());
+        }
+    }
+
+    private void onLogReceive(SourceLogEntry sourceLogEntry) {
+        log.info("Got server log: {}", sourceLogEntry);
+        taServerLog.appendText(sourceLogEntry.getMessage());
     }
 
     private void setupMasterServerToolbarComponents() {
@@ -184,12 +304,9 @@ public class MainController implements Initializable {
         }
     }
 
-    private CompletableFuture<SourceServerInfo> serverInfoFuture = null;
-
     private CompletableFuture<SourceServerInfo> updateSourceServerInfo(SourceServerInfo info) {
         if (serverInfoFuture != null && !serverInfoFuture.isDone()) {
             serverInfoFuture.cancel(true);
-            log.info("Existing task cancelled");
         }
         serverInfoFuture = serverQueryClient.getServerInfo(info.getAddress()).thenApply(update -> {
             info.setName(update.getName());
@@ -284,5 +401,20 @@ public class MainController implements Initializable {
     @Autowired
     public void setServerQueryClient(SourceQueryClient serverQueryClient) {
         this.serverQueryClient = serverQueryClient;
+    }
+
+    @Autowired
+    public void setRconClient(SourceRconClient rconClient) {
+        this.rconClient = rconClient;
+    }
+
+    @Autowired
+    public void setSourceLogListenService(SourceLogListenService sourceLogListenService) {
+        this.sourceLogListenService = sourceLogListenService;
+    }
+
+    @Autowired
+    public void setPublicIp(InetAddress publicIp) {
+        this.publicIp = publicIp;
     }
 }
