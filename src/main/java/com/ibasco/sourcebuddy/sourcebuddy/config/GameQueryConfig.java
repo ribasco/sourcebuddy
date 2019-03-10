@@ -16,4 +16,5 @@ public class GameQueryConfig {
     public MasterServerQueryClient masterQueryClient() {
         return new MasterServerQueryClient();
     }
+
 }

@@ -3,10 +3,8 @@ package com.ibasco.sourcebuddy.sourcebuddy;
 import com.ibasco.sourcebuddy.sourcebuddy.config.AppConfig;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,10 +35,7 @@ public class Bootstrap extends Application {
 
     @Override
     public void start(Stage stage) throws Exception {
-        Rectangle2D visualBounds = Screen.getPrimary().getVisualBounds();
-        double width = visualBounds.getWidth() / 2;
-        double height = visualBounds.getHeight() / 2;
-        stage.setScene(new Scene(rootNode, width, height));
+        stage.setScene(new Scene(rootNode));
         stage.centerOnScreen();
         stage.show();
     }

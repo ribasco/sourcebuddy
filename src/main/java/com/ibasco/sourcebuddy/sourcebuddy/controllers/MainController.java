@@ -8,8 +8,10 @@ import com.ibasco.agql.protocols.valve.steam.master.enums.MasterServerType;
 import com.ibasco.sourcebuddy.sourcebuddy.model.SourceKeyValueInfo;
 import com.ibasco.sourcebuddy.sourcebuddy.model.SourcePlayerInfo;
 import com.ibasco.sourcebuddy.sourcebuddy.model.SourceServerInfo;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -22,6 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.Vector;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class MainController implements Initializable {
@@ -49,21 +54,48 @@ public class MainController implements Initializable {
 
     @FXML
     private TableView<SourceServerInfo> tvServerList;
+
+    @FXML
+    private TextField tfSearchCriteria;
+
+    @FXML
+    private ProgressIndicator piMasterServer;
     //endregion
 
     private SourceQueryClient serverQueryClient;
 
     private MasterServerQueryClient masterQueryClient;
 
-    private ObservableList<SourceServerInfo> serverList = FXCollections.observableArrayList();
+    private ObservableList<SourceServerInfo> masterServerList = FXCollections.observableArrayList();
+
+    private FilteredList<SourceServerInfo> filteredMasterServers = masterServerList.filtered(p -> true);
+
+    private CompletableFuture<Vector<InetSocketAddress>> masterServerListFuture = null;
+
+    private final Object lock = new Object();
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         log.info("Main controller initialized");
         setupMasterServerTable();
+        setupMasterServerToolbarComponents();
         setupPlayerInfoTable();
         setupKeyValueTable(tvServerDetails);
         setupKeyValueTable(tvServerRules);
+    }
+
+    private void setupMasterServerToolbarComponents() {
+        tfSearchCriteria.textProperty().addListener((observable, oldValue, newValue) -> {
+            Predicate<SourceServerInfo> criteria = info -> {
+                if (newValue == null || newValue.isBlank())
+                    return true;
+                String search = newValue.toLowerCase();
+                return info.getName().toLowerCase().contains(search) || info.getMapName().toLowerCase().contains(search);
+            };
+            synchronized (lock) {
+                filteredMasterServers.setPredicate(criteria);
+            }
+        });
     }
 
     private void setupPlayerInfoTable() {
@@ -125,18 +157,7 @@ public class MainController implements Initializable {
         serverTagsCol.setCellValueFactory(new PropertyValueFactory<>("serverTags"));
 
         //Raise the following events on item selection
-        tvServerList.getSelectionModel().selectedItemProperty().addListener((observableValue, oldVal, newVal) -> {
-            if (oldVal != null && tvServerPlayerInfo.itemsProperty().isBound())
-                tvServerPlayerInfo.itemsProperty().unbind();
-            if (newVal == null)
-                return;
-
-            updateSourceServerInfo(newVal);
-            populatePlayerDetailsTable(newVal);
-            populateServerDetailsTable(newVal);
-            populateServerRulesTable(newVal);
-        });
-
+        tvServerList.getSelectionModel().selectedItemProperty().addListener(this::processNewItemSelection);
         tvServerList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         tvServerList.getColumns().clear();
         //noinspection unchecked
@@ -145,23 +166,63 @@ public class MainController implements Initializable {
         btnListServers.setOnAction(this::refreshMasterServerList);
     }
 
-    private void updateSourceServerInfo(SourceServerInfo info) {
-        serverQueryClient.getServerInfo(info.getAddress()).thenAccept(update -> {
+    private void processNewItemSelection(ObservableValue<? extends SourceServerInfo> observable, SourceServerInfo oldInfo, SourceServerInfo newInfo) {
+        if (oldInfo != null && tvServerPlayerInfo.itemsProperty().isBound())
+            tvServerPlayerInfo.itemsProperty().unbind();
+        if (newInfo == null)
+            return;
+
+        //Check last update interval
+        if ((System.currentTimeMillis() - newInfo.getLastUpdate()) >= 3000) {
+            updateSourceServerInfo(newInfo).thenAccept(sourceServerInfo -> {
+                populatePlayerDetailsTable(newInfo);
+                populateServerDetailsTable(newInfo);
+                populateServerRulesTable(newInfo);
+            });
+        } else {
+            log.info("Source server still up to date: {}. Skipping update process", newInfo.getAddress());
+        }
+    }
+
+    private CompletableFuture<SourceServerInfo> serverInfoFuture = null;
+
+    private CompletableFuture<SourceServerInfo> updateSourceServerInfo(SourceServerInfo info) {
+        if (serverInfoFuture != null && !serverInfoFuture.isDone()) {
+            serverInfoFuture.cancel(true);
+            log.info("Existing task cancelled");
+        }
+        serverInfoFuture = serverQueryClient.getServerInfo(info.getAddress()).thenApply(update -> {
             info.setName(update.getName());
             info.setPlayerCount(update.getNumOfPlayers());
             info.setMaxPlayerCount(update.getMaxPlayers());
             info.setMapName(update.getMapName());
+            info.setServerTags(update.getServerTags());
+            info.setDescription(update.getGameDescription());
+            info.setLastUpdate(System.currentTimeMillis());
+            return info;
         });
+        return serverInfoFuture;
     }
 
     private void refreshMasterServerList(ActionEvent actionEvent) {
-        log.info("Listing all servers: {}", serverQueryClient);
-        tvServerList.getItems().clear();
-        tvServerList.setItems(serverList);
+        if (masterServerListFuture != null && !masterServerListFuture.isDone()) {
+            log.warn("Process still running");
+            return;
+        }
 
-        MasterServerFilter filter = MasterServerFilter.create().dedicated(true).allServers().appId(550);
-        masterQueryClient.getServerList(MasterServerType.SOURCE, MasterServerRegion.REGION_ALL, filter, this::populateMasterServerListItem)
-                .whenComplete((inetSocketAddresses, throwable) -> log.info("Done"));
+        log.info("Listing all servers: {}", serverQueryClient);
+        synchronized (lock) {
+            masterServerList.clear();
+            tvServerList.setItems(filteredMasterServers);
+
+            MasterServerFilter filter = MasterServerFilter.create().dedicated(true).appId(550);
+            masterServerListFuture = masterQueryClient.getServerList(MasterServerType.SOURCE, MasterServerRegion.REGION_ALL, filter, this::populateMasterServerListItem)
+                    .whenComplete((inetSocketAddresses, throwable) -> {
+                        log.info("Done");
+                        piMasterServer.setVisible(false);
+                    });
+            piMasterServer.setVisible(true);
+        }
     }
 
     private void populateServerDetailsTable(final SourceServerInfo info) {
@@ -182,14 +243,15 @@ public class MainController implements Initializable {
 
     private void populateServerRulesTable(final SourceServerInfo info) {
         tvServerRules.getItems().clear();
-        serverQueryClient.getServerRulesCached(info.getAddress()).thenAccept(rulesMap -> {
-            for (var entry : rulesMap.entrySet())
+        serverQueryClient.getServerRules(info.getAddress()).thenAccept(rulesMap -> {
+            info.setRules(FXCollections.observableMap(rulesMap));
+            for (var entry : info.getRules().entrySet())
                 addProperty(tvServerRules, entry.getKey(), entry.getValue());
         });
     }
 
     private void populatePlayerDetailsTable(final SourceServerInfo info) {
-        serverQueryClient.getPlayersCached(info.getAddress()).thenAccept(sourcePlayers -> {
+        serverQueryClient.getPlayers(info.getAddress()).thenAccept(sourcePlayers -> {
             ObservableList<SourcePlayerInfo> playerInfoList = sourcePlayers
                     .stream()
                     .map(SourcePlayerInfo::new)
@@ -197,14 +259,16 @@ public class MainController implements Initializable {
 
             tvServerPlayerInfo.itemsProperty().bind(info.playersProperty());
             info.setPlayers(playerInfoList);
+            tvServerPlayerInfo.requestLayout();
         });
     }
 
     private void populateMasterServerListItem(InetSocketAddress address, InetSocketAddress sender, Throwable throwable) {
         serverQueryClient.getServerInfo(address).thenAccept(details -> {
-            log.debug("INFO: {}", details);
-            details.setAddress(address);
-            serverList.add(new SourceServerInfo(details));
+            synchronized (lock) {
+                details.setAddress(address);
+                masterServerList.add(new SourceServerInfo(details));
+            }
         });
     }
 

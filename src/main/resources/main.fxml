@@ -26,36 +26,30 @@
         </MenuBar>
         <AnchorPane prefHeight="712.0" prefWidth="1161.0" VBox.vgrow="ALWAYS">
             <children>
-                <SplitPane dividerPositions="0.7138728323699421" orientation="VERTICAL" prefHeight="694.0" prefWidth="1161.0" AnchorPane.bottomAnchor="40.0" AnchorPane.leftAnchor="0.0"
-                           AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <SplitPane dividerPositions="0.7138728323699421" orientation="VERTICAL" prefHeight="694.0" prefWidth="1161.0" AnchorPane.bottomAnchor="40.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                     <items>
                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                             <children>
-                                <SplitPane dividerPositions="0.6566005176876618" prefHeight="427.0" prefWidth="1161.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                           AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <SplitPane dividerPositions="0.6566005176876618" prefHeight="427.0" prefWidth="1161.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                     <items>
                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
                                             <children>
-                                                <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                                         AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                <TabPane prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                     <tabs>
                                                         <Tab text="Master Server List">
                                                             <content>
                                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                                     <children>
-                                                                        <TableView fx:id="tvServerList" prefHeight="429.0" prefWidth="756.0" AnchorPane.bottomAnchor="43.0" AnchorPane.leftAnchor="0.0"
-                                                                                   AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                                        <TableView fx:id="tvServerList" prefHeight="429.0" prefWidth="756.0" AnchorPane.bottomAnchor="43.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                             <columnResizePolicy>
                                                                                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
                                                                             </columnResizePolicy>
                                                                         </TableView>
-                                                                        <ToolBar prefHeight="40.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                                                                 AnchorPane.rightAnchor="0.0">
+                                                                        <ToolBar prefHeight="40.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
                                                                             <items>
-                                                                                <TextField prefHeight="26.0" prefWidth="280.0" promptText="Search Criteria"/>
-                                                                                <ChoiceBox prefHeight="26.0" prefWidth="100.0"/>
-                                                                                <Button mnemonicParsing="false" prefHeight="26.0" prefWidth="101.0" text="Bookmark"/>
+                                                                                <TextField fx:id="tfSearchCriteria" prefHeight="26.0" prefWidth="280.0" promptText="Search Criteria"/>
                                                                                 <Button fx:id="btnListServers" mnemonicParsing="false" prefHeight="26.0" prefWidth="127.0" text="Refresh Servers"/>
+                                                                                <ProgressIndicator fx:id="piMasterServer" prefHeight="0.0" prefWidth="43.0" visible="false"/>
                                                                             </items>
                                                                         </ToolBar>
                                                                     </children>
@@ -66,8 +60,7 @@
                                                             <content>
                                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                                     <children>
-                                                                        <TableView layoutX="98.0" layoutY="29.0" prefHeight="439.0" prefWidth="597.0" AnchorPane.bottomAnchor="0.0"
-                                                                                   AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                                                                        <TableView layoutX="98.0" layoutY="29.0" prefHeight="439.0" prefWidth="597.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
                                                                     </children>
                                                                 </AnchorPane>
                                                             </content>
@@ -78,13 +71,11 @@
                                         </AnchorPane>
                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="158.0" prefWidth="79.0">
                                             <children>
-                                                <SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                                           AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                <SplitPane dividerPositions="0.5" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                     <items>
                                                         <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="100.0" prefWidth="160.0">
                                                             <children>
-                                                                <TableView fx:id="tvServerPlayerInfo" prefHeight="316.0" prefWidth="373.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0"
-                                                                           AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                                <TableView fx:id="tvServerPlayerInfo" prefHeight="316.0" prefWidth="373.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                                     <columnResizePolicy>
                                                                         <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
                                                                     </columnResizePolicy>
@@ -99,9 +90,7 @@
                                                                             <content>
                                                                                 <AnchorPane minHeight="0.0" minWidth="0.0">
                                                                                     <children>
-                                                                                        <TableView fx:id="tvServerDetails" layoutX="96.0" layoutY="14.0" prefHeight="200.0" prefWidth="200.0"
-                                                                                                   AnchorPane.bottomAnchor="-10.0" AnchorPane.leftAnchor="-10.0" AnchorPane.rightAnchor="-10.0"
-                                                                                                   AnchorPane.topAnchor="-10.0">
+                                                                                        <TableView fx:id="tvServerDetails" layoutX="96.0" layoutY="14.0" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="-10.0" AnchorPane.leftAnchor="-10.0" AnchorPane.rightAnchor="-10.0" AnchorPane.topAnchor="-10.0">
                                                                                             <columnResizePolicy>
                                                                                                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
                                                                                             </columnResizePolicy>
@@ -110,12 +99,11 @@
                                                                                 </AnchorPane>
                                                                             </content>
                                                                         </TitledPane>
-                                                                        <TitledPane expanded="false" text="Server Rules">
+                                                                        <TitledPane text="Server Rules">
                                                                             <content>
                                                                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                                                                     <children>
-                                                                                        <TableView fx:id="tvServerRules" layoutX="96.0" layoutY="46.0" AnchorPane.bottomAnchor="-10.0"
-                                                                                                   AnchorPane.leftAnchor="-10.0" AnchorPane.rightAnchor="-10.0" AnchorPane.topAnchor="-10.0">
+                                                                                        <TableView fx:id="tvServerRules" layoutX="96.0" layoutY="46.0" AnchorPane.bottomAnchor="-10.0" AnchorPane.leftAnchor="-10.0" AnchorPane.rightAnchor="-10.0" AnchorPane.topAnchor="-10.0">
                                                                                             <columnResizePolicy>
                                                                                                 <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
                                                                                             </columnResizePolicy>
@@ -138,8 +126,7 @@
                         </AnchorPane>
                         <AnchorPane SplitPane.resizableWithParent="false">
                             <children>
-                                <TabPane layoutX="-353.0" layoutY="-26.0" prefHeight="258.0" prefWidth="1161.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0"
-                                         AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <TabPane layoutX="-353.0" layoutY="-26.0" prefHeight="258.0" prefWidth="1161.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                     <tabs>
                                         <Tab text="RCON Command">
                                             <content>

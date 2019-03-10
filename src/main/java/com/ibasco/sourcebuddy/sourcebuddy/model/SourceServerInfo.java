@@ -3,6 +3,7 @@ package com.ibasco.sourcebuddy.sourcebuddy.model;
 import com.ibasco.agql.protocols.valve.source.query.pojos.SourceServer;
 import javafx.beans.property.*;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 
 import java.net.InetSocketAddress;
 
@@ -21,6 +22,8 @@ public class SourceServerInfo {
 
     private ListProperty<SourcePlayerInfo> players = new SimpleListProperty<>(null);
 
+    private MapProperty<String, String> rules = new SimpleMapProperty<>(null);
+
     private ObjectProperty<InetSocketAddress> address = new SimpleObjectProperty<>(null);
 
     private IntegerProperty appId = new SimpleIntegerProperty(-1);
@@ -35,8 +38,11 @@ public class SourceServerInfo {
 
     private LongProperty gameId = new SimpleLongProperty(-1);
 
+    private LongProperty lastUpdate = new SimpleLongProperty(0);
+
     public SourceServerInfo(SourceServer server) {
         setPlayers(null);
+        setRules(null);
         setAddress(server.getAddress());
         setName(server.getName());
         setServerTags(server.getServerTags());
@@ -49,6 +55,19 @@ public class SourceServerInfo {
         setDescription(server.getGameDescription());
         setVersion(server.getGameVersion());
         setGameId(server.getGameId());
+        setLastUpdate(System.currentTimeMillis());
+    }
+
+    public ObservableMap<String, String> getRules() {
+        return rules.get();
+    }
+
+    public MapProperty<String, String> rulesProperty() {
+        return rules;
+    }
+
+    public void setRules(ObservableMap<String, String> rules) {
+        this.rules.set(rules);
     }
 
     public long getGameId() {
@@ -217,5 +236,17 @@ public class SourceServerInfo {
 
     public void setPlayerCount(int playerCount) {
         this.playerCount.set(playerCount);
+    }
+
+    public long getLastUpdate() {
+        return lastUpdate.get();
+    }
+
+    public LongProperty lastUpdateProperty() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(long lastUpdate) {
+        this.lastUpdate.set(lastUpdate);
     }
 }
