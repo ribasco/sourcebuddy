@@ -1,4 +1,4 @@
-package com.ibasco.sourcebuddy.sourcebuddy.config;
+package com.ibasco.sourcebuddy.config;
 
 import com.ibasco.agql.protocols.valve.source.query.client.SourceQueryClient;
 import com.ibasco.agql.protocols.valve.source.query.client.SourceRconClient;
@@ -44,10 +44,8 @@ public class GameQueryConfig {
 
     @Bean(name = "sourceLogListener", destroyMethod = "close")
     public SourceLogListenService sourceLogListenService(@Autowired InetAddress publicIp) {
-        SourceLogListenService service = new SourceLogListenService();
         String address = (logListenAddress != null && !logListenAddress.isBlank()) ? logListenAddress : publicIp.getHostAddress();
         log.info("Initializing log listen service: {}:{}", address, logListenPort);
-        service.setListenAddress(new InetSocketAddress(address, logListenPort));
-        return service;
+        return new SourceLogListenService(new InetSocketAddress(address, logListenPort));
     }
 }

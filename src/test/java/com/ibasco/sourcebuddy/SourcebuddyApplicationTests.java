@@ -1,4 +1,4 @@
-package com.ibasco.sourcebuddy.sourcebuddy;
+package com.ibasco.sourcebuddy;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -1,4 +1,4 @@
-package com.ibasco.sourcebuddy.sourcebuddy.model;
+package com.ibasco.sourcebuddy.model;
 
 import com.ibasco.agql.protocols.valve.source.query.pojos.SourcePlayer;
 import javafx.beans.property.*;

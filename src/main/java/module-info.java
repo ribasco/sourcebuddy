@@ -1,10 +1,9 @@
 module sourcebuddy {
-    exports com.ibasco.sourcebuddy.sourcebuddy;
-    opens com.ibasco.sourcebuddy.sourcebuddy to spring.core;
-    opens com.ibasco.sourcebuddy.sourcebuddy.config to spring.core, spring.beans, spring.context;
-    opens com.ibasco.sourcebuddy.sourcebuddy.controllers to javafx.fxml, spring.beans;
-    opens com.ibasco.sourcebuddy.sourcebuddy.model to javafx.base;
-
+    exports com.ibasco.sourcebuddy;
+    opens com.ibasco.sourcebuddy to spring.core;
+    opens com.ibasco.sourcebuddy.config to spring.core, spring.beans, spring.context;
+    opens com.ibasco.sourcebuddy.controllers to javafx.fxml, spring.beans;
+    opens com.ibasco.sourcebuddy.model to javafx.base;
     requires javafx.graphics;
     requires javafx.fxml;
     requires spring.boot;
@@ -18,4 +17,17 @@ module sourcebuddy {
     requires gson;
     requires spring.beans;
     requires agql.lib.core;
+    requires java.sql;
+    requires spring.jdbc;
+    requires spring.orm;
+    requires spring.tx;
+    requires org.hibernate.orm.core;
+    requires net.bytebuddy;
+    requires commons.dbcp2;
+    requires java.management;
+    requires java.persistence;
+    //requires java.annotation;
+    requires java.naming;
+    requires spring.data.jpa;
+    requires org.controlsfx.controls;
 }

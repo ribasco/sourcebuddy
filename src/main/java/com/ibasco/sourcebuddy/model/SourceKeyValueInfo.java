@@ -1,4 +1,4 @@
-package com.ibasco.sourcebuddy.sourcebuddy.model;
+package com.ibasco.sourcebuddy.model;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;

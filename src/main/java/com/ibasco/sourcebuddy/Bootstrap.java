@@ -1,6 +1,6 @@
-package com.ibasco.sourcebuddy.sourcebuddy;
+package com.ibasco.sourcebuddy;
 
-import com.ibasco.sourcebuddy.sourcebuddy.config.AppConfig;
+import com.ibasco.sourcebuddy.config.AppConfig;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -36,7 +36,10 @@ public class Bootstrap extends Application {
     @Override
     public void start(Stage stage) throws Exception {
         stage.setTitle("Source Buddy");
-        stage.setScene(new Scene(rootNode));
+        Scene scene = new Scene(rootNode);
+
+        scene.getStylesheets().add("/base.css");
+        stage.setScene(scene);
         stage.centerOnScreen();
         stage.show();
     }
@@ -45,5 +48,9 @@ public class Bootstrap extends Application {
     public void stop() throws Exception {
         log.info("Stopping application");
         context.close();
+    }
+
+    public static void main(String[] args) {
+        Application.launch(args);
     }
 }

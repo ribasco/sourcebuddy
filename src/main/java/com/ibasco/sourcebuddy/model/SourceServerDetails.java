@@ -1,20 +1,34 @@
-package com.ibasco.sourcebuddy.sourcebuddy.model;
+package com.ibasco.sourcebuddy.model;
 
 import com.ibasco.agql.protocols.valve.source.query.pojos.SourceServer;
+import com.ibasco.sourcebuddy.enums.OperatingSystem;
+import com.ibasco.sourcebuddy.enums.ServerStatus;
 import javafx.beans.property.*;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 
+import javax.persistence.*;
 import java.net.InetSocketAddress;
+import java.time.LocalDateTime;
 
-public class SourceServerInfo {
+@Entity
+@Table(
+        name = "SOURCE_SERVER_DETAILS",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"ip_address", "port"})}
+)
+public class SourceServerDetails {
+
+    private IntegerProperty id = new SimpleIntegerProperty();
+
     private StringProperty ipAddress = new SimpleStringProperty("0.0.0.0");
+
+    private IntegerProperty port = new SimpleIntegerProperty(-1);
 
     private StringProperty name = new SimpleStringProperty("N/A");
 
-    private IntegerProperty playerCount = new SimpleIntegerProperty(0);
+    private IntegerProperty playerCount = new SimpleIntegerProperty(-1);
 
-    private IntegerProperty maxPlayerCount = new SimpleIntegerProperty(8);
+    private IntegerProperty maxPlayerCount = new SimpleIntegerProperty(-1);
 
     private StringProperty mapName = new SimpleStringProperty("N/A");
 
@@ -28,7 +42,7 @@ public class SourceServerInfo {
 
     private IntegerProperty appId = new SimpleIntegerProperty(-1);
 
-    private IntegerProperty operatingSystem = new SimpleIntegerProperty(-1);
+    private ObjectProperty<OperatingSystem> operatingSystem = new SimpleObjectProperty<>();
 
     private StringProperty gameDirectory = new SimpleStringProperty("N/A");
 
@@ -38,50 +52,71 @@ public class SourceServerInfo {
 
     private LongProperty gameId = new SimpleLongProperty(-1);
 
-    private LongProperty lastUpdate = new SimpleLongProperty(0);
+    private ObjectProperty<LocalDateTime> lastUpdate = new SimpleObjectProperty<>(LocalDateTime.now());
 
-    public SourceServerInfo(SourceServer server) {
-        setPlayers(null);
-        setRules(null);
+    private ObjectProperty<ServerStatus> status = new SimpleObjectProperty<>(ServerStatus.ACTIVE);
+
+    public SourceServerDetails() {
+
+    }
+
+    public SourceServerDetails(SourceServer server) {
         setAddress(server.getAddress());
         setName(server.getName());
         setServerTags(server.getServerTags());
         setPlayerCount(server.getNumOfPlayers());
         setMaxPlayerCount(server.getMaxPlayers());
         setMapName(server.getMapName());
-        setAppId(server.getAppId());
-        setOperatingSystem(server.getOperatingSystem());
+        setAppId((int) server.getAppId());
+        setOperatingSystem(OperatingSystem.valueOf(server.getOperatingSystem()));
         setGameDirectory(server.getGameDirectory());
         setDescription(server.getGameDescription());
         setVersion(server.getGameVersion());
         setGameId(server.getGameId());
-        setLastUpdate(System.currentTimeMillis());
     }
 
-    public ObservableMap<String, String> getRules() {
-        return rules.get();
+    @Column(name = "server_id")
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public int getId() {
+        return id.get();
     }
 
-    public MapProperty<String, String> rulesProperty() {
-        return rules;
+    public IntegerProperty idProperty() {
+        return id;
     }
 
-    public void setRules(ObservableMap<String, String> rules) {
-        this.rules.set(rules);
+    public void setId(int id) {
+        this.id.set(id);
     }
 
-    public long getGameId() {
-        return gameId.get();
+    @Column(name = "status")
+    public ServerStatus getStatus() {
+        return status.get();
+    }
+
+    public ObjectProperty<ServerStatus> statusProperty() {
+        return status;
+    }
+
+    public void setStatus(ServerStatus status) {
+        this.status.set(status);
+    }
+
+    @Column(name = "game_id")
+    public Long getGameId() {
+        return gameId.getValue();
     }
 
     public LongProperty gameIdProperty() {
         return gameId;
     }
 
-    public void setGameId(long gameId) {
-        this.gameId.set(gameId);
+    public void setGameId(Long gameId) {
+        this.gameId.setValue(gameId);
     }
 
+    @Column(name = "version")
     public String getVersion() {
         return version.get();
     }
@@ -94,6 +129,7 @@ public class SourceServerInfo {
         this.version.set(version);
     }
 
+    @Column(name = "description")
     public String getDescription() {
         return description.get();
     }
@@ -106,6 +142,7 @@ public class SourceServerInfo {
         this.description.set(description);
     }
 
+    @Column(name = "directory")
     public String getGameDirectory() {
         return gameDirectory.get();
     }
@@ -118,19 +155,21 @@ public class SourceServerInfo {
         this.gameDirectory.set(gameDirectory);
     }
 
-    public int getOperatingSystem() {
+    @Column(name = "os")
+    public OperatingSystem getOperatingSystem() {
         return operatingSystem.get();
     }
 
-    public IntegerProperty operatingSystemProperty() {
+    public ObjectProperty<OperatingSystem> operatingSystemProperty() {
         return operatingSystem;
     }
 
-    public void setOperatingSystem(int operatingSystem) {
+    public void setOperatingSystem(OperatingSystem operatingSystem) {
         this.operatingSystem.set(operatingSystem);
     }
 
-    public int getAppId() {
+    @Column(name = "app_id")
+    public Integer getAppId() {
         return appId.get();
     }
 
@@ -138,10 +177,11 @@ public class SourceServerInfo {
         return appId;
     }
 
-    public void setAppId(int appId) {
-        this.appId.set(appId);
+    public void setAppId(Integer appId) {
+        this.appId.setValue(appId);
     }
 
+    @Transient
     public InetSocketAddress getAddress() {
         return address.get();
     }
@@ -154,18 +194,7 @@ public class SourceServerInfo {
         this.address.set(address);
     }
 
-    public ObservableList<SourcePlayerInfo> getPlayers() {
-        return players.get();
-    }
-
-    public ListProperty<SourcePlayerInfo> playersProperty() {
-        return players;
-    }
-
-    public void setPlayers(ObservableList<SourcePlayerInfo> players) {
-        this.players.set(players);
-    }
-
+    @Column(name = "tags")
     public String getServerTags() {
         return serverTags.get();
     }
@@ -178,6 +207,7 @@ public class SourceServerInfo {
         this.serverTags.set(serverTags);
     }
 
+    @Transient
     public String getMapName() {
         return mapName.get();
     }
@@ -190,6 +220,7 @@ public class SourceServerInfo {
         this.mapName.set(mapName);
     }
 
+    @Transient
     public int getMaxPlayerCount() {
         return maxPlayerCount.get();
     }
@@ -202,6 +233,7 @@ public class SourceServerInfo {
         this.maxPlayerCount.set(maxPlayerCount);
     }
 
+    @Column(name = "ip_address")
     public String getIpAddress() {
         return ipAddress.get();
     }
@@ -214,6 +246,20 @@ public class SourceServerInfo {
         this.ipAddress.set(ipAddress);
     }
 
+    @Column(name = "port")
+    public int getPort() {
+        return port.get();
+    }
+
+    public IntegerProperty portProperty() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port.set(port);
+    }
+
+    @Column(name = "name")
     public String getName() {
         return name.get();
     }
@@ -226,6 +272,7 @@ public class SourceServerInfo {
         this.name.set(name);
     }
 
+    @Transient
     public int getPlayerCount() {
         return playerCount.get();
     }
@@ -238,15 +285,42 @@ public class SourceServerInfo {
         this.playerCount.set(playerCount);
     }
 
-    public long getLastUpdate() {
+    @Column(name = "last_update", columnDefinition = "DATETIME")
+    public LocalDateTime getLastUpdate() {
         return lastUpdate.get();
     }
 
-    public LongProperty lastUpdateProperty() {
+    public ObjectProperty<LocalDateTime> lastUpdateProperty() {
         return lastUpdate;
     }
 
-    public void setLastUpdate(long lastUpdate) {
+    public void setLastUpdate(LocalDateTime lastUpdate) {
         this.lastUpdate.set(lastUpdate);
+    }
+
+    @Transient
+    public ObservableList<SourcePlayerInfo> getPlayers() {
+        return players.get();
+    }
+
+    public ListProperty<SourcePlayerInfo> playersProperty() {
+        return players;
+    }
+
+    public void setPlayers(ObservableList<SourcePlayerInfo> players) {
+        this.players.set(players);
+    }
+
+    @Transient
+    public ObservableMap<String, String> getRules() {
+        return rules.get();
+    }
+
+    public MapProperty<String, String> rulesProperty() {
+        return rules;
+    }
+
+    public void setRules(ObservableMap<String, String> rules) {
+        this.rules.set(rules);
     }
 }

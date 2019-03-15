@@ -1,6 +1,6 @@
-package com.ibasco.sourcebuddy.sourcebuddy.config;
+package com.ibasco.sourcebuddy.config;
 
-import com.ibasco.sourcebuddy.sourcebuddy.controllers.MainController;
+import com.ibasco.sourcebuddy.controllers.MainController;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
