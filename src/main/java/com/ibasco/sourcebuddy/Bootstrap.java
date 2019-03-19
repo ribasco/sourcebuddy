@@ -1,13 +1,20 @@
 package com.ibasco.sourcebuddy;
 
+import com.ibasco.sourcebuddy.components.ViewManager;
 import com.ibasco.sourcebuddy.config.AppConfig;
+import com.ibasco.sourcebuddy.constants.Beans;
+import com.ibasco.sourcebuddy.constants.Views;
+import com.ibasco.sourcebuddy.util.ResourceUtil;
+import com.ibasco.sourcebuddy.util.SpringUtil;
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.apache.commons.lang3.StringUtils;
+import org.dockfx.DockPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -21,36 +28,51 @@ public class Bootstrap extends Application {
 
     private ConfigurableApplicationContext context;
 
-    private Parent rootNode;
+    private ViewManager viewManager;
+
+    @Value("${app.title}")
+    private String appTitle;
 
     @Override
     public void init() throws Exception {
         SpringApplicationBuilder builder = new SpringApplicationBuilder(Bootstrap.class).sources(AppConfig.class);
         context = builder.run(getParameters().getRaw().toArray(new String[0]));
-        URL resource = getClass().getResource("/main.fxml");
-        FXMLLoader loader = new FXMLLoader(resource);
-        loader.setControllerFactory(context::getBean);
-        rootNode = loader.load();
+        SpringUtil.registerBean(Beans.APP_PARAMETERS, getParameters());
+        SpringUtil.registerBean(Beans.HOST_SERVICES, getHostServices());
+        viewManager = SpringUtil.getBean(Beans.VIEW_MANAGER);
     }
 
     @Override
     public void start(Stage stage) throws Exception {
-        stage.setTitle("Source Buddy");
+        log.debug("Retrieving main view");
+        Parent rootNode = viewManager.loadView(Views.MAIN);
+
+        SpringUtil.registerBean(Beans.PRIMARY_STAGE, stage);
+
+        stage.getIcons().add(ResourceUtil.loadIcon("/general/app-icon"));
+
+        stage.setTitle(StringUtils.defaultString(appTitle, "Source Buddy"));
+
+        log.debug("Initializing primary stage and scene");
         Scene scene = new Scene(rootNode);
 
-        scene.getStylesheets().add("/base.css");
+        URL res = ResourceUtil.loadResource("/styles/default.css");
+
+        scene.getStylesheets().add(res.toExternalForm());
         stage.setScene(scene);
         stage.centerOnScreen();
         stage.show();
+
+        log.debug("Primary stage and scene have been initialized");
+
+        // test the look and feel with both Caspian and Modena
+        Application.setUserAgentStylesheet(Application.STYLESHEET_MODENA);
+        DockPane.initializeDefaultUserAgentStylesheet();
     }
 
     @Override
     public void stop() throws Exception {
         log.info("Stopping application");
         context.close();
-    }
-
-    public static void main(String[] args) {
-        Application.launch(args);
     }
 }

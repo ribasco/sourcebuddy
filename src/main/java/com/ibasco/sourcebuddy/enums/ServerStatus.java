@@ -1,9 +1,12 @@
 package com.ibasco.sourcebuddy.enums;
 
 public enum ServerStatus {
+    NEW(-1),
     ACTIVE(0),
-    INACTIVE(1),
-    PURGED(2);
+    TIMED_OUT(1),
+    ERRORED(2),
+    INACTIVE(3),
+    PURGED(4);
 
     private int status;
 

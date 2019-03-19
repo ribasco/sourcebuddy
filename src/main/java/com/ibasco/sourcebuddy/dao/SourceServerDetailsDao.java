@@ -1,6 +1,6 @@
 package com.ibasco.sourcebuddy.dao;
 
-import com.ibasco.sourcebuddy.model.SourceServerDetails;
+import com.ibasco.sourcebuddy.entities.SourceServerDetails;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;

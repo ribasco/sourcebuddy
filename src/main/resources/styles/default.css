@@ -1,0 +1,88 @@
+@import "base.css";
+
+.button {
+    -fx-background-color: #707070,
+    linear-gradient(#fcfcfc, #f3f3f3),
+    linear-gradient(#f2f2f2 0%, #ebebeb 49%, #dddddd 50%, #cfcfcf 100%);
+    -fx-background-insets: 0, 1, 2;
+    -fx-background-radius: 3, 2, 1;
+    /*-fx-padding: 3 30 3 30;*/
+    -fx-text-fill: black;
+    -fx-font-size: 14px;
+}
+
+.button:pressed {
+    /*-fx-padding: 10 15 13 15;*/
+    -fx-background-insets: 2 0 0 0, 2 0 3 0, 2 0 4 0, 2 0 5 0;
+}
+
+.button:hover {
+    -fx-background-color: #b8b8b8,
+    linear-gradient(#fcfcfc, #f3f3f3),
+    linear-gradient(#f2f2f2 0%, #ebebeb 49%, #dddddd 50%, #cfcfcf 100%);
+    /*-fx-background-color:
+            linear-gradient(from 0% 93% to 0% 100%, #a34313 0%, #903b12 100%),
+            #9d4024,
+            #d86e3a,
+            radial-gradient(center 50% 50%, radius 100%, #ea7f4b, #c54e2c);*/
+}
+
+.split-pane:horizontal > .split-pane-divider {
+    -fx-background-color: #C7C7C7;
+}
+
+.split-pane:vertical > .split-pane-divider {
+    -fx-background-color: #C7C7C7;
+}
+
+.split-pane > .split-pane-divider {
+    -fx-padding: 0 2 0 2;
+}
+
+.dock-title-bar {
+    -fx-background-color: #4C4A48;
+    -fx-border-width: 1;
+    -fx-border-color: #535353;
+    -fx-font-weight: bold;
+    /*-fx-border-color: -fx-outer-border;*/
+}
+
+.dock-title-bar .button {
+    -fx-padding: 1 7 1 7;
+}
+
+.dock-title-label {
+    /*-fx-graphic: url(docknode.png);*/
+    -fx-padding: 0 0 3 0;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.2), 0, 0, 0, 1);
+}
+
+.table-view {
+    -fx-background-color: transparent;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: linear-gradient(#4C4A48 0%, #676563 100%);
+}
+
+.table-view .column-header-background .label {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+}
+
+/*
+.table-view .table-cell{
+    -fx-text-fill: white;
+}
+
+.table-row-cell{
+    -fx-background-color: -fx-table-cell-border-color, #616161;
+    -fx-background-insets: 0, 0 0 1 0;
+    -fx-padding: 0.0em; !* 0 *!
+}
+*/
