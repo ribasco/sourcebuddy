@@ -12,15 +12,6 @@ public class SQLiteMetadataBuilderInitializer implements MetadataBuilderInitiali
 
     private static final SQLiteDialect dialect = new SQLiteDialect();
 
-    @Override
-    public void contribute(MetadataBuilder metadataBuilder, StandardServiceRegistry serviceRegistry) {
-        DialectResolver dialectResolver = serviceRegistry.getService(DialectResolver.class);
-
-        if ((dialectResolver instanceof DialectResolverSet)) {
-            ((DialectResolverSet) dialectResolver).addResolver(resolver);
-        }
-    }
-
     static private final DialectResolver resolver = new DialectResolver() {
         @Override
         public Dialect resolveDialect(DialectResolutionInfo info) {
@@ -29,6 +20,15 @@ public class SQLiteMetadataBuilderInitializer implements MetadataBuilderInitiali
             return null;
         }
     };
+
+    @Override
+    public void contribute(MetadataBuilder metadataBuilder, StandardServiceRegistry serviceRegistry) {
+        DialectResolver dialectResolver = serviceRegistry.getService(DialectResolver.class);
+
+        if ((dialectResolver instanceof DialectResolverSet)) {
+            ((DialectResolverSet) dialectResolver).addResolver(resolver);
+        }
+    }
 }
 
 

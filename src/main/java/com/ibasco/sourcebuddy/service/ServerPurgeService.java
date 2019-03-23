@@ -1,4 +1,5 @@
 package com.ibasco.sourcebuddy.service;
 
-public class ServerPurgeService {
+public interface ServerPurgeService {
+
 }

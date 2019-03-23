@@ -13,11 +13,11 @@ public enum OperatingSystem {
         this.code = code;
     }
 
-    public char getCode() {
-        return code;
-    }
-
     public static OperatingSystem valueOf(char code) {
         return Arrays.stream(values()).filter(o -> o.code == code).findFirst().orElse(null);
+    }
+
+    public char getCode() {
+        return code;
     }
 }

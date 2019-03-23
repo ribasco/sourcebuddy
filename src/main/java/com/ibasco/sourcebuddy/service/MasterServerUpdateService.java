@@ -6,8 +6,8 @@ import com.ibasco.agql.protocols.valve.steam.master.enums.MasterServerRegion;
 import com.ibasco.agql.protocols.valve.steam.master.enums.MasterServerType;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.ScheduledService;
 import javafx.concurrent.Task;
+import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,15 +15,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.net.InetSocketAddress;
 import java.util.stream.Collectors;
 
-
-public class MasterServerUpdateService extends ScheduledService<ObservableList<InetSocketAddress>> {
+public class MasterServerUpdateService extends ListenableTaskService<ObservableList<InetSocketAddress>> {
 
     private static final Logger log = LoggerFactory.getLogger(MasterServerUpdateService.class);
 
     private MasterServerQueryClient masterQueryClient;
 
     @Override
-    protected Task<ObservableList<InetSocketAddress>> createTask() {
+    protected void initialize() {
+        log.debug("Initializing specific service properties for {}", getClass().getSimpleName());
+        setDelay(Duration.seconds(30));
+        setPeriod(Duration.seconds(400));
+    }
+
+    @Override
+    protected Task<ObservableList<InetSocketAddress>> createNewTask() {
         return new Task<>() {
             @Override
             protected ObservableList<InetSocketAddress> call() throws Exception {

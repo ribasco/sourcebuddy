@@ -1,8 +1,10 @@
 package com.ibasco.sourcebuddy.controllers;
 
-import com.ibasco.sourcebuddy.entities.KeyValueInfo;
+import com.ibasco.sourcebuddy.domain.KeyValueInfo;
+import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
 import com.ibasco.sourcebuddy.util.GuiUtil;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -29,7 +31,15 @@ public class RulesBrowserController extends BaseController {
     @Override
     public void initialize(Stage stage, Node rootNode) {
         GuiUtil.setupKeyValueTable(tvRulesTable);
-        serverDetailsModel.getServerSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+        serverDetailsModel.getServerSelectionModel().selectedItemProperty().addListener(this::updateRulesSelection);
+    }
+
+    private void updateRulesSelection(ObservableValue observableValue, ServerDetails oldValue, ServerDetails newValue) {
+        if (!serverDetailsModel.READ_LOCK.tryLock()) {
+            log.debug("Unable to acquire read lock for rules");
+            return;
+        }
+        try {
             if (newValue != null && newValue.getRules() != null) {
                 ObservableList<KeyValueInfo> rulesList = FXCollections.observableArrayList();
                 for (Map.Entry<String, String> e : newValue.getRules().entrySet()) {
@@ -39,7 +49,9 @@ public class RulesBrowserController extends BaseController {
             } else {
                 tvRulesTable.setItems(null);
             }
-        });
+        } finally {
+            serverDetailsModel.READ_LOCK.unlock();
+        }
     }
 
     @Autowired

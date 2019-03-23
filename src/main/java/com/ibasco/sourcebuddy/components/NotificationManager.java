@@ -15,10 +15,6 @@ public class NotificationManager {
         showNotification(pane, message, "/icons/notif/notif-icon-warning.png", actions);
     }
 
-    public void showError(NotificationPane pane, String message, Action... actions) {
-        showNotification(pane, message, "/icons/notif/notif-icon-error.png", actions);
-    }
-
     public void showNotification(NotificationPane pane, String message, String graphic, Action... actions) {
         if (pane.isShowing())
             pane.hide();
@@ -37,5 +33,9 @@ public class NotificationManager {
         }
         pane.setText(message);
         pane.show();
+    }
+
+    public void showError(NotificationPane pane, String message, Action... actions) {
+        showNotification(pane, message, "/icons/notif/notif-icon-error.png", actions);
     }
 }

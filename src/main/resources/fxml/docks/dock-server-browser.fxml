@@ -4,7 +4,7 @@
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.*?>
 <?import org.controlsfx.control.MasterDetailPane?>
-<AnchorPane prefHeight="515.0" prefWidth="742.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.ServerBrowserController">
+<AnchorPane xmlns:fx="http://javafx.com/fxml/1" prefHeight="515.0" prefWidth="742.0" xmlns="http://javafx.com/javafx/11.0.1" fx:controller="com.ibasco.sourcebuddy.controllers.ServerBrowserController">
     <children>
         <VBox layoutY="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
             <children>
@@ -19,7 +19,7 @@
                         </AnchorPane>
                     </masterNode>
                     <detailNode>
-                        <AnchorPane xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+                        <AnchorPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/11.0.1">
                             <children>
                                 <VBox layoutY="15.0" prefHeight="85.0" prefWidth="740.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                     <children>

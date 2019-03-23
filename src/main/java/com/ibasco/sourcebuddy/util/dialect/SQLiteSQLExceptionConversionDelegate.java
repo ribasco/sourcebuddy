@@ -9,24 +9,37 @@ import org.hibernate.internal.util.JdbcExceptionHelper;
 
 import java.sql.SQLException;
 
-
 /**
  * Exception converter for the SQLite dialect.
  */
 public class SQLiteSQLExceptionConversionDelegate implements SQLExceptionConversionDelegate {
 
     private static final int SQLITE_BUSY = 5;
+
     private static final int SQLITE_LOCKED = 6;
+
     private static final int SQLITE_IO_ERR = 10;
+
     //    private static final int SQLITE_CORRUPT = 11;
 //    private static final int SQLITE_NOT_FOUND = 12;
 //    private static final int SQLITE_FULL = 13;
 //    private static final int SQLITE_CANT_OPEN = 14;
     private static final int SQLITE_PROTOCOL = 15;
+
     private static final int SQLITE_TOO_BIG = 18;
+
     private static final int SQLITE_CONSTRAINT = 19;
+
     private static final int SQLITE_MISMATCH = 20;
+
     private static final int SQLITE_NOT_ADB = 26;
+
+    private static final ViolatedConstraintNameExtracter EXTRACTER = new TemplatedViolatedConstraintNameExtracter() {
+        @Override
+        protected String doExtractConstraintName(SQLException sqle) throws NumberFormatException {
+            return extractUsingTemplate("constraint ", " failed", sqle.getMessage());
+        }
+    };
 
     @Override
     public JDBCException convert(SQLException sqlException, String message, String sql) {
@@ -43,11 +56,4 @@ public class SQLiteSQLExceptionConversionDelegate implements SQLExceptionConvers
         }
         return new GenericJDBCException(message, sqlException, sql);
     }
-
-    private static final ViolatedConstraintNameExtracter EXTRACTER = new TemplatedViolatedConstraintNameExtracter() {
-        @Override
-        protected String doExtractConstraintName(SQLException sqle) throws NumberFormatException {
-            return extractUsingTemplate("constraint ", " failed", sqle.getMessage());
-        }
-    };
 }

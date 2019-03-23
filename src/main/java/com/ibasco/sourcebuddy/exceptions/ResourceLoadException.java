@@ -1,6 +1,7 @@
 package com.ibasco.sourcebuddy.exceptions;
 
 public class ResourceLoadException extends RuntimeException {
+
     public ResourceLoadException() {
     }
 

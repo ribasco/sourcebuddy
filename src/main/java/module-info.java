@@ -1,20 +1,28 @@
 module sourcebuddy {
     exports com.ibasco.sourcebuddy;
-    /*exports com.ibasco.sourcebuddy.enums;
-    exports com.ibasco.sourcebuddy.exceptions;*/
-
+    exports com.ibasco.sourcebuddy.events;
     exports com.ibasco.sourcebuddy.util.dialect to org.hibernate.orm.core;
-    exports com.ibasco.sourcebuddy.entities to org.hibernate.orm.core, spring.beans;
-    exports com.ibasco.sourcebuddy.service to spring.beans;
+    exports com.ibasco.sourcebuddy.domain to org.hibernate.orm.core, spring.beans, org.apache.commons.lang3;
+    exports com.ibasco.sourcebuddy.service to spring.core, spring.beans, spring.aop;
     exports com.ibasco.sourcebuddy.components to spring.beans, spring.core;
     exports com.ibasco.sourcebuddy.util to spring.beans, spring.core;
     exports com.ibasco.sourcebuddy.model to spring.beans, spring.core;
+    exports com.ibasco.sourcebuddy.enums to spring.data.jpa, spring.beans, spring.core;
+    exports com.ibasco.sourcebuddy.service.impl to spring.beans, spring.core;
+    exports com.ibasco.sourcebuddy.tasks to spring.beans, spring.core;
+    exports com.ibasco.sourcebuddy.data.converters to org.hibernate.orm.core;
+    exports com.ibasco.sourcebuddy.data.types to org.hibernate.orm.core;
+    exports com.ibasco.sourcebuddy.controllers to spring.context, spring.core, spring.beans;
 
     opens com.ibasco.sourcebuddy to spring.core;
     opens com.ibasco.sourcebuddy.config to spring.core, spring.beans, spring.context;
     opens com.ibasco.sourcebuddy.controllers to javafx.fxml, spring.beans, spring.core;
-    opens com.ibasco.sourcebuddy.entities to javafx.base, spring.core;
+    opens com.ibasco.sourcebuddy.domain to javafx.base, spring.core, org.apache.commons.lang3;
     opens com.ibasco.sourcebuddy.components to spring.beans, spring.core;
+    opens com.ibasco.sourcebuddy.service to spring.beans, spring.core, spring.aop;
+    opens com.ibasco.sourcebuddy.service.impl to spring.core, spring.beans, spring.aop;
+    opens com.ibasco.sourcebuddy.tasks to spring.core, spring.beans;
+    opens com.ibasco.sourcebuddy.util to spring.core, spring.beans;
 
     requires javafx.graphics;
     requires javafx.fxml;
@@ -31,6 +39,7 @@ module sourcebuddy {
     requires javafx.controls;
     requires logback.classic;
     requires slf4j.api;
+    requires agql.steam.webapi;
     requires agql.source.query;
     requires agql.steam.master;
     requires gson;
@@ -44,7 +53,11 @@ module sourcebuddy {
     requires java.naming;
     requires org.controlsfx.controls;
     requires geoip2;
-    requires dockfx;
     requires java.annotation;
+    requires javax.inject;
     requires org.apache.commons.lang3;
+    requires com.jfoenix;
+    requires dockfx.clearcontrol;
+    requires spring.data.commons;
+    //requires dockfx;
 }

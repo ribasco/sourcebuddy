@@ -1,10 +1,12 @@
 package com.ibasco.sourcebuddy.model;
 
-import com.ibasco.sourcebuddy.entities.SourceServerDetails;
+import com.ibasco.sourcebuddy.domain.ServerDetails;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableSelectionModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.locks.Lock;
@@ -13,51 +15,55 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Component
 public class ServerDetailsModel {
+
+    private static final Logger log = LoggerFactory.getLogger(ServerDetailsModel.class);
+
     private final ReadWriteLock serverListLock = new ReentrantReadWriteLock();
 
-    public final Lock writeLock = serverListLock.writeLock();
+    public final Lock WRITE_LOCK = serverListLock.writeLock();
 
-    public final Lock readLock = serverListLock.readLock();
+    public final Lock READ_LOCK = serverListLock.readLock();
 
-    private ObjectProperty<TableSelectionModel<SourceServerDetails>> serverSelectionModel = new SimpleObjectProperty<>();
+    private ObjectProperty<TableSelectionModel<ServerDetails>> serverSelectionModel = new SimpleObjectProperty<>();
 
-    private ListProperty<SourceServerDetails> serverDetails = new SimpleListProperty<>(FXCollections.observableArrayList());
+    private ListProperty<ServerDetails> serverDetails = new SimpleListProperty<>(FXCollections.observableArrayList());
 
     private StringProperty statusMessage = new SimpleStringProperty();
 
-    public ObservableList<SourceServerDetails> getServerDetails() {
+    public ObservableList<ServerDetails> getServerDetails() {
+        log.debug("Getting details: {}", serverDetails.get());
         return serverDetails.get();
     }
 
-    public ListProperty<SourceServerDetails> serverDetailsProperty() {
-        return serverDetails;
+    public void setServerDetails(ObservableList<ServerDetails> serverDetails) {
+        this.serverDetails.set(serverDetails);
     }
 
-    public void setServerDetails(ObservableList<SourceServerDetails> serverDetails) {
-        this.serverDetails.set(serverDetails);
+    public ListProperty<ServerDetails> serverDetailsProperty() {
+        return serverDetails;
     }
 
     public String getStatusMessage() {
         return statusMessage.get();
     }
 
-    public StringProperty statusMessageProperty() {
-        return statusMessage;
-    }
-
     public void setStatusMessage(String statusMessage) {
         this.statusMessage.set(statusMessage);
     }
 
-    public TableSelectionModel<SourceServerDetails> getServerSelectionModel() {
+    public StringProperty statusMessageProperty() {
+        return statusMessage;
+    }
+
+    public TableSelectionModel<ServerDetails> getServerSelectionModel() {
         return serverSelectionModel.get();
     }
 
-    public ObjectProperty<TableSelectionModel<SourceServerDetails>> serverSelectionModelProperty() {
-        return serverSelectionModel;
+    public void setServerSelectionModel(TableSelectionModel<ServerDetails> serverSelectionModel) {
+        this.serverSelectionModel.set(serverSelectionModel);
     }
 
-    public void setServerSelectionModel(TableSelectionModel<SourceServerDetails> serverSelectionModel) {
-        this.serverSelectionModel.set(serverSelectionModel);
+    public ObjectProperty<TableSelectionModel<ServerDetails>> serverSelectionModelProperty() {
+        return serverSelectionModel;
     }
 }

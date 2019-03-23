@@ -1,6 +1,7 @@
 package com.ibasco.sourcebuddy.exceptions;
 
 public class ViewLoadException extends RuntimeException {
+
     public ViewLoadException() {
     }
 

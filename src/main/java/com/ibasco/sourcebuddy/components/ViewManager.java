@@ -33,17 +33,6 @@ public class ViewManager {
 
     private Map<String, ViewNodeControllerEntry> viewControllerMap = new HashMap<>();
 
-    private class ViewNodeControllerEntry {
-        private BaseController controller;
-
-        private Node rootNode;
-
-        ViewNodeControllerEntry(BaseController controller, Node rootNode) {
-            this.controller = controller;
-            this.rootNode = rootNode;
-        }
-    }
-
     public boolean hasController(String viewName) {
         return viewControllerMap.containsKey(viewName);
     }
@@ -102,7 +91,7 @@ public class ViewManager {
 
         try {
             FXMLLoader loader = new FXMLLoader();
-            loader.setControllerFactory(SpringUtil.getApplicationContext()::getBean);
+            loader.setControllerFactory(SpringUtil.getContext()::getBean);
             URL viewUrl = loadResource(viewPath);
             loader.setLocation(viewUrl);
             T node = loader.load();
@@ -121,10 +110,10 @@ public class ViewManager {
                     @Override
                     public void changed(ObservableValue<? extends Scene> observable, Scene oldScene, Scene newScene) {
                         if (newScene != null) {
-                            log.debug("Scene initialized (View: {}, Controller: {}, Stage: {})", viewName, controller.getClass().getSimpleName(), newScene.getWindow());
+                            //log.debug("\tScene initialized (View: {}, Controller: {}, Stage: {})", viewName, controller.getClass().getSimpleName(), newScene.getWindow());
                             if (newScene.getWindow() != null) {
                                 Stage stage = (Stage) newScene.getWindow();
-                                log.debug("Stage initialized (View: {}, Controller: {}, Stage: {}, Scene: {})", viewName, controller.getClass().getSimpleName(), stage, newScene);
+                                //log.debug("\tStage initialized (View: {}, Controller: {}, Stage: {}, Scene: {})", viewName, controller.getClass().getSimpleName(), stage, newScene);
                                 initializeAndRemove(controller, node, stage, node.sceneProperty(), this);
                                 return;
                             }
@@ -132,7 +121,7 @@ public class ViewManager {
                                 @Override
                                 public void changed(ObservableValue<? extends Window> observable, Window oldWindow, Window newWindow) {
                                     Stage stage = (Stage) newWindow;
-                                    log.debug("Stage initialized (View: {}, Controller: {}, Stage: {}, Scene: {})", viewName, controller.getClass().getSimpleName(), stage, stage.getScene());
+                                    //log.debug("\tStage initialized (View: {}, Controller: {}, Stage: {}, Scene: {})", viewName, controller.getClass().getSimpleName(), stage, stage.getScene());
                                     initializeAndRemove(controller, node, stage, newScene.windowProperty(), this);
                                 }
                             });
@@ -154,11 +143,23 @@ public class ViewManager {
     private void initializeAndRemove(BaseController controller, Node node, Stage stage, ObservableValue property, ChangeListener listener) {
         try {
             controller.initialize(stage, node);
-            log.debug("ViewManager :: Successfully initialized controller {}", controller.getClass().getSimpleName());
+            log.debug("ViewManager :: Initialized controller {}", controller.getClass().getSimpleName());
         } catch (Throwable ex) {
             throw new ViewLoadException(String.format("An exception occured during initialization of controller '%s'", controller.getClass().getName()), ex);
         } finally {
             property.removeListener(listener);
+        }
+    }
+
+    private class ViewNodeControllerEntry {
+
+        private BaseController controller;
+
+        private Node rootNode;
+
+        ViewNodeControllerEntry(BaseController controller, Node rootNode) {
+            this.controller = controller;
+            this.rootNode = rootNode;
         }
     }
 }

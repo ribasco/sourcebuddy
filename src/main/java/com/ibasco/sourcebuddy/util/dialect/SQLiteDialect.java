@@ -1,6 +1,5 @@
 package com.ibasco.sourcebuddy.util.dialect;
 
-
 import org.hibernate.dialect.Dialect;
 import org.hibernate.dialect.function.*;
 import org.hibernate.exception.spi.SQLExceptionConversionDelegate;
@@ -12,6 +11,7 @@ import java.sql.Types;
  * SQLite dialect for hibernate 5.
  */
 public class SQLiteDialect extends Dialect {
+
     public SQLiteDialect() {
         registerColumnType(Types.BIT, "boolean");
         registerColumnType(Types.TINYINT, "tinyint");
@@ -74,6 +74,21 @@ public class SQLiteDialect extends Dialect {
     }
 
     @Override
+    public String getSelectGUIDString() {
+        return "select hex(randomblob(16))";
+    }
+
+    @Override
+    public String getForUpdateString() {
+        return "";
+    }
+
+    @Override
+    public boolean supportsOuterJoinForUpdate() {
+        return false;
+    }
+
+    @Override
     public boolean supportsCurrentTimestampSelection() {
         return true;
     }
@@ -109,16 +124,6 @@ public class SQLiteDialect extends Dialect {
     }
 
     @Override
-    public String getForUpdateString() {
-        return "";
-    }
-
-    @Override
-    public boolean supportsOuterJoinForUpdate() {
-        return false;
-    }
-
-    @Override
     public String getDropForeignKeyString() {
         throw new UnsupportedOperationException("No drop foreign key syntax supported by SQLiteDialect");
     }
@@ -142,10 +147,5 @@ public class SQLiteDialect extends Dialect {
     @Override
     public boolean supportsTupleDistinctCounts() {
         return false;
-    }
-
-    @Override
-    public String getSelectGUIDString() {
-        return "select hex(randomblob(16))";
     }
 }

@@ -1,6 +1,7 @@
 package com.ibasco.sourcebuddy.exceptions;
 
 public class NoMappedControllerException extends ViewLoadException {
+
     public NoMappedControllerException() {
     }
 

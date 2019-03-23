@@ -7,10 +7,12 @@ import com.ibasco.sourcebuddy.constants.Views;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
 import com.ibasco.sourcebuddy.util.SpringUtil;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
+import org.controlsfx.dialog.ExceptionDialog;
 import org.dockfx.DockPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +42,13 @@ public class Bootstrap extends Application {
         SpringUtil.registerBean(Beans.APP_PARAMETERS, getParameters());
         SpringUtil.registerBean(Beans.HOST_SERVICES, getHostServices());
         viewManager = SpringUtil.getBean(Beans.VIEW_MANAGER);
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            log.error("Uncaught exception occured", e);
+            Platform.runLater(() -> {
+                ExceptionDialog exceptionDialog = new ExceptionDialog(e);
+                exceptionDialog.show();
+            });
+        });
     }
 
     @Override
@@ -61,6 +70,8 @@ public class Bootstrap extends Application {
         scene.getStylesheets().add(res.toExternalForm());
         stage.setScene(scene);
         stage.centerOnScreen();
+        stage.setWidth(1280);
+        stage.setHeight(720);
         stage.show();
 
         log.debug("Primary stage and scene have been initialized");

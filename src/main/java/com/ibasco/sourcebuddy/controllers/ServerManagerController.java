@@ -4,7 +4,7 @@ import com.ibasco.agql.protocols.valve.source.query.client.SourceRconClient;
 import com.ibasco.agql.protocols.valve.source.query.exceptions.RconNotYetAuthException;
 import com.ibasco.agql.protocols.valve.source.query.logger.SourceLogEntry;
 import com.ibasco.agql.protocols.valve.source.query.logger.SourceLogListenService;
-import com.ibasco.sourcebuddy.entities.SourceServerDetails;
+import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
 import javafx.scene.Node;
 import javafx.scene.control.TextInputDialog;
@@ -34,7 +34,7 @@ public class ServerManagerController extends BaseController {
     }
 
     private void authenticateRcon() {
-        SourceServerDetails info = serverDetailsModel.getServerSelectionModel().getSelectedItem();
+        ServerDetails info = serverDetailsModel.getServerSelectionModel().getSelectedItem();
 
         if (rconClient.isAuthenticated(info.getAddress())) {
             log.warn("Address {} is already authenticated", info.getAddress());
@@ -88,7 +88,7 @@ public class ServerManagerController extends BaseController {
     }
 
     private CompletableFuture<String> executeRconCommand(String command) {
-        SourceServerDetails selectedServer = serverDetailsModel.getServerSelectionModel().getSelectedItem();
+        ServerDetails selectedServer = serverDetailsModel.getServerSelectionModel().getSelectedItem();
         if (selectedServer == null)
             return CompletableFuture.failedFuture(new IllegalStateException("No server selected"));
 

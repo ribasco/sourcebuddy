@@ -30,14 +30,12 @@ public class BatchConfig implements BatchConfigurer {
     private StepBuilderFactory stepBuilderFactory;
 
     @Autowired
+    public void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }    @Autowired
     @Qualifier(Beans.TRANSACTION_MANAGER)
     public void setTransactionManager(PlatformTransactionManager transactionManager) {
         this.transactionManager = transactionManager;
-    }
-
-    @Autowired
-    public void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
     }
 
     @Autowired
@@ -49,6 +47,8 @@ public class BatchConfig implements BatchConfigurer {
     public void setStepBuilderFactory(StepBuilderFactory stepBuilderFactory) {
         this.stepBuilderFactory = stepBuilderFactory;
     }
+
+
 
     @Override
     public JobRepository getJobRepository() throws Exception {
