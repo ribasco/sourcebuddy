@@ -9,6 +9,7 @@ import com.ibasco.sourcebuddy.model.ServerDetailsModel;
 import com.ibasco.sourcebuddy.service.SteamQueryService;
 import com.ibasco.sourcebuddy.tasks.UpdateMasterServerListTask;
 import com.ibasco.sourcebuddy.tasks.UpdateServerDetailsTask;
+import com.ibasco.sourcebuddy.tasks.UpdateSteamAppDetailsTask;
 import static com.ibasco.sourcebuddy.util.GuiUtil.findNode;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
 import javafx.beans.binding.Bindings;
@@ -80,6 +81,9 @@ public class MainController extends BaseController {
 
     private Button btnServiceStatus;
 
+    @FXML
+    private Button btnUpdateDetails;
+
     @Override
     public void initialize(Stage stage, Node rootNode) {
 
@@ -122,19 +126,26 @@ public class MainController extends BaseController {
     }
 
     private void setupMainToolbar() {
-        btnUpdateMasterList.setOnAction(event -> {
-            //Optional<String> value = prompt("Enter steam id", "Enter steam id");
-            //if (value.isPresent()) {
-            //int appId = Integer.valueOf(value.get());
 
-            int[] appIds = new int[] {440, 550, 730};
+        btnUpdateDetails.setOnAction(event -> taskManager.executeTask(UpdateSteamAppDetailsTask.class));
+        btnUpdateMasterList.setOnAction(event -> {
+            Optional<String> value = prompt("Enter steam id", "Enter steam id");
+            if (value.isPresent()) {
+                int appId = Integer.valueOf(value.get());
+
+                Optional<SteamApp> steamApp = steamQueryService.findSteamAppById(appId);
+                if (steamApp.isPresent()) {
+                    taskManager.executeTask(UpdateMasterServerListTask.class, steamApp);
+                }
+
+            }
+            /*int[] appIds = new int[] {550};
             for (int appId : appIds) {
                 Optional<SteamApp> steamApp = steamQueryService.findSteamAppById(appId);
                 if (steamApp.isEmpty())
                     continue;
                 taskManager.executeTask(UpdateMasterServerListTask.class, steamApp);
-            }
-            //}
+            }*/
         });
 
         btnUpdateServerDetails.setOnAction(event -> {

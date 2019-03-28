@@ -6,7 +6,7 @@
 <?import org.controlsfx.control.NotificationPane?>
 <?import org.controlsfx.control.StatusBar?>
 <?import org.dockfx.DockPane?>
-<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.MainController">
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="773.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.MainController">
     <children>
         <MenuBar fx:id="mbMainMenu">
             <menus>
@@ -32,6 +32,7 @@
                 <CheckComboBox fx:id="cbDocks" prefHeight="25.0" prefWidth="142.0" title="Show/Hide Docks"/>
                 <Button fx:id="btnUpdateServerDetails" mnemonicParsing="false" prefHeight="25.0" prefWidth="163.0" text="Refresh Server Details"/>
                 <Button fx:id="btnUpdateMasterList" mnemonicParsing="false" prefHeight="25.0" prefWidth="176.0" text="Update Master Server List"/>
+                <Button fx:id="btnUpdateDetails" mnemonicParsing="false" prefHeight="25.0" prefWidth="191.0" text="Update steam app details"/>
             </items>
         </ToolBar>
         <NotificationPane fx:id="npMain" VBox.vgrow="ALWAYS">

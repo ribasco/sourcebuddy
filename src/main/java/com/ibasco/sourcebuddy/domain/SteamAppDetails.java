@@ -1,7 +1,5 @@
 package com.ibasco.sourcebuddy.domain;
 
-import com.ibasco.sourcebuddy.data.converters.ImageDataConverter;
-import com.ibasco.sourcebuddy.data.types.ImageData;
 import javafx.beans.property.*;
 
 import javax.persistence.*;
@@ -27,7 +25,7 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
 
     public static final String HEADER_IMAGE = "header_image";
 
-    private IntegerProperty id = new SimpleIntegerProperty();
+    private LongProperty id = new SimpleLongProperty();
 
     private ObjectProperty<SteamApp> steamApp = new SimpleObjectProperty<>();
 
@@ -41,25 +39,25 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
 
     private StringProperty type = new SimpleStringProperty();
 
-    private ObjectProperty<ImageData> image = new SimpleObjectProperty<>();
+    //private ObjectProperty<ImageData> image = new SimpleObjectProperty<>();
 
     @Id
-    @Column(name = DETAILS_ID)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public int getId() {
-        return id.get();
+    @Column(name = DETAILS_ID)
+    public Long getId() {
+        return id.getValue();
     }
 
-    public void setId(int id) {
-        this.id.set(id);
+    public void setId(Long id) {
+        this.id.setValue(id);
     }
 
-    public IntegerProperty idProperty() {
+    public LongProperty idProperty() {
         return id;
     }
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = SteamApp.APP_ID, referencedColumnName = SteamApp.APP_ID)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = SteamApp.APP_ID)
     public SteamApp getSteamApp() {
         return steamApp.get();
     }
@@ -137,7 +135,7 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
         return type;
     }
 
-    @Lob
+/*    @Lob
     @Column(name = HEADER_IMAGE)
     @Convert(converter = ImageDataConverter.class)
     public ImageData getImage() {
@@ -150,5 +148,10 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
 
     public ObjectProperty<ImageData> imageProperty() {
         return image;
+    }*/
+
+    @Override
+    public String toString() {
+        return getName();
     }
 }

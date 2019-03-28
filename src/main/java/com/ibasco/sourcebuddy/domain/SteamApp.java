@@ -40,7 +40,7 @@ public class SteamApp extends AuditableEntity<SteamApp> implements Serializable 
         return name;
     }
 
-    @OneToOne(mappedBy = "steamApp")
+    @OneToOne(mappedBy = "steamApp", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
     public SteamAppDetails getAppDetails() {
         return appDetails.get();
     }

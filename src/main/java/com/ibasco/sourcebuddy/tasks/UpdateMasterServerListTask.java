@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
@@ -39,7 +40,11 @@ public class UpdateMasterServerListTask extends BaseTask<Void> {
         return null;
     }
 
-    protected WorkProgressCallback<ServerDetails> createIndeterminateProgressCallback() {
+    public SteamApp getSteamApp() {
+        return steamApp;
+    }
+
+    private WorkProgressCallback<ServerDetails> createIndeterminateProgressCallback() {
         return new WorkProgressCallback<>() {
 
             private AtomicInteger addedCtr = new AtomicInteger();
@@ -60,5 +65,18 @@ public class UpdateMasterServerListTask extends BaseTask<Void> {
                 updateMessage("Processing (Added: %s, Skipped: %d)", addedCtr.get(), skippedCtr.get());
             }
         };
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UpdateMasterServerListTask that = (UpdateMasterServerListTask) o;
+        return steamApp.equals(that.steamApp);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(steamApp);
     }
 }

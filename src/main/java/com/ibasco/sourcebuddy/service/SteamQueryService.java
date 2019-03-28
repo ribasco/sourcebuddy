@@ -68,4 +68,8 @@ public interface SteamQueryService {
     CompletableFuture<SteamAppDetails> findAppDetails(SteamApp app);
 
     void saveSteamAppList(List<SteamApp> steamAppList);
+
+    void saveSteamApp(SteamApp app);
+
+    void saveSteamAppDetails(SteamAppDetails steamAppDetails);
 }

@@ -205,6 +205,8 @@ public class SourceServerServiceImpl implements SourceServerService {
         if (app == null || app.getId() <= 0)
             throw new IllegalArgumentException("Invalid steam app specified");
 
+        log.debug("updateServerEntries() :: Fetching server list for app '{}'", app);
+
         //Retrieve existing server entries from the repository
         List<ServerDetails> servers = serverDetailsRepository.findBySteamApp(app);
 

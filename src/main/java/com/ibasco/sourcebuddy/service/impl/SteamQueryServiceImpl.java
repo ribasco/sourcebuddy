@@ -9,6 +9,7 @@ import com.ibasco.sourcebuddy.constants.Qualifiers;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
 import com.ibasco.sourcebuddy.domain.SteamAppDetails;
+import com.ibasco.sourcebuddy.repository.SteamAppDetailsRepository;
 import com.ibasco.sourcebuddy.repository.SteamAppsRepository;
 import com.ibasco.sourcebuddy.service.SteamQueryService;
 import org.slf4j.Logger;
@@ -32,6 +33,8 @@ public class SteamQueryServiceImpl implements SteamQueryService {
     private static final Logger log = LoggerFactory.getLogger(SteamQueryServiceImpl.class);
 
     private SteamAppsRepository steamAppRepository;
+
+    private SteamAppDetailsRepository steamAppDetailsRepository;
 
     private SteamApps steamAppsApi;
 
@@ -132,6 +135,16 @@ public class SteamQueryServiceImpl implements SteamQueryService {
         steamAppRepository.saveAll(steamAppList);
     }
 
+    @Override
+    public void saveSteamApp(SteamApp app) {
+        steamAppRepository.saveAndFlush(app);
+    }
+
+    @Override
+    public void saveSteamAppDetails(SteamAppDetails steamAppDetails) {
+        steamAppDetailsRepository.saveAndFlush(steamAppDetails);
+    }
+
     @Autowired
     public void setSteamAppRepository(SteamAppsRepository steamAppRepository) {
         this.steamAppRepository = steamAppRepository;
@@ -155,5 +168,10 @@ public class SteamQueryServiceImpl implements SteamQueryService {
     @Autowired
     public void setEntityMapper(EntityMapper entityMapper) {
         this.entityMapper = entityMapper;
+    }
+
+    @Autowired
+    public void setSteamAppDetailsRepository(SteamAppDetailsRepository steamAppDetailsRepository) {
+        this.steamAppDetailsRepository = steamAppDetailsRepository;
     }
 }
