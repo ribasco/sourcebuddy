@@ -18,24 +18,24 @@ public class ServerDetailsModel {
 
     private static final Logger log = LoggerFactory.getLogger(ServerDetailsModel.class);
 
-    private final ReadWriteLock serverListLock = new ReentrantReadWriteLock();
+    private static final ReadWriteLock serverListLock = new ReentrantReadWriteLock();
 
-    public final Lock WRITE_LOCK = serverListLock.writeLock();
+    public static final Lock WRITE_LOCK = serverListLock.writeLock();
 
-    public final Lock READ_LOCK = serverListLock.readLock();
+    public static final Lock READ_LOCK = serverListLock.readLock();
 
     private ObjectProperty<TableSelectionModel<ServerDetails>> serverSelectionModel = new SimpleObjectProperty<>();
 
-    private ListProperty<ServerDetails> serverDetails = new SimpleListProperty<>(FXCollections.observableArrayList());
+    private ListProperty<ServerDetails> serverDetails = new SimpleListProperty<>(FXCollections.synchronizedObservableList(FXCollections.observableArrayList()));
 
     private StringProperty statusMessage = new SimpleStringProperty();
 
     public ObservableList<ServerDetails> getServerDetails() {
-        log.debug("Getting details: {}", serverDetails.get());
         return serverDetails.get();
     }
 
     public void setServerDetails(ObservableList<ServerDetails> serverDetails) {
+
         this.serverDetails.set(serverDetails);
     }
 

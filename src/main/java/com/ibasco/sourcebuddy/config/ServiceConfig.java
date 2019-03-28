@@ -9,8 +9,8 @@ import org.springframework.context.annotation.Configuration;
 public class ServiceConfig {
 
     @Bean
-    public SourceServerQueryService sourceServerQueryService() {
-        return new SourceServerQueryServiceImpl();
+    public SourceServerService sourceServerService() {
+        return new SourceServerServiceImpl();
     }
 
     @Bean
@@ -21,11 +21,6 @@ public class ServiceConfig {
     @Bean
     public GeoIpService geoIpService() {
         return new GeoIpServiceImpl();
-    }
-
-    @Bean
-    public MasterServerUpdateService masterServerUpdateService() {
-        return new MasterServerUpdateService();
     }
 
     @Bean

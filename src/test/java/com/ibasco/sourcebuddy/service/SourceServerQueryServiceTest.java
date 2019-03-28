@@ -5,7 +5,7 @@ import com.ibasco.agql.protocols.valve.steam.master.client.MasterServerQueryClie
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.repository.CountryRepository;
 import com.ibasco.sourcebuddy.repository.ServerDetailsRepository;
-import com.ibasco.sourcebuddy.service.impl.SourceServerQueryServiceImpl;
+import com.ibasco.sourcebuddy.service.impl.SourceServerServiceImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +44,7 @@ class SourceServerQueryServiceTest {
     private GeoIpService geoIpService;
 
     @InjectMocks
-    private SourceServerQueryService sourceServerQueryService = new SourceServerQueryServiceImpl();
+    private SourceServerService sourceServerQueryService = new SourceServerServiceImpl();
 
     @Test
     @DisplayName("Test default populate method with an empty list")
@@ -59,7 +59,7 @@ class SourceServerQueryServiceTest {
 
         when(masterServerQueryClient.getServerList(any(), any(), any(), any())).thenReturn(CompletableFuture.completedFuture(masterServerList));
 
-        int res = sourceServerQueryService.populateServerList(serverList, null);
+        int res = sourceServerQueryService.findServerListByApp(serverList, null);
 
         log.info("Result: {}", res);
     }

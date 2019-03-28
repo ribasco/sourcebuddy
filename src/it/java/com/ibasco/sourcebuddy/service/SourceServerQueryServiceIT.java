@@ -20,7 +20,7 @@ class SourceServerQueryServiceIT {
     private static final Logger log = LoggerFactory.getLogger(SourceServerQueryServiceTest.class);
 
     @Autowired
-    private SourceServerQueryService sourceServerQueryService;
+    private SourceServerService sourceServerQueryService;
 
     @Autowired
     private SteamQueryService steamQueryService;
@@ -40,7 +40,7 @@ class SourceServerQueryServiceIT {
 
         List<ServerDetails> serverList = new ArrayList<>();
 
-        int res = sourceServerQueryService.populateServerList(serverList, steamApp.get(), true);
+        int res = sourceServerQueryService.findServerListByApp(serverList, steamApp.get(), true);
 
         assertTrue(res > 0);
     }

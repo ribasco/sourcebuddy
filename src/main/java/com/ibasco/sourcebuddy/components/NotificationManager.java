@@ -1,6 +1,6 @@
 package com.ibasco.sourcebuddy.components;
 
-import com.ibasco.sourcebuddy.Bootstrap;
+import com.ibasco.sourcebuddy.util.ResourceUtil;
 import javafx.scene.image.ImageView;
 import org.controlsfx.control.NotificationPane;
 import org.controlsfx.control.action.Action;
@@ -19,14 +19,10 @@ public class NotificationManager {
         if (pane.isShowing())
             pane.hide();
         if (graphic != null && !graphic.isBlank()) {
-            URL imagePath = Bootstrap.class.getResource(graphic);
-            if (imagePath == null) {
-                throw new NullPointerException("Image path not found: " + graphic);
-            }
+            URL imagePath = ResourceUtil.loadResource(graphic);
             ImageView image = new ImageView(imagePath.toExternalForm());
             pane.setGraphic(image);
         }
-
         if (actions != null) {
             pane.getActions().clear();
             pane.getActions().addAll(actions);

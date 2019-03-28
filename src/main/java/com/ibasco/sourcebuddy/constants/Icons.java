@@ -2,6 +2,8 @@ package com.ibasco.sourcebuddy.constants;
 
 public class Icons {
 
+    public static final String APP_ICON = "/general/app-icon";
+
     public static final String SERVER_BROWSER_ICON = "/general/server-browser";
 
     public static final String PLAYER_BROWSER_ICON = "/general/player-browser";

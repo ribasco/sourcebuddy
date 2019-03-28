@@ -78,8 +78,7 @@ public class SteamApp extends AuditableEntity<SteamApp> implements Serializable 
 
     @Override
     public String toString() {
-        //return new ReflectionToStringBuilder(this, ToStringStyle.SIMPLE_STYLE).toString();
-        return getId() + " :: " + getName();
+        return getName() + " (ID: " + getId() + ")";
     }
 
     @Column(name = NAME)

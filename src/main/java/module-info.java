@@ -24,6 +24,7 @@ module sourcebuddy {
     opens com.ibasco.sourcebuddy.tasks to spring.core, spring.beans;
     opens com.ibasco.sourcebuddy.util to spring.core, spring.beans;
 
+    requires com.h2database;
     requires javafx.graphics;
     requires javafx.fxml;
     requires spring.boot;

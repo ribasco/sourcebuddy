@@ -1,36 +1,80 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.image.ImageView?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.MasterDetailPane?>
-<AnchorPane xmlns:fx="http://javafx.com/fxml/1" prefHeight="515.0" prefWidth="742.0" xmlns="http://javafx.com/javafx/11.0.1" fx:controller="com.ibasco.sourcebuddy.controllers.ServerBrowserController">
+<?import org.controlsfx.control.CheckComboBox?>
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.ServerBrowserController">
     <children>
-        <VBox layoutY="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <AnchorPane prefHeight="513.0" prefWidth="1094.0" VBox.vgrow="ALWAYS">
             <children>
-                <MasterDetailPane fx:id="mdpServerBrowser" detailSide="BOTTOM" dividerPosition="0.7" VBox.vgrow="ALWAYS">
-                    <masterNode>
-                        <AnchorPane>
-                            <TableView fx:id="serverListTable" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                <columnResizePolicy>
-                                    <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
-                                </columnResizePolicy>
-                            </TableView>
-                        </AnchorPane>
-                    </masterNode>
-                    <detailNode>
-                        <AnchorPane xmlns:fx="http://javafx.com/fxml/1" xmlns="http://javafx.com/javafx/11.0.1">
-                            <children>
-                                <VBox layoutY="15.0" prefHeight="85.0" prefWidth="740.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <TabPane tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <tabs>
+                        <Tab text="Master">
+                            <content>
+                                <AnchorPane>
+                                    <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                        <children>
+                                            <ToolBar prefHeight="40.0" prefWidth="200.0">
+                                                <items>
+                                                    <Label text="Filter:">
+                                                        <padding>
+                                                            <Insets right="5.0"/>
+                                                        </padding>
+                                                    </Label>
+                                                    <CheckBox mnemonicParsing="false" text="Text:"/>
+                                                    <TextField promptText="Filter"/>
+                                                    <CheckBox mnemonicParsing="false" text="Tags"/>
+                                                    <CheckComboBox prefHeight="25.0" prefWidth="94.0"/>
+                                                    <CheckBox mnemonicParsing="false" text="Others"/>
+                                                    <CheckComboBox prefHeight="25.0" prefWidth="101.0"/>
+                                                    <Button mnemonicParsing="false" text="Search"/>
+                                                    <Separator orientation="VERTICAL">
+                                                        <padding>
+                                                            <Insets left="5.0"/>
+                                                        </padding>
+                                                    </Separator>
+                                                    <Pane HBox.hgrow="ALWAYS"/>
+                                                    <Label text="Games:">
+                                                        <padding>
+                                                            <Insets right="5.0"/>
+                                                        </padding>
+                                                    </Label>
+                                                    <CheckComboBox prefHeight="25.0" prefWidth="126.0" title="Source Games"/>
+                                                    <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="54.0" text="Add"/>
+                                                    <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="82.0" text="Refresh"/>
+                                                </items>
+                                                <padding>
+                                                    <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>
+                                                </padding>
+                                            </ToolBar>
+                                            <TableView fx:id="serverListTable" VBox.vgrow="ALWAYS"/>
+                                        </children>
+                                    </VBox>
+                                </AnchorPane>
+                            </content>
+                        </Tab>
+                        <Tab text="Bookmarks">
+                            <content>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                     <children>
-                                        <ImageView fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true"/>
+                                        <TreeTableView fx:id="ttvBookmarkedServers" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
                                     </children>
-                                </VBox>
-                            </children>
-                        </AnchorPane>
-                    </detailNode>
-                </MasterDetailPane>
+                                </AnchorPane>
+                            </content>
+                        </Tab>
+                        <Tab text="Managed">
+                            <content>
+                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                    <children>
+                                        <TreeTableView fx:id="ttvManagedServers" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                                    </children>
+                                </AnchorPane>
+                            </content>
+                        </Tab>
+                    </tabs>
+                </TabPane>
             </children>
-        </VBox>
+        </AnchorPane>
     </children>
-</AnchorPane>
+</VBox>

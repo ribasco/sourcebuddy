@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 public class UpdateSteamAppsTaskk extends BaseTask<Void> {
 
     @Override
-    protected Void call() throws Exception {
+    protected Void process() throws Exception {
         return null;
     }
 }

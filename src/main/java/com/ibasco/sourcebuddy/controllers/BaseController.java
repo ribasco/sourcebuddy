@@ -41,7 +41,7 @@ abstract public class BaseController implements Initializable {
         this.location = location;
         this.resourceBundle = resources;
 
-        log.debug("Initialize :: Location: {}, Resource Bundle: {}", location, resourceBundle);
+        //log.debug("Initialize :: Location: {}, Resource Bundle: {}", location, resourceBundle);
     }
 
     /**
@@ -69,7 +69,7 @@ abstract public class BaseController implements Initializable {
         return resourceBundle;
     }
 
-    public ViewManager getViewManager() {
+    ViewManager getViewManager() {
         return viewManager;
     }
 
@@ -82,7 +82,7 @@ abstract public class BaseController implements Initializable {
         return applicationContext;
     }
 
-    public NotificationManager getNotificationManager() {
+    NotificationManager getNotificationManager() {
         return notificationManager;
     }
 
@@ -104,7 +104,7 @@ abstract public class BaseController implements Initializable {
         return applicationContext.getBean(Beans.HOST_SERVICES, HostServices.class);
     }
 
-    protected void publishEvent(ApplicationEvent event) {
+    void publishEvent(ApplicationEvent event) {
         SpringUtil.publishEvent(event);
     }
 

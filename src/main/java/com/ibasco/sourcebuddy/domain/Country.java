@@ -13,9 +13,9 @@ public class Country extends AuditableEntity {
 
     public static final String TABLE_NAME = "SB_COUNTRY";
 
-    public static final String COUNTRY_CODE = "country_code";
+    public static final String COUNTRY_CODE = "COUNTRY_CODE";
 
-    public static final String COUNTRY_NAME = "name";
+    public static final String COUNTRY_NAME = "NAME";
 
     private StringProperty countryCode = new SimpleStringProperty();
 

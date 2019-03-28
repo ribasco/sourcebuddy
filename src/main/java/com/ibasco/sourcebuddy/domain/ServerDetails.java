@@ -47,43 +47,59 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
 
     public static final String NAME = "name";
 
+    public static final String BOOKMARKED = "bookmarked";
+
+    private static final String STEAM_ID = "steam_id";
+
+    private static final String DEDICATED = "dedicated";
+
+    private static final String SECURE = "secure";
+
     private IntegerProperty id = new SimpleIntegerProperty();
 
     private StringProperty ipAddress = new SimpleStringProperty("");
 
     private IntegerProperty port = new SimpleIntegerProperty(-1);
 
-    private StringProperty name = new SimpleStringProperty("N/A");
+    private StringProperty name = new SimpleStringProperty();
 
     private IntegerProperty playerCount = new SimpleIntegerProperty(-1);
 
     private IntegerProperty maxPlayerCount = new SimpleIntegerProperty(-1);
 
-    private StringProperty mapName = new SimpleStringProperty("N/A");
+    private StringProperty mapName = new SimpleStringProperty();
 
-    private StringProperty serverTags = new SimpleStringProperty("N/A");
+    private StringProperty serverTags = new SimpleStringProperty();
 
-    private ListProperty<PlayerInfo> players = new SimpleListProperty<>(null);
+    private ListProperty<PlayerInfo> players = new SimpleListProperty<>();
 
-    private MapProperty<String, String> rules = new SimpleMapProperty<>(null);
+    private MapProperty<String, String> rules = new SimpleMapProperty<>();
 
-    private ObjectProperty<InetSocketAddress> address = new SimpleObjectProperty<>(null);
+    private ObjectProperty<InetSocketAddress> address = new SimpleObjectProperty<>();
 
     private ObjectProperty<SteamApp> steamApp = new SimpleObjectProperty<>();
 
     private ObjectProperty<OperatingSystem> operatingSystem = new SimpleObjectProperty<>();
 
-    private StringProperty gameDirectory = new SimpleStringProperty("N/A");
+    private StringProperty gameDirectory = new SimpleStringProperty();
 
-    private StringProperty description = new SimpleStringProperty("N/A");
+    private StringProperty description = new SimpleStringProperty();
 
-    private StringProperty version = new SimpleStringProperty("N/A");
+    private StringProperty version = new SimpleStringProperty();
 
     private LongProperty gameId = new SimpleLongProperty(-1);
 
     private ObjectProperty<ServerStatus> status = new SimpleObjectProperty<>(ServerStatus.NEW);
 
     private ObjectProperty<Country> country = new SimpleObjectProperty<>();
+
+    private BooleanProperty bookmarked = new SimpleBooleanProperty();
+
+    private LongProperty steamId = new SimpleLongProperty();
+
+    private BooleanProperty dedicated = new SimpleBooleanProperty();
+
+    private BooleanProperty secure = new SimpleBooleanProperty();
 
     public ServerDetails() {
         addressProperty().bind(Bindings.createObjectBinding(() -> {
@@ -96,6 +112,12 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
 
     public ObjectProperty<InetSocketAddress> addressProperty() {
         return address;
+    }
+
+    public ServerDetails(InetSocketAddress address) {
+        setIpAddress(address.getAddress().getHostAddress());
+        setPort(address.getPort());
+        setAddress(address);
     }
 
     public ServerDetails(String ipAddress, int port) {
@@ -111,7 +133,6 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
         setPlayerCount(server.getNumOfPlayers());
         setMaxPlayerCount(server.getMaxPlayers());
         setMapName(server.getMapName());
-        //setAppId((int) server.getAppId());
         setOperatingSystem(OperatingSystem.valueOf(server.getOperatingSystem()));
         setGameDirectory(server.getGameDirectory());
         setDescription(server.getGameDescription());
@@ -122,12 +143,12 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
     @Column(name = SERVER_ID)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public int getId() {
-        return id.get();
+    public Integer getId() {
+        return id.getValue();
     }
 
-    public void setId(int id) {
-        this.id.set(id);
+    public void setId(Integer id) {
+        this.id.setValue(id);
     }
 
     public IntegerProperty idProperty() {
@@ -212,8 +233,10 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
         return operatingSystem;
     }
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = SteamApp.APP_ID, referencedColumnName = SteamApp.APP_ID)
+    //@OneToOne(cascade = CascadeType.MERGE, mappedBy = "")
+    /*@JoinColumn(name = SteamApp.APP_ID, referencedColumnName = SteamApp.APP_ID)*/
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "app_id", nullable = true)
     public SteamApp getSteamApp() {
         return steamApp.get();
     }
@@ -348,11 +371,6 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
         return country;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(getIpAddress(), getPort());
-    }
-
     @Column(name = PORT)
     public int getPort() {
         return port.get();
@@ -362,12 +380,17 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
         this.port.set(port);
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ServerDetails that = (ServerDetails) o;
-        return getIpAddress().equals(that.getIpAddress()) && (port.get() == that.port.get());
+    @Column(name = STEAM_ID)
+    public Long getSteamId() {
+        return steamId.getValue();
+    }
+
+    public LongProperty steamIdProperty() {
+        return steamId;
+    }
+
+    public void setSteamId(Long steamId) {
+        this.steamId.setValue(steamId);
     }
 
     @Column(name = IP_ADDRESS)
@@ -377,5 +400,57 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress.set(ipAddress);
+    }
+
+    @Column(name = BOOKMARKED)
+    public Boolean isBookmarked() {
+        return bookmarked.getValue();
+    }
+
+    public BooleanProperty bookmarkedProperty() {
+        return bookmarked;
+    }
+
+    public void setBookmarked(Boolean bookmarked) {
+        this.bookmarked.setValue(bookmarked);
+    }
+
+    @Column(name = DEDICATED)
+    public boolean isDedicated() {
+        return dedicated.getValue();
+    }
+
+    public BooleanProperty dedicatedProperty() {
+        return dedicated;
+    }
+
+    public void setDedicated(Boolean dedicated) {
+        this.dedicated.setValue(dedicated);
+    }
+
+    @Column(name = SECURE)
+    public Boolean isSecure() {
+        return secure.getValue();
+    }
+
+    public BooleanProperty secureProperty() {
+        return secure;
+    }
+
+    public void setSecure(Boolean secure) {
+        this.secure.setValue(secure);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ServerDetails that = (ServerDetails) o;
+        return getIpAddress().equals(that.getIpAddress()) && getPort() == that.getPort();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getIpAddress(), getPort());
     }
 }

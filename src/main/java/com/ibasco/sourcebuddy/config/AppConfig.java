@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.datasource.SingleConnectionDataSource;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.JpaVendorAdapter;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -110,22 +111,7 @@ public class AppConfig implements AsyncConfigurer {
         JpaTransactionManager transactionManager = new JpaTransactionManager();
         transactionManager.setEntityManagerFactory(entityManagerFactory);
         return transactionManager;
-        //return new HibernateTransactionManager(sessionFactory());
     }
-
-/*    @Bean
-    public DataSourceInitializer dataSourceInitializer(DataSource dataSource) throws MalformedURLException {
-        log.info("Initializing DataSourceInitializer");
-        ResourceDatabasePopulator databasePopulator = new ResourceDatabasePopulator();
-        *//*databasePopulator.addScript(dropReopsitoryTables);
-        databasePopulator.addScript(dataReopsitorySchema);
-        databasePopulator.setIgnoreFailedDrops(true);*//*
-        DataSourceInitializer initializer = new DataSourceInitializer();
-
-        initializer.setDataSource(dataSource);
-        initializer.setDatabasePopulator(databasePopulator);
-        return initializer;
-    }*/
 
     @Bean
     @Primary
@@ -142,13 +128,19 @@ public class AppConfig implements AsyncConfigurer {
     }
 
     @Bean
+    @Primary
     public DataSource dataSource() {
         try {
+            SingleConnectionDataSource scd = new SingleConnectionDataSource();
+
             BasicDataSource dataSource = new BasicDataSource();
             dataSource.setDriverClassName(driverClassName);
             dataSource.setUrl(url);
             dataSource.setUsername(username);
             dataSource.setPassword(password);
+            /*dataSource.setInitialSize(5);
+            dataSource.setMaxTotal(5);
+            dataSource.setMaxIdle(5);*/
             dataSource.setDefaultAutoCommit(true);
             return dataSource;
         } catch (Exception e) {
@@ -157,21 +149,11 @@ public class AppConfig implements AsyncConfigurer {
         }
     }
 
-    /*@Bean
-    public SessionFactory sessionFactory() throws IOException {
-        LocalSessionFactoryBean sessionFactoryBean = new LocalSessionFactoryBean();
-        sessionFactoryBean.setDataSource(dataSource());
-        sessionFactoryBean.setPackagesToScan(SourceServerDetails.class.getPackageName());
-        sessionFactoryBean.setHibernateProperties(hibernateProperties());
-        sessionFactoryBean.afterPropertiesSet();
-        return sessionFactoryBean.getObject();
-    }*/
-
     private Properties hibernateProperties() {
         Properties hibernateProp = new Properties();
-        //hibernateProp.put("hibernate.dialect", "org.hibernate.dialect.SQLiteDialect");
-        hibernateProp.put("hibernate.dialect", "com.ibasco.sourcebuddy.util.dialect.SQLiteDialect");
-        hibernateProp.put("hibernate.format_sql", false);
+        //hibernateProp.put("hibernate.dialect", "com.ibasco.sourcebuddy.util.dialect.SQLiteDialect");
+        hibernateProp.put("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
+        hibernateProp.put("hibernate.format_sql", true);
         hibernateProp.put("hibernate.use_sql_comments", true);
         hibernateProp.put("hibernate.show_sql", false);
         hibernateProp.put("hibernate.max_fetch_depth", 3);
@@ -181,20 +163,52 @@ public class AppConfig implements AsyncConfigurer {
     }
 
     @Bean(destroyMethod = "shutdownNow")
-    public ExecutorService defaultExecutorService() {
+    public ExecutorService taskExecutorService() {
         int num = Runtime.getRuntime().availableProcessors() + 1;
         log.info("Using default number of threads: {}", num);
-        return Executors.newFixedThreadPool(num, serviceInfoThreadFactory());
+        //return Executors.newFixedThreadPool(num, taskThreadFactory());
+        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                      60L, TimeUnit.SECONDS,
+                                      new SynchronousQueue<>(),
+                                      taskThreadFactory());
+    }
+
+    @Bean(destroyMethod = "shutdownNow")
+    public ExecutorService steamExecutorService() {
+        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                      60L, TimeUnit.SECONDS,
+                                      new SynchronousQueue<>(),
+                                      steamThreadFactory());
     }
 
     @Bean
-    public ThreadFactory serviceInfoThreadFactory() {
+    public ThreadFactory steamThreadFactory() {
         return r -> {
-            Thread thread = new Thread(r);
+            Thread thread = new Thread(steamThreadGroup(), r);
             thread.setDaemon(true);
-            thread.setName(String.format("sb-service-%d", thread.getId()));
+            thread.setName(String.format("sb-steam-%d", thread.getId()));
             return thread;
         };
+    }
+
+    @Bean
+    public ThreadFactory taskThreadFactory() {
+        return r -> {
+            Thread thread = new Thread(taskThreadGroup(), r);
+            thread.setDaemon(true);
+            thread.setName(String.format("sb-task-%d", thread.getId()));
+            return thread;
+        };
+    }
+
+    @Bean
+    public ThreadGroup steamThreadGroup() {
+        return new ThreadGroup("sb-steam-tasks");
+    }
+
+    @Bean
+    public ThreadGroup taskThreadGroup() {
+        return new ThreadGroup("sb-core-tasks");
     }
 
     @Bean

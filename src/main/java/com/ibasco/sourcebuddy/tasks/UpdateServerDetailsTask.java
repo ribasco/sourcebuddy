@@ -1,24 +1,15 @@
 package com.ibasco.sourcebuddy.tasks;
 
 import com.ibasco.sourcebuddy.domain.ServerDetails;
-import com.ibasco.sourcebuddy.domain.SteamApp;
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
-import com.ibasco.sourcebuddy.repository.ServerDetailsRepository;
-import com.ibasco.sourcebuddy.service.SourceServerQueryService;
+import com.ibasco.sourcebuddy.service.SourceServerService;
 import com.ibasco.sourcebuddy.util.ServerDetailsFilter;
-import com.ibasco.sourcebuddy.util.WorkProgressCallback;
-import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 @Component
@@ -27,140 +18,56 @@ public class UpdateServerDetailsTask extends BaseTask<Void> {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateServerDetailsTask.class);
 
-    private ServerDetailsRepository serverDetailsRepository;
+    private SourceServerService sourceServerService;
 
-    private SourceServerQueryService sourceServerQueryService;
+    private List<ServerDetails> servers;
 
-    private ServerDetailsModel serverDetailsModel;
+    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
+    public UpdateServerDetailsTask(List<ServerDetails> serverDetails) {
+        if (serverDetails == null)
+            throw new IllegalArgumentException("Server list cannot be null");
+        this.servers = serverDetails;
+    }
 
-    private SteamApp steamApp;
-
-    public UpdateServerDetailsTask(SteamApp steamApp) {
-        this.steamApp = steamApp;
+    @Autowired
+    public void setSourceServerService(SourceServerService sourceServerQueryService) {
+        this.sourceServerService = sourceServerQueryService;
     }
 
     @Override
-    protected Void call() throws Exception {
-        long startTime = System.currentTimeMillis();
+    public String toString() {
+        return getClass().getSimpleName() + " (Total servers: " + servers.size() + ")";
+    }
 
-        try {
-            ObservableList<ServerDetails> servers = FXCollections.observableArrayList(serverDetailsModel.getServerDetails());
+    @Override
+    protected Void process() throws Exception {
+        updateTitle("Server batch update for 'd' servers", servers.size());
 
-            if (steamApp == null)
-                throw new Exception("Steam app not specified");
+        if (servers.isEmpty()) {
+            updateMessage("No available servers to update. Server list is empty");
+            log.debug("No available servers to update. Server list is empty");
+            return null;
+        }
 
-            updateTitle("Source server details update");
-            int total = sourceServerQueryService.populateServerList(servers, this.steamApp, false, createWorkProgressCallback("Obtaining master server list", -1));
+        log.debug("UpdateServerDetailsTask :: Starting batch server details update (Size: {})", servers.size());
+        sourceServerService.updateServerDetails(servers, createWorkProgressCallback("Server details update", servers.size()));
 
-            if (total == 0) {
-                log.debug("No servers retrieved");
-                return null;
-            }
+        //Update player details (active and non-empty servers only)
+        List<ServerDetails> filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).filter(ServerDetailsFilter::byNonEmptyServers).collect(Collectors.toList());
+        log.debug("UpdateServerDetailsTask :: Starting batch player details update (Size: {})", filteredList.size());
+        sourceServerService.updatePlayerDetails(filteredList, createWorkProgressCallback("Player details update", filteredList.size()));
 
-            log.debug("Finished retrieving server list (Total: {})", total);
+        //Update server rules (active servers only)
+        filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).collect(Collectors.toList());
+        log.debug("UpdateServerDetailsTask :: Starting batch server rules update (Size: {})", filteredList.size());
+        sourceServerService.updateServerRules(filteredList, createWorkProgressCallback("Server rules update", filteredList.size()));
 
-            sourceServerQueryService.updateServerDetails(servers, createWorkProgressCallback("Server details update", servers.size()));
-
-            //Update player details (active and non-empty servers only)
-            List<ServerDetails> filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).filter(ServerDetailsFilter::byNonEmptyServers).collect(Collectors.toList());
-            sourceServerQueryService.updatePlayerDetails(filteredList, createWorkProgressCallback("Player details update", filteredList.size()));
-
-            //Update server rules (active servers only)
-            filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).collect(Collectors.toList());
-            sourceServerQueryService.updateServerRules(filteredList, createWorkProgressCallback("Server rules update", filteredList.size()));
-
-            //Save to database
-            log.debug("Saving {} server entries to database", servers.size());
-            saveToRepository(servers);
-
-            log.info("DONE (Total time: {} seconds)", Duration.ofMillis(System.currentTimeMillis() - startTime).toSeconds());
-
-            try {
-                serverDetailsModel.WRITE_LOCK.lock();
-                Platform.runLater(() -> serverDetailsModel.setServerDetails(FXCollections.observableArrayList(servers)));
-            } catch (Exception e) {
-                throw e;
-            } finally {
-                serverDetailsModel.WRITE_LOCK.unlock();
-            }
-        } catch (Exception e) {
-            log.error("Update server details task failed", e);
-            throw e;
+        //Save to database
+        if (!servers.isEmpty()) {
+            log.debug("UpdateServerDetailsTask :: Saving {} entries to database", servers.size());
+            sourceServerService.saveServerList(servers);
         }
 
         return null;
-    }
-
-    private WorkProgressCallback<ServerDetails> createWorkProgressCallback(String workDesc, final int totalWork) {
-        return new WorkProgressCallback<>() {
-            final AtomicInteger workCtr = new AtomicInteger();
-
-            final AtomicInteger successCtr = new AtomicInteger();
-
-            final AtomicInteger failedCtr = new AtomicInteger();
-
-            {
-                if (totalWork < 0)
-                    updateProgress(-1, Long.MIN_VALUE);
-            }
-
-            @Override
-            public void onProgress(ServerDetails item, Throwable exception) {
-                if (exception != null) {
-                    failedCtr.incrementAndGet();
-                } else {
-                    successCtr.incrementAndGet();
-                }
-
-                final int work = workCtr.incrementAndGet();
-
-                if (totalWork < 0) {
-                    updateMessage(
-                            "%s (IP: %s, Processed: %d)",
-                            workDesc,
-                            item.getAddress().toString().replace("/", ""),
-                            work
-                    );
-                } else {
-                    updateProgress(work, totalWork);
-                    updateMessage(
-                            "%s (Pass: %d, Err: %d, %d/%d (%.2f%%))",
-                            workDesc,
-                            successCtr.get(),
-                            failedCtr.get(),
-                            workCtr.get(),
-                            totalWork,
-                            ((double) work / (double) totalWork) * 100.0d
-                    );
-                }
-            }
-        };
-    }
-
-    private void saveToRepository(List<ServerDetails> servers) {
-        if (servers == null || servers.isEmpty())
-            return;
-        log.debug("Persisting {} entries to database", servers.size());
-        serverDetailsRepository.saveAll(servers);
-        serverDetailsRepository.flush();
-    }
-
-    public SteamApp getSteamApp() {
-        return steamApp;
-    }
-
-    @Autowired
-    public void setServerDetailsModel(ServerDetailsModel serverDetailsModel) {
-        this.serverDetailsModel = serverDetailsModel;
-    }
-
-    @Autowired
-    public void setServerDetailsRepository(ServerDetailsRepository serverDetailsRepository) {
-        this.serverDetailsRepository = serverDetailsRepository;
-    }
-
-    @Autowired
-    public void setSourceQueryService(SourceServerQueryService sourceServerQueryService) {
-        this.sourceServerQueryService = sourceServerQueryService;
     }
 }

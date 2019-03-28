@@ -17,6 +17,10 @@ public enum OperatingSystem {
         return Arrays.stream(values()).filter(o -> o.code == code).findFirst().orElse(null);
     }
 
+    public static OperatingSystem valueOfStr(String code) {
+        return Arrays.stream(values()).filter(o -> String.valueOf(o.code).equalsIgnoreCase(code)).findFirst().orElse(null);
+    }
+
     public char getCode() {
         return code;
     }

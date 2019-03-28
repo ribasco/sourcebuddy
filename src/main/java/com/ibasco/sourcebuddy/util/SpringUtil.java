@@ -103,7 +103,12 @@ public class SpringUtil {
         BeanDefinitionRegistry registry = (BeanDefinitionRegistry) context.getBeanFactory();
         registry.registerBeanDefinition(beanId, beanDef);
         context.getBeanFactory().registerSingleton(beanId, instance);
-        log.debug("Registered bean instance: Id: {}, Class Name: {}, Instance Id: {} (Result: {} = {}, Has Definition = {})", beanId, instance.getClass().getSimpleName(), instance.hashCode(), context.getBean(beanId).getClass().getSimpleName(), context.getBean(beanId).hashCode(), context.containsBeanDefinition(beanId));
+        log.debug("registerBean() :: Registered bean instance: Id: {}, Class Name: {}, Instance Id: {} (Result: {} = {}, Has Definition = {})", beanId, instance.getClass().getSimpleName(), instance.hashCode(), context.getBean(beanId).getClass().getSimpleName(), context.getBean(beanId).hashCode(), context.containsBeanDefinition(beanId));
+    }
+
+    public static void registerSingleton(String beanId, Object instance) {
+        ConfigurableApplicationContext context = (ConfigurableApplicationContext) SpringUtil.context;
+        context.getBeanFactory().registerSingleton(beanId, instance);
     }
 
     public static void publishEvent(ApplicationEvent event) {

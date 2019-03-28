@@ -6,11 +6,11 @@ import com.ibasco.agql.protocols.valve.source.query.logger.SourceLogListenServic
 import com.ibasco.agql.protocols.valve.steam.master.client.MasterServerQueryClient;
 import com.ibasco.agql.protocols.valve.steam.webapi.SteamWebApiClient;
 import com.ibasco.agql.protocols.valve.steam.webapi.interfaces.SteamApps;
+import com.ibasco.agql.protocols.valve.steam.webapi.interfaces.SteamGameServerService;
 import com.ibasco.agql.protocols.valve.steam.webapi.interfaces.SteamStorefront;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,19 +35,21 @@ public class SteamConfig {
     @Value("${app.steam-auth-token}")
     private String authToken;
 
+    private ExecutorService steamExecutorService;
+
     @Bean(destroyMethod = "close")
-    public SourceQueryClient sourceServerQueryClient(@Qualifier("defaultExecutorService") ExecutorService executorService) {
-        return new SourceQueryClient(executorService);
+    public SourceQueryClient sourceServerQueryClient() {
+        return new SourceQueryClient(steamExecutorService);
     }
 
     @Bean(destroyMethod = "close")
-    public MasterServerQueryClient masterServerQueryClient(@Qualifier("defaultExecutorService") ExecutorService executorService) {
-        return new MasterServerQueryClient();
+    public MasterServerQueryClient masterServerQueryClient() {
+        return new MasterServerQueryClient(true, 3, steamExecutorService);
     }
 
     @Bean(destroyMethod = "close")
-    public SourceRconClient sourceRconClient(@Qualifier("defaultExecutorService") ExecutorService executorService) {
-        return new SourceRconClient(true, executorService);
+    public SourceRconClient sourceRconClient() {
+        return new SourceRconClient(true, steamExecutorService);
     }
 
     @Bean(destroyMethod = "close")
@@ -58,17 +60,27 @@ public class SteamConfig {
     }
 
     @Bean
+    public SteamGameServerService gameServerService() {
+        return new SteamGameServerService(steamWebApiClient());
+    }
+
+    @Bean
     public SteamApps steamAppsApi() {
         return new SteamApps(steamWebApiClient());
     }
 
     @Bean
     public SteamWebApiClient steamWebApiClient() {
-        return new SteamWebApiClient(authToken);
+        return new SteamWebApiClient(authToken, steamExecutorService);
     }
 
     @Bean
     public SteamStorefront steamStorefrontApi() {
         return new SteamStorefront(steamWebApiClient());
+    }
+
+    @Autowired
+    public void setSteamExecutorService(ExecutorService steamExecutorService) {
+        this.steamExecutorService = steamExecutorService;
     }
 }

@@ -23,17 +23,17 @@ public class GeoIpServiceImpl implements GeoIpService {
     private CountryRepository countryRepository;
 
     @Override
-    public Country findCountryByAddress(InetSocketAddress address) {
+    public Country findCountry(InetSocketAddress address) {
         try {
             return geoIpDatabaseReader.city(address.getAddress()).getCountry();
         } catch (IOException | GeoIp2Exception e) {
-            log.error("Could not obtain geoip location of " + address, e);
+            log.warn("Could not obtain geoip location of address {}", address);
         }
         return null;
     }
 
     @Override
-    public Country findAndUpdateRepository(InetSocketAddress address) {
+    public Country refreshCountryRepository(InetSocketAddress address) {
         return null;
     }
 

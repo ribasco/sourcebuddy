@@ -2,15 +2,16 @@ package com.ibasco.sourcebuddy.controllers;
 
 import com.ibasco.sourcebuddy.domain.SteamApp;
 import com.ibasco.sourcebuddy.domain.SteamAppDetails;
-import com.ibasco.sourcebuddy.service.SourceServerQueryService;
+import com.ibasco.sourcebuddy.service.SourceServerService;
 import com.ibasco.sourcebuddy.service.SteamQueryService;
-import static com.ibasco.sourcebuddy.util.GuiUtil.createBasicColumn;
+import static com.ibasco.sourcebuddy.util.GuiUtil.*;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.image.Image;
 import javafx.stage.Stage;
@@ -37,27 +38,32 @@ public class GameBrowserController extends BaseController {
 
     private SteamQueryService steamQueryService;
 
-    private SourceServerQueryService sourceServerQueryService;
+    private SourceServerService sourceServerQueryService;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
-        log.debug("Game browser initialized: {}", stage);
+        log.debug("Game browser initialized");
         setupGameBrowserTable();
-        steamQueryService.findSteamApps().whenComplete((steamApps, throwable) -> {
+
+        log.debug("Fetching steam app list");
+        steamQueryService.findSteamAppList().whenComplete((steamApps, throwable) -> {
             if (throwable != null) {
                 log.error("Error", throwable);
                 return;
             }
             log.debug("Got total of {} apps", steamApps.size());
             tvGameBrowser.setItems(FXCollections.observableArrayList(steamApps));
-            log.debug("Saving to repository");
         });
+
+        hideDetailPaneOnHeightChange(mdpGameBrowser, 150);
+        updateOrientationOnResize(mdpGameBrowser, 500);
     }
 
     private void setupGameBrowserTable() {
         tvGameBrowser.getColumns().clear();
 
-        createBasicColumn(tvGameBrowser, "App ID", "id");
+        TableColumn<SteamApp, Integer> col = createBasicColumn(tvGameBrowser, "App ID", "id");
+        col.setVisible(false);
         createBasicColumn(tvGameBrowser, "Name", "name");
         tvGameBrowser.getSelectionModel().selectedItemProperty().addListener(new ChangeListener<SteamApp>() {
             @Override
@@ -90,7 +96,7 @@ public class GameBrowserController extends BaseController {
     }
 
     @Autowired
-    public void setSourceServerQueryService(SourceServerQueryService sourceServerQueryService) {
+    public void setSourceServerQueryService(SourceServerService sourceServerQueryService) {
         this.sourceServerQueryService = sourceServerQueryService;
     }
 

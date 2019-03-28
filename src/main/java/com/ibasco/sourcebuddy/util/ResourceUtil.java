@@ -5,6 +5,7 @@ import com.ibasco.sourcebuddy.exceptions.ResourceLoadException;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 
+import java.io.InputStream;
 import java.net.URL;
 
 public class ResourceUtil {
@@ -28,6 +29,11 @@ public class ResourceUtil {
             resPath = String.format("/icons/%s.png", name);
         }
         return new Image(loadResource(resPath).toExternalForm());
+    }
+
+    public static InputStream loadResourceAsStream(String resourceName) {
+        URL url = loadResource(resourceName);
+        return Bootstrap.class.getResourceAsStream(resourceName);
     }
 
     public static URL loadResource(String resourceName) {

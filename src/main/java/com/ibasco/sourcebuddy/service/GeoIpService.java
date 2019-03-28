@@ -6,7 +6,7 @@ import java.net.InetSocketAddress;
 
 public interface GeoIpService {
 
-    Country findCountryByAddress(InetSocketAddress address);
+    Country findCountry(InetSocketAddress address);
 
-    Country findAndUpdateRepository(InetSocketAddress address);
+    Country refreshCountryRepository(InetSocketAddress address);
 }
