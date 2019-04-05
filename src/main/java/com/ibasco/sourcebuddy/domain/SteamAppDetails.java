@@ -3,11 +3,11 @@ package com.ibasco.sourcebuddy.domain;
 import javafx.beans.property.*;
 
 import javax.persistence.*;
-import java.io.Serializable;
+import java.util.Objects;
 
 @Entity
 @Table(name = SteamAppDetails.TABLE_NAME)
-public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements Serializable {
+public class SteamAppDetails extends AuditableEntity<String> {
 
     public static final String TABLE_NAME = "SB_STEAM_APP_DETAILS";
 
@@ -23,9 +23,11 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
 
     public static final String TYPE = "type";
 
+    public static final String EMPTY_DETAILS = "empty_details";
+
     public static final String HEADER_IMAGE = "header_image";
 
-    private LongProperty id = new SimpleLongProperty();
+    private IntegerProperty id = new SimpleIntegerProperty();
 
     private ObjectProperty<SteamApp> steamApp = new SimpleObjectProperty<>();
 
@@ -39,25 +41,27 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
 
     private StringProperty type = new SimpleStringProperty();
 
-    //private ObjectProperty<ImageData> image = new SimpleObjectProperty<>();
+    private BooleanProperty emptyDetails = new SimpleBooleanProperty();
+
+    private ObjectProperty<byte[]> headerImage = new SimpleObjectProperty<>();
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = DETAILS_ID)
-    public Long getId() {
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    public Integer getId() {
         return id.getValue();
     }
 
-    public void setId(Long id) {
+    public void setId(Integer id) {
         this.id.setValue(id);
     }
 
-    public LongProperty idProperty() {
+    public IntegerProperty idProperty() {
         return id;
     }
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = SteamApp.APP_ID)
+    @OneToOne
+    @JoinColumn(name = SteamApp.APP_ID, unique = true)
     public SteamApp getSteamApp() {
         return steamApp.get();
     }
@@ -70,7 +74,7 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
         return steamApp;
     }
 
-    @Column(name = NAME, nullable = true, updatable = true)
+    @Column(name = NAME)
     public String getName() {
         return name.get();
     }
@@ -83,6 +87,7 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
         return name;
     }
 
+    @Lob
     @Column(name = SHORT_DESCRIPTION)
     public String getShortDescription() {
         return shortDescription.get();
@@ -96,6 +101,7 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
         return shortDescription;
     }
 
+    @Lob
     @Column(name = DETAILED_DESCRIPTION)
     public String getDetailedDescription() {
         return detailedDescription.get();
@@ -135,20 +141,45 @@ public class SteamAppDetails extends AuditableEntity<SteamAppDetails> implements
         return type;
     }
 
-/*    @Lob
+    @Column(name = EMPTY_DETAILS)
+    public Boolean isEmptyDetails() {
+        return emptyDetails.getValue();
+    }
+
+    public BooleanProperty emptyDetailsProperty() {
+        return emptyDetails;
+    }
+
+    public void setEmptyDetails(Boolean emptyDetails) {
+        this.emptyDetails.setValue(emptyDetails);
+    }
+
+    @Lob
     @Column(name = HEADER_IMAGE)
-    @Convert(converter = ImageDataConverter.class)
-    public ImageData getImage() {
-        return image.get();
+    public byte[] getHeaderImage() {
+        return headerImage.get();
     }
 
-    public void setImage(ImageData image) {
-        this.image.set(image);
+    public ObjectProperty<byte[]> headerImageProperty() {
+        return headerImage;
     }
 
-    public ObjectProperty<ImageData> imageProperty() {
-        return image;
-    }*/
+    public void setHeaderImage(byte[] headerImage) {
+        this.headerImage.set(headerImage);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SteamAppDetails details = (SteamAppDetails) o;
+        return getId().equals(details.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId());
+    }
 
     @Override
     public String toString() {

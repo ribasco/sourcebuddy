@@ -35,27 +35,30 @@ public class SteamConfig {
     @Value("${app.steam-auth-token}")
     private String authToken;
 
-    private ExecutorService steamExecutorService;
+    private ExecutorService steamWebExecutorService;
+
+    private ExecutorService sourceQueryExecutorService;
 
     @Bean(destroyMethod = "close")
     public SourceQueryClient sourceServerQueryClient() {
-        return new SourceQueryClient(steamExecutorService);
+        return new SourceQueryClient(sourceQueryExecutorService);
     }
 
     @Bean(destroyMethod = "close")
     public MasterServerQueryClient masterServerQueryClient() {
-        return new MasterServerQueryClient(true, 3, steamExecutorService);
+        return new MasterServerQueryClient(true, 3, sourceQueryExecutorService);
     }
 
     @Bean(destroyMethod = "close")
     public SourceRconClient sourceRconClient() {
-        return new SourceRconClient(true, steamExecutorService);
+        return new SourceRconClient(true, sourceQueryExecutorService);
     }
 
     @Bean(destroyMethod = "close")
     public SourceLogListenService sourceLogListener(@Autowired InetAddress publicIp) {
         String address = (logListenAddress != null && !logListenAddress.isBlank()) ? logListenAddress : publicIp.getHostAddress();
         log.info("Initializing log listen service: {}:{}", address, logListenPort);
+        //TODO: Specify an executor service
         return new SourceLogListenService(new InetSocketAddress(address, logListenPort));
     }
 
@@ -65,13 +68,8 @@ public class SteamConfig {
     }
 
     @Bean
-    public SteamApps steamAppsApi() {
-        return new SteamApps(steamWebApiClient());
-    }
-
-    @Bean
     public SteamWebApiClient steamWebApiClient() {
-        return new SteamWebApiClient(authToken, steamExecutorService);
+        return new SteamWebApiClient(authToken, steamWebExecutorService);
     }
 
     @Bean
@@ -79,8 +77,18 @@ public class SteamConfig {
         return new SteamStorefront(steamWebApiClient());
     }
 
+    @Bean
+    public SteamApps steamAppsApi() {
+        return new SteamApps(steamWebApiClient());
+    }
+
     @Autowired
-    public void setSteamExecutorService(ExecutorService steamExecutorService) {
-        this.steamExecutorService = steamExecutorService;
+    public void setSteamWebExecutorService(ExecutorService steamWebExecutorService) {
+        this.steamWebExecutorService = steamWebExecutorService;
+    }
+
+    @Autowired
+    public void setSourceQueryExecutorService(ExecutorService sourceQueryExecutorService) {
+        this.sourceQueryExecutorService = sourceQueryExecutorService;
     }
 }

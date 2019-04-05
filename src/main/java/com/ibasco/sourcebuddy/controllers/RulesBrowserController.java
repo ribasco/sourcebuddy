@@ -1,9 +1,9 @@
 package com.ibasco.sourcebuddy.controllers;
 
+import com.ibasco.sourcebuddy.components.GuiHelper;
 import com.ibasco.sourcebuddy.domain.KeyValueInfo;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
-import com.ibasco.sourcebuddy.util.GuiUtil;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -30,12 +30,12 @@ public class RulesBrowserController extends BaseController {
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
-        GuiUtil.setupKeyValueTable(tvRulesTable);
+        GuiHelper.setupKeyValueTable(tvRulesTable);
         serverDetailsModel.getServerSelectionModel().selectedItemProperty().addListener(this::updateRulesSelection);
     }
 
     private void updateRulesSelection(ObservableValue observableValue, ServerDetails oldValue, ServerDetails newValue) {
-        if (!serverDetailsModel.READ_LOCK.tryLock()) {
+        if (!ServerDetailsModel.READ_LOCK.tryLock()) {
             log.debug("Unable to acquire read lock for rules");
             return;
         }
@@ -50,7 +50,7 @@ public class RulesBrowserController extends BaseController {
                 tvRulesTable.setItems(null);
             }
         } finally {
-            serverDetailsModel.READ_LOCK.unlock();
+            ServerDetailsModel.READ_LOCK.unlock();
         }
     }
 

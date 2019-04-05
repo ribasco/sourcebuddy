@@ -1,5 +1,6 @@
 package com.ibasco.sourcebuddy.tasks;
 
+import com.ibasco.sourcebuddy.annotations.BaseComponent;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.util.WorkProgressCallback;
 import javafx.beans.property.ObjectProperty;
@@ -11,11 +12,16 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@BaseComponent
 public abstract class BaseTask<T> extends Task<T> {
 
     private static final Logger log = LoggerFactory.getLogger(BaseTask.class);
 
     private ObjectProperty<Duration> duration = new SimpleObjectProperty<>();
+
+    protected BaseTask() {
+
+    }
 
     void updateTitle(String message, Object... args) {
         String formattedMsg = String.format(message, args);
@@ -53,8 +59,8 @@ public abstract class BaseTask<T> extends Task<T> {
             }
 
             @Override
-            public void onProgress(ServerDetails item, Throwable exception) {
-                if (exception != null) {
+            public void onProgress(ServerDetails item, Throwable ex) {
+                if (ex != null) {
                     failedCtr.incrementAndGet();
                 } else {
                     successCtr.incrementAndGet();

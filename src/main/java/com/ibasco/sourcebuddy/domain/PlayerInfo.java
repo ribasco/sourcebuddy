@@ -1,9 +1,8 @@
 package com.ibasco.sourcebuddy.domain;
 
-import com.ibasco.agql.protocols.valve.source.query.pojos.SourcePlayer;
 import javafx.beans.property.*;
 
-public class PlayerInfo extends AuditableEntity {
+public class PlayerInfo extends AuditableEntity<String> {
 
     private IntegerProperty index = new SimpleIntegerProperty(-1);
 
@@ -12,17 +11,6 @@ public class PlayerInfo extends AuditableEntity {
     private IntegerProperty score = new SimpleIntegerProperty(-1);
 
     private FloatProperty duration = new SimpleFloatProperty(0.0f);
-
-    public PlayerInfo(SourcePlayer player) {
-        this(player.getIndex(), player.getName(), player.getScore(), player.getDuration());
-    }
-
-    public PlayerInfo(int index, String name, int score, float duration) {
-        setIndex(index);
-        setName(name);
-        setScore(score);
-        setDuration(duration);
-    }
 
     public int getIndex() {
         return index.get();

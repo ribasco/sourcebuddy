@@ -2,7 +2,7 @@ package com.ibasco.sourcebuddy.repository;
 
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
-import com.ibasco.sourcebuddy.service.SteamQueryService;
+import com.ibasco.sourcebuddy.service.SteamService;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,7 +23,7 @@ public class ServerDetailsRepositoryIT {
     private ServerDetailsRepository serverDetailsRepository;
 
     @Autowired
-    private SteamQueryService steamQueryService;
+    private SteamService steamQueryService;
 
     @Test
     @DisplayName("Test findSteamAppById()")

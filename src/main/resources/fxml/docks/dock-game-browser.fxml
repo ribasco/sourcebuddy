@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.TableView?>
-<?import javafx.scene.layout.*?>
-<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.GameBrowserController">
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.ToolBar?>
+<?import javafx.scene.layout.VBox?>
+<VBox prefHeight="388.0" prefWidth="346.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.GameBrowserController">
     <children>
-        <AnchorPane VBox.vgrow="ALWAYS">
-            <children>
-                <TableView fx:id="tvGameBrowser" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
-            </children>
-        </AnchorPane>
+        <TableView fx:id="tvGameBrowser" VBox.vgrow="ALWAYS"/>
+        <ToolBar fx:id="tbGameFilter">
+            <items>
+                <TextField fx:id="tfGameFilter" prefHeight="25.0" prefWidth="201.0" promptText="Search Game"/>
+            </items>
+            <VBox.margin>
+                <Insets/>
+            </VBox.margin>
+            <padding>
+                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+            </padding>
+        </ToolBar>
     </children>
 </VBox>

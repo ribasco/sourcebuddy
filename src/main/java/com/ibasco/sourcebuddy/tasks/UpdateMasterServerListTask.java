@@ -8,12 +8,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Component
 @Scope("prototype")
 public class UpdateMasterServerListTask extends BaseTask<Void> {
 
@@ -23,7 +21,6 @@ public class UpdateMasterServerListTask extends BaseTask<Void> {
 
     private SourceServerService sourceServerService;
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     public UpdateMasterServerListTask(SteamApp steamApp) {
         this.steamApp = steamApp;
     }
@@ -36,7 +33,7 @@ public class UpdateMasterServerListTask extends BaseTask<Void> {
     @Override
     protected Void process() throws Exception {
         updateTitle("New server list update for '%s'", steamApp);
-        sourceServerService.updateServerEntries(steamApp, createIndeterminateProgressCallback());
+        sourceServerService.fetchNewServerEntries(steamApp, createIndeterminateProgressCallback());
         return null;
     }
 
@@ -56,8 +53,8 @@ public class UpdateMasterServerListTask extends BaseTask<Void> {
             }
 
             @Override
-            public void onProgress(ServerDetails item, Throwable exception) {
-                if (exception != null) {
+            public void onProgress(ServerDetails item, Throwable ex) {
+                if (ex != null) {
                     skippedCtr.incrementAndGet();
                 } else {
                     addedCtr.incrementAndGet();

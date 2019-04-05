@@ -1,11 +1,11 @@
 package com.ibasco.sourcebuddy.controllers;
 
 import com.ibasco.sourcebuddy.components.NotificationManager;
-import com.ibasco.sourcebuddy.components.ServiceManager;
+import com.ibasco.sourcebuddy.components.SpringHelper;
+import com.ibasco.sourcebuddy.components.TaskManager;
 import com.ibasco.sourcebuddy.components.ViewManager;
 import com.ibasco.sourcebuddy.constants.Beans;
 import com.ibasco.sourcebuddy.events.ApplicationInitEvent;
-import com.ibasco.sourcebuddy.util.SpringUtil;
 import javafx.application.HostServices;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
@@ -24,24 +24,24 @@ abstract public class BaseController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(BaseController.class);
 
-    private ConfigurableApplicationContext applicationContext;
-
-    private ViewManager viewManager;
-
-    private NotificationManager notificationManager;
-
-    private ServiceManager serviceManager;
-
     private URL location;
 
     private ResourceBundle resourceBundle;
 
+    SpringHelper springHelper;
+
+    ConfigurableApplicationContext applicationContext;
+
+    ViewManager viewManager;
+
+    NotificationManager notificationManager;
+
+    TaskManager taskManager;
+
     @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    public final void initialize(URL location, ResourceBundle resources) {
         this.location = location;
         this.resourceBundle = resources;
-
-        //log.debug("Initialize :: Location: {}, Resource Bundle: {}", location, resourceBundle);
     }
 
     /**
@@ -73,11 +73,6 @@ abstract public class BaseController implements Initializable {
         return viewManager;
     }
 
-    @Autowired
-    public void setViewManager(ViewManager viewManager) {
-        this.viewManager = viewManager;
-    }
-
     public ConfigurableApplicationContext getAppContext() {
         return applicationContext;
     }
@@ -86,30 +81,36 @@ abstract public class BaseController implements Initializable {
         return notificationManager;
     }
 
-    @Autowired
-    public void setNotificationManager(NotificationManager notificationManager) {
-        this.notificationManager = notificationManager;
-    }
-
-    public ServiceManager getServiceManager() {
-        return serviceManager;
-    }
-
-    @Autowired
-    public void setServiceManager(ServiceManager serviceManager) {
-        this.serviceManager = serviceManager;
-    }
-
     public HostServices getHostServices() {
         return applicationContext.getBean(Beans.HOST_SERVICES, HostServices.class);
     }
 
     void publishEvent(ApplicationEvent event) {
-        SpringUtil.publishEvent(event);
+        springHelper.publishEvent(event);
     }
 
     @Autowired
-    public void setApplicationContext(ConfigurableApplicationContext applicationContext) {
+    protected void setApplicationContext(ConfigurableApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
+    }
+
+    @Autowired
+    protected void setViewManager(ViewManager viewManager) {
+        this.viewManager = viewManager;
+    }
+
+    @Autowired
+    protected void setNotificationManager(NotificationManager notificationManager) {
+        this.notificationManager = notificationManager;
+    }
+
+    @Autowired
+    protected void setTaskManager(TaskManager taskManager) {
+        this.taskManager = taskManager;
+    }
+
+    @Autowired
+    protected void setSpringHelper(SpringHelper springHelper) {
+        this.springHelper = springHelper;
     }
 }

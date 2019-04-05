@@ -1,16 +1,16 @@
 package com.ibasco.sourcebuddy.controllers;
 
+import static com.ibasco.sourcebuddy.components.GuiHelper.findNode;
 import com.ibasco.sourcebuddy.components.TaskManager;
 import com.ibasco.sourcebuddy.constants.Icons;
 import com.ibasco.sourcebuddy.constants.Views;
 import com.ibasco.sourcebuddy.domain.SteamApp;
 import com.ibasco.sourcebuddy.events.ApplicationInitEvent;
+import com.ibasco.sourcebuddy.gui.skins.CustomTaskProgressViewSkin;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
-import com.ibasco.sourcebuddy.service.SteamQueryService;
+import com.ibasco.sourcebuddy.service.SteamService;
 import com.ibasco.sourcebuddy.tasks.UpdateMasterServerListTask;
 import com.ibasco.sourcebuddy.tasks.UpdateServerDetailsTask;
-import com.ibasco.sourcebuddy.tasks.UpdateSteamAppDetailsTask;
-import static com.ibasco.sourcebuddy.util.GuiUtil.findNode;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
@@ -75,14 +75,11 @@ public class MainController extends BaseController {
 
     private TaskManager taskManager;
 
-    private SteamQueryService steamQueryService;
+    private SteamService steamQueryService;
 
     private TaskProgressView<Task<?>> taskProgressView;
 
     private Button btnServiceStatus;
-
-    @FXML
-    private Button btnUpdateDetails;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
@@ -104,9 +101,11 @@ public class MainController extends BaseController {
         DropShadow borderGlow = new DropShadow();
         borderGlow.setOffsetY(0f);
         borderGlow.setOffsetX(0f);
-        borderGlow.setColor(Color.GREEN);
+        borderGlow.setColor(Color.web("#53BE6B"));
         borderGlow.setWidth(40);
         borderGlow.setHeight(40);
+
+        taskProgressView.setSkin(new CustomTaskProgressViewSkin<>(taskProgressView));
 
         taskProgressView.getTasks().addListener((ListChangeListener<Task<?>>) c -> {
             while (c.next()) {
@@ -126,8 +125,6 @@ public class MainController extends BaseController {
     }
 
     private void setupMainToolbar() {
-
-        btnUpdateDetails.setOnAction(event -> taskManager.executeTask(UpdateSteamAppDetailsTask.class));
         btnUpdateMasterList.setOnAction(event -> {
             Optional<String> value = prompt("Enter steam id", "Enter steam id");
             if (value.isPresent()) {
@@ -185,13 +182,13 @@ public class MainController extends BaseController {
         ImageView logsImage = ResourceUtil.loadIconView(Icons.LOGS_ICON);
         ImageView chatImage = ResourceUtil.loadIconView(Icons.CHAT_ICON);
 
-        Pane serverBrowserPane = getViewManager().loadView(Views.DOCK_SERVER_BROWSER);
-        Pane playerBrowserPane = getViewManager().loadView(Views.DOCK_PLAYER_BROWSER);
-        Pane rulesBrowserPane = getViewManager().loadView(Views.DOCK_RULES_BROWSER);
-        Pane serverManagerPane = getViewManager().loadView(Views.DOCK_SERVER_MANAGER);
-        Pane logsPane = getViewManager().loadView(Views.DOCK_LOGS);
-        Pane serverChatPane = getViewManager().loadView(Views.DOCK_SERVER_CHAT);
-        Pane gameBrowserPane = getViewManager().loadView(Views.DOCK_GAME_BROWSER);
+        Pane serverBrowserPane = viewManager.loadView(Views.DOCK_SERVER_BROWSER);
+        Pane playerBrowserPane = viewManager.loadView(Views.DOCK_PLAYER_BROWSER);
+        Pane rulesBrowserPane = viewManager.loadView(Views.DOCK_RULES_BROWSER);
+        Pane serverManagerPane = viewManager.loadView(Views.DOCK_SERVER_MANAGER);
+        Pane logsPane = viewManager.loadView(Views.DOCK_LOGS);
+        Pane serverChatPane = viewManager.loadView(Views.DOCK_SERVER_CHAT);
+        //Pane gameBrowserPane = viewManager.loadView(Views.DOCK_GAME_BROWSER);
 
         dpMainDock.addEventHandler(DockEvent.DOCK_RELEASED, new EventHandler<DockEvent>() {
             @Override
@@ -216,13 +213,18 @@ public class MainController extends BaseController {
         dpMainDock.addEventHandler(DockEvent.DOCK_RELEASED, event -> updateSplitPaneResizable(dpMainDock.getChildren(), 0));
 
         DockNode serverBrowserDock = new DockNode(serverBrowserPane, "Servers", serverBrowserImage);
-        //serverBrowserDock.setDockTitleBar(null); //prevent from being un-docked
+        serverBrowserDock.setDockTitleBar(null); //prevent from being un-docked
+        serverBrowserDock.setPrefWidth(1300);
         serverBrowserDock.dock(dpMainDock, DockPos.TOP);
 
         DockNode playerBrowserDock = new DockNode(playerBrowserPane, "Players", playerBrowserImage);
+        playerBrowserDock.setMinWidth(350);
+        playerBrowserDock.setPrefWidth(350);
         playerBrowserDock.dock(dpMainDock, DockPos.RIGHT);
 
         DockNode rulesBrowserDock = new DockNode(rulesBrowserPane, "Server Rules", rulesBrowserImage);
+        rulesBrowserDock.setMinWidth(350);
+        rulesBrowserDock.setPrefWidth(350);
         rulesBrowserDock.dock(dpMainDock, DockPos.BOTTOM, playerBrowserDock);
 
         DockNode serverManagerDock = new DockNode(serverManagerPane, "Server Manager", serverManagerImage);
@@ -234,10 +236,11 @@ public class MainController extends BaseController {
         DockNode serverChatDock = new DockNode(serverChatPane, "Server Chat", chatImage);
         serverChatDock.dock(dpMainDock, DockPos.CENTER, serverManagerDock);
 
-        DockNode gameBrowserDock = new DockNode(gameBrowserPane, "Game Browser");
+        /*DockNode gameBrowserDock = new DockNode(gameBrowserPane, "Game Browser");
         gameBrowserDock.setId("dockGameBrowsr");
-        gameBrowserDock.setPrefSize(100, 10);
-        gameBrowserDock.dock(dpMainDock, DockPos.LEFT);
+        gameBrowserDock.setPrefWidth(230);
+        gameBrowserDock.setMinWidth(250);
+        gameBrowserDock.dock(dpMainDock, DockPos.LEFT);*/
     }
 
     private void updateSplitPaneResizable(ObservableList<Node> items, int level) {
@@ -263,7 +266,7 @@ public class MainController extends BaseController {
     }
 
     @Autowired
-    public void setSteamQueryService(SteamQueryService steamQueryService) {
+    public void setSteamQueryService(SteamService steamQueryService) {
         this.steamQueryService = steamQueryService;
     }
 }

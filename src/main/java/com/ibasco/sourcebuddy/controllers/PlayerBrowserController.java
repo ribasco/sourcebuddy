@@ -67,7 +67,7 @@ public class PlayerBrowserController extends BaseController {
     private void updatePlayerTableOnSelection(ObservableValue observableValue, ServerDetails o, ServerDetails newValue) {
         if (newValue == null)
             return;
-        if (!serverDetailsModel.READ_LOCK.tryLock()) {
+        if (!ServerDetailsModel.READ_LOCK.tryLock()) {
             log.debug("Unable to acquire read lock for players");
             return;
         }
@@ -78,7 +78,7 @@ public class PlayerBrowserController extends BaseController {
                 tvPlayerTable.setItems(null);
             }
         } finally {
-            serverDetailsModel.READ_LOCK.unlock();
+            ServerDetailsModel.READ_LOCK.unlock();
         }
     }
 

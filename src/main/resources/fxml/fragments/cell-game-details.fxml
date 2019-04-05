@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<GridPane prefHeight="110.0" prefWidth="413.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1">
+    <columnConstraints>
+        <ColumnConstraints fillWidth="false" hgrow="NEVER"/>
+        <ColumnConstraints hgrow="ALWAYS"/>
+    </columnConstraints>
+    <rowConstraints>
+        <RowConstraints minHeight="10.0" vgrow="SOMETIMES"/>
+    </rowConstraints>
+    <children>
+        <VBox spacing="10.0" GridPane.columnIndex="1">
+            <children>
+                <Label fx:id="lblGameTitle" text="Game Title">
+                    <font>
+                        <Font name="System Bold" size="12.0"/>
+                    </font>
+                </Label>
+                <Label fx:id="lblGameDescription" alignment="TOP_LEFT" text="Game Description" textAlignment="JUSTIFY" wrapText="true" VBox.vgrow="ALWAYS">
+                    <font>
+                        <Font name="System Italic" size="12.0"/>
+                    </font>
+                </Label>
+            </children>
+        </VBox>
+    </children>
+</GridPane>

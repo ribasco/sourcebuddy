@@ -1,9 +1,5 @@
 package com.ibasco.sourcebuddy.domain;
 
-import javafx.beans.property.ObjectProperty;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
@@ -17,70 +13,54 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @MappedSuperclass
-@EntityListeners(AuditingEntityListener.class)
+@EntityListeners({AuditingEntityListener.class})
 abstract public class AuditableEntity<T> implements Serializable {
 
-    private ObjectProperty<LocalDateTime> createdDate = new SimpleObjectProperty<>();
+    private T createdBy;
 
-    private StringProperty createUser = new SimpleStringProperty();
+    private T lastModifiedBy;
 
-    private StringProperty updateUser = new SimpleStringProperty();
+    private LocalDateTime createDate;
 
-    private ObjectProperty<LocalDateTime> updateDate = new SimpleObjectProperty<>();
-
-    @CreatedDate
-    @Column(name = "create_date")
-    public LocalDateTime getCreatedDate() {
-        return createdDate.get();
-    }
-
-    public void setCreatedDate(LocalDateTime createdDate) {
-        this.createdDate.set(createdDate);
-    }
-
-    public ObjectProperty<LocalDateTime> createdDateProperty() {
-        return createdDate;
-    }
+    private LocalDateTime updateDate;
 
     @CreatedBy
     @Column(name = "create_user")
-    public String getCreateUser() {
-        return createUser.get();
+    public T getCreatedBy() {
+        return createdBy;
     }
 
-    public void setCreateUser(String createUser) {
-        this.createUser.set(createUser);
-    }
-
-    public StringProperty createUserProperty() {
-        return createUser;
+    public void setCreatedBy(T createdBy) {
+        this.createdBy = createdBy;
     }
 
     @LastModifiedBy
     @Column(name = "update_user")
-    public String getUpdateUser() {
-        return updateUser.get();
+    public T getLastModifiedBy() {
+        return lastModifiedBy;
     }
 
-    public void setUpdateUser(String updateUser) {
-        this.updateUser.set(updateUser);
+    public void setLastModifiedBy(T lastModifiedBy) {
+        this.lastModifiedBy = lastModifiedBy;
     }
 
-    public StringProperty updateUserProperty() {
-        return updateUser;
+    @CreatedDate
+    @Column(name = "create_date")
+    public LocalDateTime getCreateDate() {
+        return createDate;
+    }
+
+    public void setCreateDate(LocalDateTime createDate) {
+        this.createDate = createDate;
     }
 
     @LastModifiedDate
     @Column(name = "update_date")
     public LocalDateTime getUpdateDate() {
-        return updateDate.get();
+        return updateDate;
     }
 
     public void setUpdateDate(LocalDateTime updateDate) {
-        this.updateDate.set(updateDate);
-    }
-
-    public ObjectProperty<LocalDateTime> updateDateProperty() {
-        return updateDate;
+        this.updateDate = updateDate;
     }
 }

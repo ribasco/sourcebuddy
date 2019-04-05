@@ -3,23 +3,17 @@ package com.ibasco.sourcebuddy.domain;
 import com.ibasco.agql.protocols.valve.source.query.pojos.SourceServer;
 import com.ibasco.sourcebuddy.enums.OperatingSystem;
 import com.ibasco.sourcebuddy.enums.ServerStatus;
-import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 
 import javax.persistence.*;
-import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.util.Objects;
 
 @Entity
-@Table(
-        name = ServerDetails.TABLE_NAME,
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"ip_address", "port"})},
-        indexes = {@Index(name = "IDX_UNQ_IPPORT", columnList = "ip_address,port")}
-)
-public class ServerDetails extends AuditableEntity<ServerDetails> implements Serializable {
+@Table(name = ServerDetails.TABLE_NAME)
+public class ServerDetails extends AuditableEntity<String> {
 
     public static final String TABLE_NAME = "SB_SERVER_DETAILS";
 
@@ -57,15 +51,15 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
 
     private IntegerProperty id = new SimpleIntegerProperty();
 
-    private StringProperty ipAddress = new SimpleStringProperty("");
+    private StringProperty ipAddress = new SimpleStringProperty();
 
-    private IntegerProperty port = new SimpleIntegerProperty(-1);
+    private IntegerProperty port = new SimpleIntegerProperty();
 
     private StringProperty name = new SimpleStringProperty();
 
-    private IntegerProperty playerCount = new SimpleIntegerProperty(-1);
+    private IntegerProperty playerCount = new SimpleIntegerProperty();
 
-    private IntegerProperty maxPlayerCount = new SimpleIntegerProperty(-1);
+    private IntegerProperty maxPlayerCount = new SimpleIntegerProperty();
 
     private StringProperty mapName = new SimpleStringProperty();
 
@@ -87,7 +81,7 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
 
     private StringProperty version = new SimpleStringProperty();
 
-    private LongProperty gameId = new SimpleLongProperty(-1);
+    private LongProperty gameId = new SimpleLongProperty();
 
     private ObjectProperty<ServerStatus> status = new SimpleObjectProperty<>(ServerStatus.NEW);
 
@@ -102,16 +96,11 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
     private BooleanProperty secure = new SimpleBooleanProperty();
 
     public ServerDetails() {
-        addressProperty().bind(Bindings.createObjectBinding(() -> {
-            if (!ipAddress.get().isBlank() && port.get() > 0) {
-                return new InetSocketAddress(ipAddress.get(), port.get());
-            }
-            return null;
-        }, ipAddress, port));
     }
 
-    public ObjectProperty<InetSocketAddress> addressProperty() {
-        return address;
+    @PostLoad
+    private void onLoad() {
+        setAddress(new InetSocketAddress(getIpAddress(), getPort()));
     }
 
     public ServerDetails(InetSocketAddress address) {
@@ -233,10 +222,8 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
         return operatingSystem;
     }
 
-    //@OneToOne(cascade = CascadeType.MERGE, mappedBy = "")
-    /*@JoinColumn(name = SteamApp.APP_ID, referencedColumnName = SteamApp.APP_ID)*/
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "app_id", nullable = true)
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "app_id")
     public SteamApp getSteamApp() {
         return steamApp.get();
     }
@@ -256,6 +243,10 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
 
     public void setAddress(InetSocketAddress address) {
         this.address.set(address);
+    }
+
+    public ObjectProperty<InetSocketAddress> addressProperty() {
+        return address;
     }
 
     @Column(name = TAGS)
@@ -452,5 +443,10 @@ public class ServerDetails extends AuditableEntity<ServerDetails> implements Ser
     @Override
     public int hashCode() {
         return Objects.hash(getIpAddress(), getPort());
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s:%d = %s", getIpAddress(), getPort(), getName());
     }
 }

@@ -2,7 +2,6 @@ package com.ibasco.sourcebuddy.components;
 
 import com.ibasco.sourcebuddy.constants.Qualifiers;
 import com.ibasco.sourcebuddy.tasks.BaseTask;
-import com.ibasco.sourcebuddy.util.SpringUtil;
 import javafx.beans.property.Property;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
@@ -17,7 +16,10 @@ import org.springframework.stereotype.Component;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -30,13 +32,43 @@ public class TaskManager implements Closeable {
 
     private ObservableList<Task<?>> taskList = FXCollections.observableArrayList();
 
+    private Map<Task<?>, CompletableFuture<Void>> taskMap = new HashMap<>();
+
     private ThreadPoolExecutor executorService;
+
+    private SpringHelper springHelper;
 
     @Autowired
     public TaskManager(@Qualifier(Qualifiers.TASK_EXECUTOR_SERVICE) ExecutorService executorService) {
         this.executorService = (ThreadPoolExecutor) executorService;
     }
 
+    public <T extends Task<?>> CompletableFuture<Void> runTask(Class<T> taskClass, Object... args) {
+        if (taskClass == null)
+            throw new IllegalArgumentException("Task class cannot be null");
+        T task = springHelper.getBean(taskClass, args);
+        if (task == null)
+            throw new IllegalStateException("Could not locate task: " + taskClass.getSimpleName());
+        CompletableFuture<Void> cf = new CompletableFuture<>();
+        taskMap.put(task, cf);
+        attachTaskMonitor(task);
+        executorService.execute(task);
+        log.debug("runTask() :: Submitted task '{}' on pool (Active: {}, Max Pool Size: {})", task.getClass().getSimpleName(), executorService.getActiveCount(), executorService.getMaximumPoolSize());
+        return cf;
+    }
+
+    @Deprecated
+    public <T extends Task<?>> T executeTask(Class<T> taskClass, Object... args) {
+        if (taskClass == null)
+            throw new IllegalArgumentException("Task class cannot be null");
+        T task = springHelper.getBean(taskClass, args);
+        if (task == null)
+            throw new IllegalStateException("Could not locate task: " + taskClass.getSimpleName());
+        executeTask(task);
+        return task;
+    }
+
+    @Deprecated
     public void executeTask(Task<?> task) {
         if (task == null)
             throw new IllegalArgumentException("Task cannot be null");
@@ -46,15 +78,6 @@ public class TaskManager implements Closeable {
         executorService.execute(task);
         taskList.add(task);
         log.debug("executeTask() :: Submitted task '{}' on pool (Active: {}, Max Pool Size: {})", task.getClass().getSimpleName(), executorService.getActiveCount(), executorService.getMaximumPoolSize());
-    }
-
-    public <T extends Task<?>> void executeTask(Class<T> taskClass, Object... args) {
-        if (taskClass == null)
-            throw new IllegalArgumentException("Task class cannot be null");
-        T task = SpringUtil.getBean(taskClass, args);
-        if (task == null)
-            throw new IllegalStateException("Could not locate task: " + taskClass.getSimpleName());
-        executeTask(task);
     }
 
     private void attachTaskMonitor(Task<?> task) {
@@ -87,26 +110,41 @@ public class TaskManager implements Closeable {
                 break;
             case SCHEDULED:
                 //log.debug("TASK_SCHEDULED :: {}", taskName);
+                if (!taskList.contains(task))
+                    taskList.add(task);
                 break;
             case RUNNING:
                 //log.debug("TASK_RUNNING :: {}", taskName);
                 break;
             case CANCELLED:
                 //log.debug("TASK_CANCELLED :: {}", taskName);
+                if (taskMap.containsKey(task)) {
+                    CompletableFuture<Void> cf = taskMap.get(task);
+                    cf.completeExceptionally(new InterruptedException("Task cancelled"));
+                    taskMap.remove(task);
+                }
                 detachTaskMonitor(task);
                 taskList.remove(task);
                 break;
             case FAILED:
                 //log.debug("TASK_FAILED :: {}", taskName);
                 Throwable err = task.getException();
-                if (err != null) {
-                    log.error("Exception occured during task run", err);
+                log.error("Exception occured during task run", err);
+                if (taskMap.containsKey(task)) {
+                    CompletableFuture<Void> cf = taskMap.get(task);
+                    cf.completeExceptionally(err);
+                    taskMap.remove(task);
                 }
                 detachTaskMonitor(task);
                 taskList.remove(task);
                 break;
             case SUCCEEDED:
                 //log.debug("TASK_SUCCESS :: {}", taskName);
+                if (taskMap.containsKey(task)) {
+                    CompletableFuture<Void> cf = taskMap.get(task);
+                    cf.complete(null);
+                    taskMap.remove(task);
+                }
                 detachTaskMonitor(task);
                 taskList.remove(task);
                 break;
@@ -134,5 +172,10 @@ public class TaskManager implements Closeable {
         } catch (InterruptedException ignored) {
 
         }
+    }
+
+    @Autowired
+    public void setSpringHelper(SpringHelper springHelper) {
+        this.springHelper = springHelper;
     }
 }

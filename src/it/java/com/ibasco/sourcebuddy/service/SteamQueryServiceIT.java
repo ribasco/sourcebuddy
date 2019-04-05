@@ -22,7 +22,7 @@ public class SteamQueryServiceIT {
     private static final Logger log = LoggerFactory.getLogger(SteamQueryServiceIT.class);
 
     @Autowired
-    private SteamQueryService steamQueryService;
+    private SteamService steamQueryService;
 
     @Test
     @DisplayName("Test steam app refresh")
@@ -44,5 +44,11 @@ public class SteamQueryServiceIT {
         steamQueryService.findGameServers(ServerFilter.create().dedicated(true).appId(550), 15000, servers::add).join();
         log.debug("Got total : {}", servers.size());
         assertTrue(servers.size() > 0);
+    }
+
+    @Test
+    void test04() {
+        List<SteamApp> apps = steamQueryService.findSteamAppsFromRepo().join();
+        assertTrue(apps.size() > 0);
     }
 }

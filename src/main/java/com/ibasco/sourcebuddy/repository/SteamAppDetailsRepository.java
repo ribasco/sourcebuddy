@@ -7,9 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
-import java.util.UUID;
 
-public interface SteamAppDetailsRepository extends JpaRepository<SteamAppDetails, UUID> {
+public interface SteamAppDetailsRepository extends JpaRepository<SteamAppDetails, Integer> {
 
     @Query("select a from SteamAppDetails a where a.steamApp = :steamApp")
     Optional<SteamAppDetails> findByApp(@Param("steamApp") SteamApp app);

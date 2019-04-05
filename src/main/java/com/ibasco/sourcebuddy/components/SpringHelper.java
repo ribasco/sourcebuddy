@@ -1,4 +1,4 @@
-package com.ibasco.sourcebuddy.util;
+package com.ibasco.sourcebuddy.components;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,40 +13,40 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Optional;
 
 @Component
-public class SpringUtil {
+public class SpringHelper {
 
-    private static final Logger log = LoggerFactory.getLogger(SpringUtil.class);
+    private static final Logger log = LoggerFactory.getLogger(SpringHelper.class);
 
-    private static ApplicationContext context;
+    private ApplicationContext context;
 
-    private static ApplicationEventPublisher publisher;
+    private ApplicationEventPublisher publisher;
 
-    private static SpringUtil instance;
+    private static SpringHelper instance;
 
     @Autowired
-    private SpringUtil(ApplicationEventPublisher publisher, ApplicationContext context) {
-        SpringUtil.context = context;
-        SpringUtil.publisher = publisher;
+    private SpringHelper(ApplicationEventPublisher publisher, ApplicationContext context) {
+        log.debug("Initializing SpringUtil");
+        this.context = context;
+        this.publisher = publisher;
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T getBean(String beanId) {
+    public <T> T getBean(String beanId) {
         return (T) context.getBean(beanId);
     }
 
-    public static <T> T getBean(Class<T> beanClass) {
+    public <T> T getBean(Class<T> beanClass) {
         return context.getBean(beanClass);
     }
 
-    public static <T> T getBean(Class<T> beanClass, Object... args) {
+    public <T> T getBean(Class<T> beanClass, Object... args) {
         return getBean(beanClass, true, args);
     }
 
-    public static <T> T getBean(Class<T> beanClass, boolean procssOptional, Object... args) {
+    public <T> T getBean(Class<T> beanClass, boolean procssOptional, Object... args) {
         if (procssOptional) {
             //Automatically proceess Optional types
             for (int i = 0; i < args.length; i++) {
@@ -63,24 +63,24 @@ public class SpringUtil {
         return context.getBean(beanClass, args);
     }
 
-    public static <T> void autowire(T bean) {
+    public <T> void autowire(T bean) {
         getContext().getAutowireCapableBeanFactory().autowireBean(bean);
     }
 
-    public static ConfigurableApplicationContext getContext() {
+    public ConfigurableApplicationContext getContext() {
         return (ConfigurableApplicationContext) context;
     }
 
-    public static <T> T getBean(String beanId, Class<T> beanClass) {
+    public <T> T getBean(String beanId, Class<T> beanClass) {
         return context.getBean(beanId, beanClass);
     }
 
-    public static boolean beanExists(String beanId) {
+    public boolean beanExists(String beanId) {
         return context.containsBeanDefinition(beanId);
     }
 
-    public static <T> T createBean(String beanId, Class<T> beanClass) {
-        ConfigurableApplicationContext context = (ConfigurableApplicationContext) SpringUtil.context;
+    public <T> T createBean(String beanId, Class<T> beanClass) {
+        ConfigurableApplicationContext context = (ConfigurableApplicationContext) this.context;
         AutowireCapableBeanFactory factory = context.getAutowireCapableBeanFactory();
         BeanDefinitionRegistry registry = (BeanDefinitionRegistry) factory;
         BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(beanClass);
@@ -96,8 +96,8 @@ public class SpringUtil {
      * @param instance
      *         The instance to be registered to spring
      */
-    public static void registerBean(String beanId, Object instance) {
-        ConfigurableApplicationContext context = (ConfigurableApplicationContext) SpringUtil.context;
+    public void registerBean(String beanId, Object instance) {
+        ConfigurableApplicationContext context = (ConfigurableApplicationContext) this.context;
         GenericBeanDefinition beanDef = new GenericBeanDefinition();
         beanDef.setBeanClass(instance.getClass());
         BeanDefinitionRegistry registry = (BeanDefinitionRegistry) context.getBeanFactory();
@@ -106,19 +106,14 @@ public class SpringUtil {
         log.debug("registerBean() :: Registered bean instance: Id: {}, Class Name: {}, Instance Id: {} (Result: {} = {}, Has Definition = {})", beanId, instance.getClass().getSimpleName(), instance.hashCode(), context.getBean(beanId).getClass().getSimpleName(), context.getBean(beanId).hashCode(), context.containsBeanDefinition(beanId));
     }
 
-    public static void registerSingleton(String beanId, Object instance) {
-        ConfigurableApplicationContext context = (ConfigurableApplicationContext) SpringUtil.context;
+    public void registerSingleton(String beanId, Object instance) {
+        ConfigurableApplicationContext context = (ConfigurableApplicationContext) this.context;
         context.getBeanFactory().registerSingleton(beanId, instance);
     }
 
-    public static void publishEvent(ApplicationEvent event) {
+    public void publishEvent(ApplicationEvent event) {
         if (event == null)
             throw new IllegalArgumentException("Event cannot be null");
         publisher.publishEvent(event);
-    }
-
-    @PostConstruct
-    private void init() {
-        instance = this;
     }
 }

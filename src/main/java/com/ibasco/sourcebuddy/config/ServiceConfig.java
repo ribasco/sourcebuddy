@@ -14,8 +14,8 @@ public class ServiceConfig {
     }
 
     @Bean
-    public SteamQueryService steamQueryService() {
-        return new SteamQueryServiceImpl();
+    public SteamService steamService() {
+        return new SteamServiceImpl();
     }
 
     @Bean

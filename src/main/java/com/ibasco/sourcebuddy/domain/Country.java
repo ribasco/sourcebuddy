@@ -9,7 +9,7 @@ import javax.persistence.*;
 @Entity
 @Table(name = Country.TABLE_NAME)
 @EntityListeners(AuditingEntityListener.class)
-public class Country extends AuditableEntity {
+public class Country extends AuditableEntity<String> {
 
     public static final String TABLE_NAME = "SB_COUNTRY";
 

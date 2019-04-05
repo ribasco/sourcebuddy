@@ -2,59 +2,48 @@ package com.ibasco.sourcebuddy.config;
 
 import com.google.gson.Gson;
 import com.ibasco.sourcebuddy.Bootstrap;
+import com.ibasco.sourcebuddy.annotations.BaseComponent;
 import com.ibasco.sourcebuddy.components.NotificationManager;
-import com.ibasco.sourcebuddy.constants.Beans;
-import com.ibasco.sourcebuddy.domain.ServerDetails;
+import com.ibasco.sourcebuddy.components.SpringHelper;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
 import com.ibasco.sourcebuddy.repository.ServerDetailsRepository;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
+import com.ibasco.sourcebuddy.util.preload.SteamAppsPreload;
 import com.maxmind.geoip2.DatabaseReader;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.EnableCaching;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
-import org.springframework.jdbc.datasource.SingleConnectionDataSource;
-import org.springframework.orm.jpa.JpaTransactionManager;
-import org.springframework.orm.jpa.JpaVendorAdapter;
-import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.vendor.HibernateJpaDialect;
-import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
-import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URI;
-import java.util.Properties;
+import java.net.http.HttpClient;
 import java.util.Scanner;
 import java.util.concurrent.*;
 
 @Configuration
-@ComponentScan(basePackageClasses = {Bootstrap.class, NotificationManager.class, ServerDetailsModel.class})
-@EnableCaching
+@ComponentScan(
+        basePackageClasses = {Bootstrap.class, NotificationManager.class, ServerDetailsModel.class, SteamAppsPreload.class, SpringHelper.class},
+        includeFilters = @ComponentScan.Filter(BaseComponent.class)
+)
 @EnableTransactionManagement
 @EnableJpaAuditing(auditorAwareRef = "auditAwareBean")
 @EnableJpaRepositories(
         considerNestedRepositories = true,
-        basePackageClasses = ServerDetailsRepository.class,
-        transactionManagerRef = Beans.TRANSACTION_MANAGER,
-        entityManagerFactoryRef = Beans.ENTITY_MANAGER_FACTORY
+        basePackageClasses = ServerDetailsRepository.class
 )
 @EnableAsync
 public class AppConfig implements AsyncConfigurer {
@@ -66,19 +55,18 @@ public class AppConfig implements AsyncConfigurer {
     @Value("${app.public-api-endpoint}")
     private String publicIpApiEndpoint;
 
-    @Value("${app.db.driver-class-name}")
-    private String driverClassName;
+    private final int DEFAULT_THREADS = Runtime.getRuntime().availableProcessors() * 2;
 
-    @Value("${app.db.url}")
-    private String url;
-
-    @Value("${app.db.username}")
-    private String username;
-
-    @Value("${app.db.password}")
-    private String password;
-
-    private ApplicationContext context;
+    @Bean
+    @Profile("test")
+    public DataSource dataSource() {
+        BasicDataSource dataSource = new BasicDataSource();
+        dataSource.setDriverClassName("org.h2.Driver");
+        dataSource.setUrl("jdbc:h2:mem:sourcebuddy;DB_CLOSE_DELAY=-1");
+        dataSource.setUsername("sa");
+        dataSource.setPassword("sa");
+        return dataSource;
+    }
 
     @Bean("publicIp")
     public InetAddress retrievePublicIp() {
@@ -105,68 +93,10 @@ public class AppConfig implements AsyncConfigurer {
         return new Gson();
     }
 
-    @Bean
-    @Primary
-    public PlatformTransactionManager defaultTransactionManager(@Qualifier(Beans.ENTITY_MANAGER_FACTORY) EntityManagerFactory entityManagerFactory) throws IOException {
-        JpaTransactionManager transactionManager = new JpaTransactionManager();
-        transactionManager.setEntityManagerFactory(entityManagerFactory);
-        return transactionManager;
-    }
-
-    @Bean
-    @Primary
-    public EntityManagerFactory defaultEntityManagerFactory() {
-        LocalContainerEntityManagerFactoryBean factoryBean = new LocalContainerEntityManagerFactoryBean();
-        factoryBean.setJpaDialect(new HibernateJpaDialect());
-        JpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
-        factoryBean.setDataSource(dataSource());
-        factoryBean.setJpaVendorAdapter(vendorAdapter);
-        factoryBean.setJpaProperties(hibernateProperties());
-        factoryBean.setPackagesToScan(ServerDetails.class.getPackageName());
-        factoryBean.afterPropertiesSet();
-        return factoryBean.getNativeEntityManagerFactory();
-    }
-
-    @Bean
-    @Primary
-    public DataSource dataSource() {
-        try {
-            SingleConnectionDataSource scd = new SingleConnectionDataSource();
-
-            BasicDataSource dataSource = new BasicDataSource();
-            dataSource.setDriverClassName(driverClassName);
-            dataSource.setUrl(url);
-            dataSource.setUsername(username);
-            dataSource.setPassword(password);
-            /*dataSource.setInitialSize(5);
-            dataSource.setMaxTotal(5);
-            dataSource.setMaxIdle(5);*/
-            dataSource.setDefaultAutoCommit(true);
-            return dataSource;
-        } catch (Exception e) {
-            log.error("DBCP DataSource bean cannot be created!", e);
-            return null;
-        }
-    }
-
-    private Properties hibernateProperties() {
-        Properties hibernateProp = new Properties();
-        //hibernateProp.put("hibernate.dialect", "com.ibasco.sourcebuddy.util.dialect.SQLiteDialect");
-        hibernateProp.put("hibernate.dialect", "org.hibernate.dialect.H2Dialect");
-        hibernateProp.put("hibernate.format_sql", true);
-        hibernateProp.put("hibernate.use_sql_comments", true);
-        hibernateProp.put("hibernate.show_sql", false);
-        hibernateProp.put("hibernate.max_fetch_depth", 3);
-        hibernateProp.put("hibernate.jdbc.batch_size", 50);
-        hibernateProp.put("hibernate.jdbc.fetch_size", 50);
-        return hibernateProp;
-    }
-
     @Bean(destroyMethod = "shutdownNow")
     public ExecutorService taskExecutorService() {
         int num = Runtime.getRuntime().availableProcessors() + 1;
-        log.info("Using default number of threads: {}", num);
-        //return Executors.newFixedThreadPool(num, taskThreadFactory());
+        log.info("taskExecutorService() : Using default number of threads: {}", num);
         return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
                                       60L, TimeUnit.SECONDS,
                                       new SynchronousQueue<>(),
@@ -174,19 +104,42 @@ public class AppConfig implements AsyncConfigurer {
     }
 
     @Bean(destroyMethod = "shutdownNow")
-    public ExecutorService steamExecutorService() {
+    public ExecutorService steamWebExecutorService() {
         return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
                                       60L, TimeUnit.SECONDS,
                                       new SynchronousQueue<>(),
-                                      steamThreadFactory());
+                                      steamWebApiThreadFactory());
+    }
+
+    @Bean(destroyMethod = "shutdownNow")
+    public ExecutorService sourceQueryExecutorService() {
+        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+                                      60L, TimeUnit.SECONDS,
+                                      new SynchronousQueue<>(),
+                                      sourceQueryThreadFactory());
+    }
+
+    @Bean(destroyMethod = "shutdownNow")
+    public ScheduledExecutorService scheduledTaskService() {
+        return new ScheduledThreadPoolExecutor(DEFAULT_THREADS, scheduledTasksThreadFactory());
     }
 
     @Bean
-    public ThreadFactory steamThreadFactory() {
+    public ThreadFactory steamWebApiThreadFactory() {
         return r -> {
-            Thread thread = new Thread(steamThreadGroup(), r);
+            Thread thread = new Thread(steamWebApiThreadGroup(), r);
             thread.setDaemon(true);
-            thread.setName(String.format("sb-steam-%d", thread.getId()));
+            thread.setName(String.format("sb-steam-web-%d", thread.getId()));
+            return thread;
+        };
+    }
+
+    @Bean
+    public ThreadFactory sourceQueryThreadFactory() {
+        return r -> {
+            Thread thread = new Thread(sourceQueryThreadGroup(), r);
+            thread.setDaemon(true);
+            thread.setName(String.format("sb-sourcequery-%d", thread.getId()));
             return thread;
         };
     }
@@ -195,15 +148,40 @@ public class AppConfig implements AsyncConfigurer {
     public ThreadFactory taskThreadFactory() {
         return r -> {
             Thread thread = new Thread(taskThreadGroup(), r);
-            thread.setDaemon(true);
+            //thread.setDaemon(true);
             thread.setName(String.format("sb-task-%d", thread.getId()));
             return thread;
         };
     }
 
     @Bean
-    public ThreadGroup steamThreadGroup() {
-        return new ThreadGroup("sb-steam-tasks");
+    public ThreadFactory scheduledTasksThreadFactory() {
+        return r -> {
+            Thread thread = new Thread(scheduledTasksThreadGroup(), r);
+            thread.setName(String.format("sb-sch-task-%d", thread.getId()));
+            return thread;
+        };
+    }
+
+    @Bean
+    public HttpClient httpClient() {
+        HttpClient.Builder builder = HttpClient.newBuilder().executor(taskExecutorService());
+        return builder.build();
+    }
+
+    @Bean
+    public ThreadGroup scheduledTasksThreadGroup() {
+        return new ThreadGroup("sb-scheduled-tasks");
+    }
+
+    @Bean
+    public ThreadGroup steamWebApiThreadGroup() {
+        return new ThreadGroup("sb-steam-webapi");
+    }
+
+    @Bean
+    public ThreadGroup sourceQueryThreadGroup() {
+        return new ThreadGroup("sb-source-query");
     }
 
     @Bean
@@ -216,14 +194,9 @@ public class AppConfig implements AsyncConfigurer {
         return new DatabaseReader.Builder(new File(GEOIP_DATABASE_PATH)).build();
     }
 
-    @Autowired
-    public void setContext(ApplicationContext context) {
-        this.context = context;
-    }
-
     @Override
     public Executor getAsyncExecutor() {
-        return ForkJoinPool.commonPool();
+        return taskExecutorService();
     }
 
     private class PublicIp {

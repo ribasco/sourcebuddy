@@ -8,7 +8,7 @@
     /* A light grey that is the base color for objects.  Instead of using
      * -fx-base directly, the sections in this file will typically use -fx-color.
      */
-    -fx-base: #d2d2d2;
+    -fx-base: #3C3F41;
 
     /* A very light grey used for the background of windows.  See also
      * -fx-text-background-color, which should be used as the -fx-text-fill
@@ -27,4 +27,18 @@
 
     -fx-focus-color: transparent;
     -fx-faint-focus-color: transparent;
+
+    -sb-control-dark: #2B2B2B;
+    -sb-control-light: #3E4143;
+    -sb-control-darker: #212121;
+
+    -sb-cell-label: #8C8C8C;
+    -sb-cell-label-highlight: #BABABA;
+    -sb-cell-disabled-label: #666666;
+
+    -sb-cell-hover-bg: #3f3f3f;
+    -sb-cell-odd: -sb-control-dark;
+    -sb-cell-even: #262626;
+
+    -sb-cell-selected-highlight: #53BE6B;
 }

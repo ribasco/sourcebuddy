@@ -7,13 +7,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
-@Scope(scopeName = "prototype")
+@Scope("prototype")
 public class UpdateServerDetailsTask extends BaseTask<Void> {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateServerDetailsTask.class);
@@ -22,7 +20,6 @@ public class UpdateServerDetailsTask extends BaseTask<Void> {
 
     private List<ServerDetails> servers;
 
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
     public UpdateServerDetailsTask(List<ServerDetails> serverDetails) {
         if (serverDetails == null)
             throw new IllegalArgumentException("Server list cannot be null");
@@ -48,6 +45,8 @@ public class UpdateServerDetailsTask extends BaseTask<Void> {
             log.debug("No available servers to update. Server list is empty");
             return null;
         }
+
+        //sourceServerService.updateAllServerDetails(servers, createWorkProgressCallback("Server details update",-1));
 
         log.debug("UpdateServerDetailsTask :: Starting batch server details update (Size: {})", servers.size());
         sourceServerService.updateServerDetails(servers, createWorkProgressCallback("Server details update", servers.size()));

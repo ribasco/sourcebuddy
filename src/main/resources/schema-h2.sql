@@ -67,7 +67,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS IDX_UNQ_IPPORT ON SB_SERVER_DETAILS (ip_addres
 
 CREATE TABLE IF NOT EXISTS SB_STEAM_APP_DETAILS
 (
-    details_id           INTEGER PRIMARY KEY AUTO_INCREMENT,
+    /*details_id           INTEGER PRIMARY KEY AUTO_INCREMENT,*/
     app_id               INTEGER NOT NULL,
     name                 TEXT,
     short_description    TEXT,

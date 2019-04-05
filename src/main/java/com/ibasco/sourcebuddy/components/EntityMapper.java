@@ -1,14 +1,13 @@
 package com.ibasco.sourcebuddy.components;
 
+import com.ibasco.agql.protocols.valve.source.query.pojos.SourcePlayer;
 import com.ibasco.agql.protocols.valve.steam.webapi.pojos.SteamSourceServer;
 import com.ibasco.agql.protocols.valve.steam.webapi.pojos.StoreAppDetails;
+import com.ibasco.sourcebuddy.domain.PlayerInfo;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
 import com.ibasco.sourcebuddy.domain.SteamAppDetails;
 import com.ibasco.sourcebuddy.enums.OperatingSystem;
-import com.ibasco.sourcebuddy.service.SteamQueryService;
-import javafx.collections.FXCollections;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.InetSocketAddress;
@@ -18,12 +17,12 @@ import java.util.stream.Collectors;
 @Component
 public class EntityMapper {
 
-    private SteamQueryService steamQueryService;
-
-    public SteamAppDetails convert(StoreAppDetails storeAppDetails) {
+    public SteamAppDetails map(StoreAppDetails storeAppDetails, SteamApp app) {
         if (storeAppDetails == null)
             return null;
         SteamAppDetails appDetails = new SteamAppDetails();
+        if (app != null)
+            appDetails.setSteamApp(app);
         appDetails.setName(storeAppDetails.getName());
         appDetails.setShortDescription(storeAppDetails.getShortDescription());
         appDetails.setDetailedDescription(storeAppDetails.getDetailedDescription());
@@ -32,11 +31,11 @@ public class EntityMapper {
         return appDetails;
     }
 
-    public List<SteamApp> convert(List<com.ibasco.agql.protocols.valve.steam.webapi.pojos.SteamApp> steamApps) {
-        return steamApps.parallelStream().map(SteamApp::new).collect(Collectors.toCollection(FXCollections::observableArrayList));
+    public List<SteamApp> mapSteamAppList(List<com.ibasco.agql.protocols.valve.steam.webapi.pojos.SteamApp> steamApps) {
+        return steamApps.parallelStream().map(SteamApp::new).collect(Collectors.toList());
     }
 
-    public ServerDetails convert(SteamSourceServer server) {
+    public ServerDetails map(SteamSourceServer server) {
         String[] addr = server.getAddr().split(":");
         ServerDetails details = new ServerDetails(new InetSocketAddress(addr[0], Integer.valueOf(addr[1])));
         details.setName(server.getName());
@@ -52,8 +51,16 @@ public class EntityMapper {
         return details;
     }
 
-    @Autowired
-    public void setSteamQueryService(SteamQueryService steamQueryService) {
-        this.steamQueryService = steamQueryService;
+    public PlayerInfo map(SourcePlayer player) {
+        PlayerInfo playerInfo = new PlayerInfo();
+        playerInfo.setName(player.getName());
+        playerInfo.setIndex(player.getIndex());
+        playerInfo.setDuration(player.getDuration());
+        playerInfo.setScore(player.getScore());
+        return playerInfo;
+    }
+
+    public List<PlayerInfo> map(List<SourcePlayer> sourcePlayers) {
+        return sourcePlayers.stream().map(this::map).collect(Collectors.toList());
     }
 }

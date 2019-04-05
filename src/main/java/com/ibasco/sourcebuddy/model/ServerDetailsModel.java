@@ -24,6 +24,10 @@ public class ServerDetailsModel {
 
     public static final Lock READ_LOCK = serverListLock.readLock();
 
+    private BooleanProperty serverListUpdating = new SimpleBooleanProperty();
+
+    private BooleanProperty serverDetailsUpdating = new SimpleBooleanProperty();
+
     private ObjectProperty<TableSelectionModel<ServerDetails>> serverSelectionModel = new SimpleObjectProperty<>();
 
     private ListProperty<ServerDetails> serverDetails = new SimpleListProperty<>(FXCollections.synchronizedObservableList(FXCollections.observableArrayList()));
@@ -35,7 +39,6 @@ public class ServerDetailsModel {
     }
 
     public void setServerDetails(ObservableList<ServerDetails> serverDetails) {
-
         this.serverDetails.set(serverDetails);
     }
 
@@ -65,5 +68,29 @@ public class ServerDetailsModel {
 
     public ObjectProperty<TableSelectionModel<ServerDetails>> serverSelectionModelProperty() {
         return serverSelectionModel;
+    }
+
+    public boolean isServerListUpdating() {
+        return serverListUpdating.get();
+    }
+
+    public BooleanProperty serverListUpdatingProperty() {
+        return serverListUpdating;
+    }
+
+    public void setServerListUpdating(boolean serverListUpdating) {
+        this.serverListUpdating.set(serverListUpdating);
+    }
+
+    public boolean isServerDetailsUpdating() {
+        return serverDetailsUpdating.get();
+    }
+
+    public BooleanProperty serverDetailsUpdatingProperty() {
+        return serverDetailsUpdating;
+    }
+
+    public void setServerDetailsUpdating(boolean serverDetailsUpdating) {
+        this.serverDetailsUpdating.set(serverDetailsUpdating);
     }
 }

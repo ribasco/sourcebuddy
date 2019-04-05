@@ -2,6 +2,7 @@ package com.ibasco.sourcebuddy.service;
 
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
+import com.ibasco.sourcebuddy.util.WorkProgressCallback;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,14 +24,11 @@ class SourceServerQueryServiceIT {
     private SourceServerService sourceServerQueryService;
 
     @Autowired
-    private SteamQueryService steamQueryService;
+    private SteamService steamQueryService;
 
     @Test
     @DisplayName("Test default populate method with an empty list")
     void test01() {
-        int total = steamQueryService.updateSteamAppsRepository().join();
-
-        assertTrue(total > 0);
 
         Optional<SteamApp> steamApp = steamQueryService.findSteamAppById(550);
 
@@ -40,7 +38,12 @@ class SourceServerQueryServiceIT {
 
         List<ServerDetails> serverList = new ArrayList<>();
 
-        int res = sourceServerQueryService.findServerListByApp(serverList, steamApp.get(), true);
+        int res = sourceServerQueryService.findServerListByApp(serverList, steamApp.get(), new WorkProgressCallback<ServerDetails>() {
+            @Override
+            public void onProgress(ServerDetails item, Throwable ex) {
+                log.debug("Server: {}", item);
+            }
+        }).join();
 
         assertTrue(res > 0);
     }

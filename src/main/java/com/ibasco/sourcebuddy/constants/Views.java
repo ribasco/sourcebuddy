@@ -4,6 +4,8 @@ public class Views {
 
     public static final String MAIN = "main";
 
+    public static final String PRELOADER = "preloader";
+
     public static final String DOCK_SERVER_BROWSER = "/docks/dock-server-browser";
 
     public static final String DOCK_PLAYER_BROWSER = "/docks/dock-player-browser";
