@@ -2,14 +2,13 @@ package com.ibasco.sourcebuddy.repository;
 
 import com.ibasco.sourcebuddy.domain.SteamApp;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface SteamAppsRepository extends JpaRepository<SteamApp, Integer> {
+public interface SteamAppsRepository extends CustomRepository<SteamApp, Integer> {
 
     @Modifying
     @Query("update SteamApp a set a.bookmarked = :bookmarkVal where a = :app")

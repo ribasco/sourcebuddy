@@ -25,6 +25,8 @@ public class SteamApp extends AuditableEntity<String> implements Comparable<Stea
 
     private BooleanProperty bookmarked = new SimpleBooleanProperty();
 
+    private BooleanProperty defaultApp = new SimpleBooleanProperty();
+
     private ObjectProperty<SteamAppDetails> appDetails = new SimpleObjectProperty<>();
 
     public SteamApp() {

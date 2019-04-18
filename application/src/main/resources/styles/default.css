@@ -443,24 +443,20 @@
                         TABLE VIEW STUFF
  *************************************************************************/
 .table-view {
-    -fx-background-color: #2B2B2B;
+    -fx-background-color: -sb-control-dark;
 }
 
 .table-view .table-row-cell:odd {
-    -fx-background-color: #2B2B2B;
+    -fx-background-color: -sb-control-dark;
 }
 
-.table-view > .table-row-cell > .highlight-timeout {
-    -fx-background-color: rgba(149, 58, 54, 0.18);
-    /*-fx-text-fill: -fx-background-color;*/
+.table-view .table-row-cell.timeout {
+    -fx-background-color: -sb-status-error-bg-dark;
 }
 
-/*
-
-.highlight-timeout:hover {
-    -fx-background-color: rgba(149, 58, 54, 0.33);
+.table-view .table-row-cell.timeout:hover {
+    -fx-background-color: -sb-status-error-bg-light;
 }
-*/
 
 .table-view .table-row-cell:even {
     -fx-background-color: #262626;
@@ -533,6 +529,13 @@
     -fx-table-cell-border-color: #2B2B2B;
 }
 
+.tree-table-view .tree-table-cell.root-col {
+    /*-fx-background-color: #adff62;*/
+    /*-fx-table-cell-border-color: #2B2B2B;*/
+    -fx-text-fill: -sb-cell-selected-highlight;
+    -fx-font-weight: bold;
+}
+
 .tree-table-view .tree-table-row-cell:odd {
     -fx-background-color: -sb-cell-odd;
 }
@@ -543,6 +546,10 @@
 
 /* Row hovered */
 .tree-table-view:row-selection .tree-table-row-cell:filled:hover {
+    -fx-background-color: #3f3f3f;
+}
+
+.tree-table-view .tree-table-row-cell:selected {
     -fx-background-color: #3f3f3f;
 }
 
@@ -582,6 +589,7 @@
 
 .combo-box .list-cell:hover {
     -fx-background-color: -sb-cell-hover-bg;
+    -fx-text-fill: -sb-cell-selected-highlight;
 }
 
 .combo-box .list-cell:selected {
@@ -611,4 +619,43 @@
     -fx-text-fill: -sb-cell-selected-highlight;
     -fx-prompt-text-fill: -sb-control-prompt;
 
+}
+
+.tb-filter {
+    -fx-background-color: rgba(0, 0, 0, 0.47);
+}
+
+/******************************************************************************
+ *
+ * Notification Pane
+ *
+ *****************************************************************************/
+
+.notification-pane.error .notification-bar > .pane {
+    -fx-background-color: linear-gradient(to bottom, rgba(248, 80, 50, 1) 0%, rgba(241, 111, 92, 0.8) 50%, rgba(246, 41, 12, 0.8) 51%, rgba(240, 47, 23, 0.72) 71%, rgba(231, 56, 39, 0.6) 100%);
+    -fx-effect: dropshadow(three-pass-box, rgba(0, 0, 0, 0.4), 11, 0.0, 0, 3);
+    -fx-text-fill: #ebebeb;
+}
+
+.notification-pane.info .notification-bar > .pane {
+    -fx-background-color: linear-gradient(to bottom, rgba(63, 127, 63, 1) 0%, rgba(83, 190, 107, 0.6) 100%);
+    -fx-text-fill: #ebebeb;
+}
+
+.notification-pane.warning .notification-bar > .pane {
+    -fx-background-color: linear-gradient(to bottom, rgba(252, 234, 187, 1) 0%, rgba(252, 205, 77, 0.9) 50%, rgba(248, 181, 0, 0.9) 51%, rgba(251, 223, 147, 0.8) 100%);
+    -fx-text-fill: #ebebeb;
+}
+
+.lineno {
+    -fx-background-color: -sb-control-darker;
+    -fx-text-fill: -sb-cell-label;
+}
+
+.styled-text-area {
+    -fx-background-color: -sb-control-dark;
+}
+
+.styled-text-area .text {
+    -fx-fill: -sb-cell-label;
 }

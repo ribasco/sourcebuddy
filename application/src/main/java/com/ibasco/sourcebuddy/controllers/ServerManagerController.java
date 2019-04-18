@@ -1,14 +1,19 @@
 package com.ibasco.sourcebuddy.controllers;
 
-import com.ibasco.agql.protocols.valve.source.query.client.SourceRconClient;
-import com.ibasco.agql.protocols.valve.source.query.exceptions.RconNotYetAuthException;
 import com.ibasco.agql.protocols.valve.source.query.logger.SourceLogEntry;
 import com.ibasco.agql.protocols.valve.source.query.logger.SourceLogListenService;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
+import com.ibasco.sourcebuddy.exceptions.NotAuthenticatedException;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.service.RconService;
+import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.TextInputDialog;
 import javafx.stage.Stage;
+import org.controlsfx.control.textfield.CustomTextField;
+import org.controlsfx.control.textfield.TextFields;
+import org.fxmisc.richtext.LineNumberFactory;
+import org.fxmisc.richtext.StyledTextArea;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,21 +27,30 @@ public class ServerManagerController extends BaseController {
 
     private static final Logger log = LoggerFactory.getLogger(ServerManagerController.class);
 
-    private SourceRconClient rconClient;
-
     private ServerDetailsModel serverDetailsModel;
 
     private SourceLogListenService sourceLogListenService;
 
+    private RconService rconService;
+
+    @FXML
+    private StyledTextArea taRconLog;
+
+    @FXML
+    private CustomTextField tfRconCommand;
+
     @Override
     public void initialize(Stage stage, Node rootNode) {
-
+        taRconLog.setParagraphGraphicFactory(LineNumberFactory.get(taRconLog));
+        TextFields.bindAutoCompletion(tfRconCommand, "status", "history", "cvarlist");
     }
 
     private void authenticateRcon() {
-        ServerDetails info = serverDetailsModel.getServerSelectionModel().getSelectedItem();
+        //ServerDetails info = serverDetailsModel.getServerSelectionModel().getSelectedItem();
 
-        if (rconClient.isAuthenticated(info.getAddress())) {
+        ServerDetails info = new ServerDetails();
+
+        if (rconService.isAuthenticated(info.getAddress())) {
             log.warn("Address {} is already authenticated", info.getAddress());
             return;
         }
@@ -49,7 +63,7 @@ public class ServerManagerController extends BaseController {
         Optional<String> password = passDialog.showAndWait();
 
         if (password.isPresent()) {
-            rconClient.authenticate(info.getAddress(), password.get()).whenComplete((status, throwable) -> {
+            rconService.authenticate(info.getAddress(), password.get()).whenComplete((status, throwable) -> {
                 if (throwable != null) {
                     log.error("Problem authenticating with server {}", info.getAddress());
                     return;
@@ -88,12 +102,15 @@ public class ServerManagerController extends BaseController {
     }
 
     private CompletableFuture<String> executeRconCommand(String command) {
-        ServerDetails selectedServer = serverDetailsModel.getServerSelectionModel().getSelectedItem();
+        if (serverDetailsModel.getSelectedServers().isEmpty())
+            return CompletableFuture.completedFuture(null);
+
+        ServerDetails selectedServer = serverDetailsModel.getSelectedServers().get(0);
         if (selectedServer == null)
             return CompletableFuture.failedFuture(new IllegalStateException("No server selected"));
 
         try {
-            return rconClient.execute(selectedServer.getAddress(), command).thenApply(s -> {
+            return rconService.execute(selectedServer.getAddress(), command).thenApply(s -> {
                 /*Platform.runLater(() -> {
                     synchronized (logLock) {
                         taServerLog.appendText(s);
@@ -102,17 +119,12 @@ public class ServerManagerController extends BaseController {
                 rconHistory.push(command);*/
                 return s;
             });
-        } catch (RconNotYetAuthException e) {
+        } catch (NotAuthenticatedException e) {
             //not yet authenticated
             log.error("You are not yet authenticated");
             authenticateRcon();
             return CompletableFuture.failedFuture(e);
         }
-    }
-
-    @Autowired
-    public void setRconClient(SourceRconClient rconClient) {
-        this.rconClient = rconClient;
     }
 
     @Autowired
@@ -123,5 +135,10 @@ public class ServerManagerController extends BaseController {
     @Autowired
     public void setSourceLogListenService(SourceLogListenService sourceLogListenService) {
         this.sourceLogListenService = sourceLogListenService;
+    }
+
+    @Autowired
+    public void setRconService(RconService rconService) {
+        this.rconService = rconService;
     }
 }

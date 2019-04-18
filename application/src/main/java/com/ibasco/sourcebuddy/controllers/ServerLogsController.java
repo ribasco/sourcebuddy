@@ -9,7 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 @Controller
-public class LogsController extends BaseController {
+public class ServerLogsController extends BaseController {
 
     @FXML
     private TextArea taLogs;

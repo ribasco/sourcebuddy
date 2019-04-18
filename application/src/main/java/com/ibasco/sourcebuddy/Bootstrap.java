@@ -1,6 +1,8 @@
 package com.ibasco.sourcebuddy;
 
+import com.ibasco.sourcebuddy.annotations.PreloadOrder;
 import com.ibasco.sourcebuddy.components.SpringHelper;
+import com.ibasco.sourcebuddy.components.ThemeManager;
 import com.ibasco.sourcebuddy.components.ViewManager;
 import com.ibasco.sourcebuddy.constants.Beans;
 import com.ibasco.sourcebuddy.constants.Icons;
@@ -29,9 +31,10 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.net.URL;
-import java.util.Map;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.stream.Collectors;
 
 @SpringBootApplication
 public class Bootstrap extends Application implements ApplicationContextAware {
@@ -46,6 +49,8 @@ public class Bootstrap extends Application implements ApplicationContextAware {
 
     private static SpringHelper springHelper;
 
+    private static ThemeManager themeManager;
+
     private UncaughtExceptionHandler exceptionHandler = new UncaughtExceptionHandler();
 
     /**
@@ -56,13 +61,26 @@ public class Bootstrap extends Application implements ApplicationContextAware {
      */
     void preloadTasks() throws InterruptedException {
         log.info("Checking for preload tasks available");
-        Map<String, PreloadTask> tasks = context.getBeansOfType(PreloadTask.class);
+        List<PreloadTask> tasks = context.getBeansOfType(PreloadTask.class).values().stream().sorted((o1, o2) -> {
+            PreloadOrder o1order = o1.getClass().getAnnotation(PreloadOrder.class);
+            PreloadOrder o2order = o2.getClass().getAnnotation(PreloadOrder.class);
+
+            if (o1order != null && o2order != null) {
+                return Integer.compare(o1order.value(), o2order.value());
+            } else if (o1order != null) {
+                return Integer.compare(o1order.value(), -1);
+            } else if (o2order != null) {
+                return Integer.compare(-1, o2order.value());
+            } else {
+                return -1;
+            }
+        }).collect(Collectors.toList());
 
         log.info("Found {} pre-load tasks", tasks.size());
 
-        for (Map.Entry<String, PreloadTask> task : tasks.entrySet()) {
-            log.info("> Executing pre-load task: {}", task.getKey());
-            executePreloadTaskAndWait(task.getValue());
+        for (PreloadTask task : tasks) {
+            log.info("> Executing pre-load task: {}", task);
+            executePreloadTaskAndWait(task);
         }
     }
 
@@ -115,8 +133,9 @@ public class Bootstrap extends Application implements ApplicationContextAware {
 
         log.debug("Bootstrap :: Initializing primary stage and scene");
         Scene scene = new Scene(rootNode);
+
         URL res = ResourceUtil.loadResource("/styles/default.css");
-        scene.getStylesheets().add(res.toExternalForm());
+        scene.getStylesheets().setAll(res.toExternalForm());
 
         stage.getIcons().add(ResourceUtil.loadIcon(Icons.APP_ICON));
         stage.setTitle(StringUtils.defaultString(getClass().getPackage().getImplementationTitle(), "Source Buddy"));
@@ -130,7 +149,7 @@ public class Bootstrap extends Application implements ApplicationContextAware {
         log.debug("Bootstrap :: Primary stage and scene initialized");
 
         // test the look and feel with both Caspian and Modena
-        Application.setUserAgentStylesheet(Application.STYLESHEET_MODENA);
+        Application.setUserAgentStylesheet(STYLESHEET_MODENA);
         DockPane.initializeDefaultUserAgentStylesheet();
     }
 
@@ -187,6 +206,11 @@ public class Bootstrap extends Application implements ApplicationContextAware {
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         Bootstrap.context = (ConfigurableApplicationContext) applicationContext;
+    }
+
+    @Autowired
+    public void setThemeManager(ThemeManager themeManager) {
+        Bootstrap.themeManager = themeManager;
     }
 }
 

@@ -4,6 +4,7 @@ import com.ibasco.agql.protocols.valve.source.query.pojos.SourceServer;
 import com.ibasco.sourcebuddy.enums.OperatingSystem;
 import com.ibasco.sourcebuddy.enums.ServerStatus;
 import javafx.beans.property.*;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.ObservableMap;
 
@@ -15,39 +16,39 @@ import java.util.Objects;
 @Table(name = ServerDetails.TABLE_NAME)
 public class ServerDetails extends AuditableEntity<String> {
 
-    public static final String TABLE_NAME = "SB_SERVER_DETAILS";
+    static final String TABLE_NAME = "SB_SERVER_DETAILS";
 
-    public static final String SERVER_ID = "server_id";
+    static final String ID = "server_id";
 
-    public static final String STATUS = "status";
+    static final String STATUS = "status";
 
-    public static final String GAME_ID = "game_id";
+    static final String GAME_ID = "game_id";
 
-    public static final String VERSION = "version";
+    static final String VERSION = "version";
 
-    public static final String DESCRIPTION = "description";
+    static final String DESCRIPTION = "description";
 
-    public static final String DIRECTORY = "directory";
+    static final String DIRECTORY = "directory";
 
-    public static final String OS = "os";
+    static final String OS = "os";
 
-    public static final String APP_ID = "app_id";
+    static final String APP_ID = "app_id";
 
-    public static final String TAGS = "tags";
+    static final String TAGS = "tags";
 
-    public static final String IP_ADDRESS = "ip_address";
+    static final String IP_ADDRESS = "ip_address";
 
-    public static final String PORT = "port";
+    static final String PORT = "port";
 
-    public static final String NAME = "name";
+    static final String NAME = "name";
 
-    public static final String BOOKMARKED = "bookmarked";
+    static final String BOOKMARKED = "bookmarked";
 
-    private static final String STEAM_ID = "steam_id";
+    static final String STEAM_ID = "steam_id";
 
-    private static final String DEDICATED = "dedicated";
+    static final String DEDICATED = "dedicated";
 
-    private static final String SECURE = "secure";
+    static final String SECURE = "secure";
 
     private IntegerProperty id = new SimpleIntegerProperty();
 
@@ -65,9 +66,9 @@ public class ServerDetails extends AuditableEntity<String> {
 
     private StringProperty serverTags = new SimpleStringProperty();
 
-    private ListProperty<PlayerInfo> players = new SimpleListProperty<>();
+    private ListProperty<PlayerInfo> players = new SimpleListProperty<>(FXCollections.observableArrayList());
 
-    private MapProperty<String, String> rules = new SimpleMapProperty<>();
+    private MapProperty<String, String> rules = new SimpleMapProperty<>(FXCollections.observableHashMap());
 
     private ObjectProperty<InetSocketAddress> address = new SimpleObjectProperty<>();
 
@@ -98,6 +99,10 @@ public class ServerDetails extends AuditableEntity<String> {
     public ServerDetails() {
     }
 
+    public ServerDetails(String name) {
+        setName(name);
+    }
+
     @PostLoad
     private void onLoad() {
         setAddress(new InetSocketAddress(getIpAddress(), getPort()));
@@ -109,7 +114,7 @@ public class ServerDetails extends AuditableEntity<String> {
         setAddress(address);
     }
 
-    public ServerDetails(String ipAddress, int port) {
+    public ServerDetails(String ipAddress, Integer port) {
         setIpAddress(ipAddress);
         setPort(port);
         setAddress(new InetSocketAddress(ipAddress, port));
@@ -119,8 +124,8 @@ public class ServerDetails extends AuditableEntity<String> {
         setAddress(server.getAddress());
         setName(server.getName());
         setServerTags(server.getServerTags());
-        setPlayerCount(server.getNumOfPlayers());
-        setMaxPlayerCount(server.getMaxPlayers());
+        setPlayerCount((int) server.getNumOfPlayers());
+        setMaxPlayerCount((int) server.getMaxPlayers());
         setMapName(server.getMapName());
         setOperatingSystem(OperatingSystem.valueOf(server.getOperatingSystem()));
         setGameDirectory(server.getGameDirectory());
@@ -129,7 +134,7 @@ public class ServerDetails extends AuditableEntity<String> {
         setGameId(server.getGameId());
     }
 
-    @Column(name = SERVER_ID)
+    @Column(name = ID)
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Integer getId() {
@@ -276,12 +281,12 @@ public class ServerDetails extends AuditableEntity<String> {
     }
 
     @Transient
-    public int getMaxPlayerCount() {
-        return maxPlayerCount.get();
+    public Integer getMaxPlayerCount() {
+        return maxPlayerCount.getValue();
     }
 
-    public void setMaxPlayerCount(int maxPlayerCount) {
-        this.maxPlayerCount.set(maxPlayerCount);
+    public void setMaxPlayerCount(Integer maxPlayerCount) {
+        this.maxPlayerCount.setValue(maxPlayerCount);
     }
 
     public IntegerProperty maxPlayerCountProperty() {
@@ -310,12 +315,12 @@ public class ServerDetails extends AuditableEntity<String> {
     }
 
     @Transient
-    public int getPlayerCount() {
-        return playerCount.get();
+    public Integer getPlayerCount() {
+        return playerCount.getValue();
     }
 
-    public void setPlayerCount(int playerCount) {
-        this.playerCount.set(playerCount);
+    public void setPlayerCount(Integer playerCount) {
+        this.playerCount.setValue(playerCount);
     }
 
     public IntegerProperty playerCountProperty() {
@@ -363,12 +368,12 @@ public class ServerDetails extends AuditableEntity<String> {
     }
 
     @Column(name = PORT)
-    public int getPort() {
-        return port.get();
+    public Integer getPort() {
+        return port.getValue();
     }
 
-    public void setPort(int port) {
-        this.port.set(port);
+    public void setPort(Integer port) {
+        this.port.setValue(port);
     }
 
     @Column(name = STEAM_ID)
@@ -437,6 +442,8 @@ public class ServerDetails extends AuditableEntity<String> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ServerDetails that = (ServerDetails) o;
+        if (getIpAddress() == null || that.getIpAddress() == null)
+            return false;
         return getIpAddress().equals(that.getIpAddress()) && getPort() == that.getPort();
     }
 

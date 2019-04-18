@@ -2,7 +2,6 @@ package com.ibasco.sourcebuddy.gui.tableview.rows;
 
 import javafx.collections.ObservableList;
 import javafx.scene.control.TableRow;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,8 +36,6 @@ public class HighlightRow<T> extends TableRow<T> {
             } else {
                 styleClass.removeAll(Collections.singleton(highlightClass));
             }
-            log.info("{} = {}", item, StringUtils.join(getStyleClass(), ","));
-
         }
     }
 }

@@ -1,17 +1,23 @@
 package com.ibasco.sourcebuddy.domain;
 
-import static com.ibasco.sourcebuddy.domain.GlobalConfig.TABLE_NAME;
+import static com.ibasco.sourcebuddy.domain.ConfigProfile.TABLE_NAME;
 import javafx.beans.property.*;
 
 import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = TABLE_NAME)
-public class GlobalConfig extends AuditableEntity<String> {
+public class ConfigProfile extends AuditableEntity<String> {
 
-    public static final String TABLE_NAME = "SB_CONFIG_GLOBAL";
+    public static final String TABLE_NAME = "SB_CONFIG_PROFILE";
 
-    public static final String ID = "config_id";
+    public static final String ID = "profile_id";
+
+    public static final String NAME = "name";
+
+    public static final String SHOW_GAME_THUMBNAILS = "show_game_thumbnails";
 
     private IntegerProperty id = new SimpleIntegerProperty();
 
@@ -20,6 +26,8 @@ public class GlobalConfig extends AuditableEntity<String> {
     private ObjectProperty<SteamApp> defaultGame = new SimpleObjectProperty<>();
 
     private BooleanProperty showGameThumbnails = new SimpleBooleanProperty();
+
+    private List<ManagedServer> managedServers = new ArrayList<>();
 
     @Id
     @Column(name = ID)
@@ -36,6 +44,7 @@ public class GlobalConfig extends AuditableEntity<String> {
         this.id.set(id);
     }
 
+    @Column(name = NAME, unique = true)
     public String getName() {
         return name.get();
     }
@@ -62,6 +71,7 @@ public class GlobalConfig extends AuditableEntity<String> {
         this.defaultGame.set(defaultGame);
     }
 
+    @Column(name = SHOW_GAME_THUMBNAILS)
     public boolean isShowGameThumbnails() {
         return showGameThumbnails.get();
     }
@@ -72,5 +82,14 @@ public class GlobalConfig extends AuditableEntity<String> {
 
     public void setShowGameThumbnails(boolean showGameThumbnails) {
         this.showGameThumbnails.set(showGameThumbnails);
+    }
+
+    @OneToMany(mappedBy = "profile", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    public List<ManagedServer> getManagedServers() {
+        return managedServers;
+    }
+
+    public void setManagedServers(List<ManagedServer> managedServers) {
+        this.managedServers = managedServers;
     }
 }

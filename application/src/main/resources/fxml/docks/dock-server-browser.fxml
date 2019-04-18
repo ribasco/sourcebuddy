@@ -21,34 +21,22 @@
                                                 <children>
                                                     <ToolBar fx:id="tbServerPanel" prefHeight="40.0" prefWidth="200.0">
                                                         <items>
-                                                            <Label text="Filter:">
-                                                                <padding>
-                                                                    <Insets right="5.0"/>
-                                                                </padding>
-                                                            </Label>
                                                             <TextField prefHeight="32.0" prefWidth="214.0" promptText="Filter" styleClass="sb-text-field"/>
                                                             <CheckComboBox prefHeight="32.0" prefWidth="137.0" title="Tags"/>
+                                                            <CheckComboBox prefHeight="32.0" prefWidth="171.0" title="Country"/>
                                                             <CheckComboBox prefHeight="32.0" prefWidth="156.0" title="Others"/>
-                                                            <Separator orientation="VERTICAL">
-                                                                <padding>
-                                                                    <Insets left="5.0"/>
-                                                                </padding>
-                                                            </Separator>
                                                             <Pane HBox.hgrow="ALWAYS"/>
-                                                            <Label text="Games:">
-                                                                <padding>
-                                                                    <Insets right="5.0"/>
-                                                                </padding>
-                                                            </Label>
                                                             <ProgressComboBox fx:id="cbBookmarkedGames" nodeOrientation="LEFT_TO_RIGHT" prefHeight="32.0" prefWidth="191.0" promptText="Select Game"/>
                                                             <Button fx:id="btnSetDefaultGame" mnemonicParsing="false" prefHeight="32.0" prefWidth="82.0" text="Set Default"/>
+                                                            <Button fx:id="btnAddGame" mnemonicParsing="false" prefHeight="32.0" text="Add Game"/>
+                                                            <Button fx:id="btnAddServer" mnemonicParsing="false" prefHeight="32.0" text="Add Server"/>
                                                             <Button fx:id="btnRefreshServerList" mnemonicParsing="false" prefHeight="32.0" prefWidth="82.0" text="Refresh"/>
                                                         </items>
                                                         <padding>
                                                             <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>
                                                         </padding>
                                                     </ToolBar>
-                                                    <TableView fx:id="serverListTable" VBox.vgrow="ALWAYS">
+                                                    <TableView fx:id="tvServerBrowser" tableMenuButtonVisible="true" VBox.vgrow="ALWAYS">
                                                         <columns>
                                                             <TableColumn prefWidth="284.0" text="Column X"/>
                                                             <TableColumn prefWidth="121.0" text="Column X"/>
@@ -63,7 +51,7 @@
                                 </AnchorPane>
                             </content>
                         </Tab>
-                        <Tab fx:id="tabBookmarks" text="Bookmarks">
+                        <Tab fx:id="tabBookmarks" text="Bookmarked Servers">
                             <content>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                     <children>
@@ -78,17 +66,11 @@
                                 </AnchorPane>
                             </content>
                         </Tab>
-                        <Tab fx:id="tabManagedServers" text="Managed">
+                        <Tab fx:id="tabManagedServers" text="Managed Servers">
                             <content>
                                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
                                     <children>
-                                        <TreeTableView fx:id="ttvManagedServers" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                            <columns>
-                                                <TreeTableColumn prefWidth="229.0" text="Column X"/>
-                                                <TreeTableColumn prefWidth="194.0" text="Column X"/>
-                                                <TreeTableColumn prefWidth="386.0" text="Column X"/>
-                                            </columns>
-                                        </TreeTableView>
+                                        <TreeTableView fx:id="ttvManagedServers" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
                                     </children>
                                 </AnchorPane>
                             </content>

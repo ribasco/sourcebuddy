@@ -89,14 +89,30 @@ public class ViewManager {
         return applicationContext.getBean(cls, viewFragmentName, controllerClass);
     }
 
+    public <T extends Node> T loadDetachedView(String viewName) {
+        FXMLLoader loader = new FXMLLoader();
+        T node;
+        try {
+            loader.setLocation(loadResource(resolveViewPath(viewName)));
+            node = loader.load();
+        } catch (IOException e) {
+            throw new ViewLoadException("Error loading detached view", e);
+        }
+        return node;
+    }
+
     public <T extends FragmentController> T loadViewFragment(String viewName, Class<T> controller) {
         try {
             FXMLLoader loader = new FXMLLoader();
             loader.setLocation(loadResource(resolveViewPath(viewName)));
-            T fragmentController = applicationContext.getBean(controller);
-            loader.setController(fragmentController);
+            T fragmentController = null;
+            if (controller != null) {
+                fragmentController = applicationContext.getBean(controller);
+                loader.setController(fragmentController);
+            }
             Parent node = loader.load();
-            fragmentController.setRootNode(node);
+            if (fragmentController != null)
+                fragmentController.setRootNode(node);
             return fragmentController;
         } catch (IOException e) {
             throw new ViewLoadException("Error loading detached view", e);
@@ -185,7 +201,7 @@ public class ViewManager {
     @SuppressWarnings("unchecked")
     private void initializeAndRemove(BaseController controller, Node node, Stage stage, ObservableValue property, ChangeListener listener) {
         try {
-            controller.initialize(stage, node);
+            controller.preInit(stage, (Parent) node);
             log.debug("ViewManager :: Initialized controller {}", controller.getClass().getSimpleName());
         } catch (Throwable ex) {
             throw new ViewLoadException(String.format("An exception occured during initialization of controller '%s'", controller.getClass().getName()), ex);

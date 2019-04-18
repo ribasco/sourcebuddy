@@ -1,14 +1,14 @@
 package com.ibasco.sourcebuddy.util;
 
+import com.ibasco.sourcebuddy.annotations.BaseComponent;
 import com.ibasco.sourcebuddy.model.PreloadModel;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
+@BaseComponent
 abstract public class PreloadTask extends Task<Void> {
 
     private static final Logger log = LoggerFactory.getLogger(PreloadTask.class);

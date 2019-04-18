@@ -48,16 +48,9 @@ public class SwitchGameTask extends BaseTask<Void> {
         }
 
         if (serverDetails.size() > 0) {
-            //Update model
-            log.debug("Setting server model list to {} entries", serverDetails.size());
+            log.debug("Got {} server entries", serverDetails.size());
             serverDetailsModel.setServerDetails(FXCollections.observableArrayList(serverDetails));
-
-            //log.debug("SwitchGameTask :: updating server details for {} entries", serverDetails.size());
-            //Once we have fetched the server entries, update the details
-            //sourceServerService.updateAllServerDetails(serverDetailsModel.getServerDetails(), null).whenComplete((aVoid, throwable) -> serverDetailsModel.setServerListUpdating(false));
         }
-
-        log.debug("SwitchGameTask :: DONE");
         return null;
     }
 

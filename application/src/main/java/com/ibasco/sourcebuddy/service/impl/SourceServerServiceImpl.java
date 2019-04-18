@@ -9,6 +9,7 @@ import com.ibasco.agql.protocols.valve.steam.master.enums.MasterServerRegion;
 import com.ibasco.agql.protocols.valve.steam.master.enums.MasterServerType;
 import com.ibasco.sourcebuddy.components.EntityMapper;
 import com.ibasco.sourcebuddy.components.GuiHelper;
+import com.ibasco.sourcebuddy.constants.Qualifiers;
 import com.ibasco.sourcebuddy.domain.Country;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
@@ -22,18 +23,19 @@ import com.ibasco.sourcebuddy.service.SteamService;
 import com.ibasco.sourcebuddy.util.ServerDetailsFilter;
 import com.ibasco.sourcebuddy.util.ThreadUtil;
 import com.ibasco.sourcebuddy.util.WorkProgressCallback;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 @Transactional
@@ -58,112 +60,135 @@ public class SourceServerServiceImpl implements SourceServerService {
     private EntityMapper entityMapper;
 
     @Override
-    public CompletableFuture<Void> updateAllServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) throws InterruptedException {
+    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
+    public CompletableFuture<Void> updateAllServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
         if (servers.isEmpty()) {
             log.warn("No available servers to update. Server list is empty");
             return CompletableFuture.completedFuture(null);
         }
 
-        try {
-            log.info("updateAllServerDetails()  :: Starting batch server details update (Size: {})", servers.size());
-            updateServerDetails(servers, callback);
+        List<CompletableFuture<?>> futureList = new ArrayList<>();
 
-            //Update player details (active and non-empty servers only)
-            List<ServerDetails> filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).filter(ServerDetailsFilter::byNonEmptyServers).collect(Collectors.toList());
-            log.info("updateAllServerDetails() :: Starting batch player details update (Size: {})", filteredList.size());
-            updatePlayerDetails(filteredList, callback);
+        log.info("updateAllServerDetails()  :: Starting batch server details update (Size: {})", servers.size());
+        CompletableFuture<?> future = updateServerDetails(servers, callback);
+        futureList.add(future);
+        future.join();
 
-            //Update server rules (active servers only)
-            filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).collect(Collectors.toList());
-            log.info("updateAllServerDetails() :: Starting batch server rules update (Size: {})", filteredList.size());
-            updateServerRules(filteredList, callback);
+        //Update player details (active and non-empty servers only)
+        List<ServerDetails> filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).filter(ServerDetailsFilter::byNonEmptyServers).collect(Collectors.toList());
+        log.info("updateAllServerDetails() :: Starting batch player details update (Size: {})", filteredList.size());
+        future = updatePlayerDetails(filteredList, callback);
+        futureList.add(future);
+        future.join();
 
-            //Save to database
-            if (!servers.isEmpty()) {
-                log.info("updateAllServerDetails() :: Saving {} entries to database", servers.size());
-                saveServerList(servers);
-                log.info("updateAllServerDetails() :: Successfully saved {} entries to database", servers.size());
-            }
-        } catch (Throwable e) {
-            return CompletableFuture.failedFuture(e);
+        //Update server rules (active servers only)
+        filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).collect(Collectors.toList());
+        log.info("updateAllServerDetails() :: Starting batch server rules update (Size: {})", filteredList.size());
+        future = updateServerRules(filteredList, callback);
+        futureList.add(future);
+        future.join();
+
+        //Save to database
+        if (!servers.isEmpty()) {
+            log.info("updateAllServerDetails() :: Saving {} entries to database", servers.size());
+            saveServerList(servers);
+            log.info("updateAllServerDetails() :: Successfully saved {} entries to database", servers.size());
         }
 
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0]));
     }
 
     @Override
-    public void updateServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) throws InterruptedException {
-        log.info("updateServerDetails() :: Running server details update for {} servers", servers.size());
-        CountDownLatch latch = new CountDownLatch(servers.size());
-        servers.parallelStream().forEach(target -> {
-            sourceServerQueryClient.getServerInfo(target.getAddress())
-                    .whenComplete((server, ex) -> {
-                        try {
-                            if (ex == null) {
-                                copySourceServerDetails(target, server);
-                            } else {
-                                if (ex.getCause() instanceof ReadTimeoutException) {
-                                    target.setStatus(ServerStatus.TIMED_OUT);
-                                } else {
-                                    log.debug("updateServerDetails() : ERROR", ex);
-                                    target.setStatus(ServerStatus.ERRORED);
-                                }
-                            }
-                            GuiHelper.invokeIfPresent(callback, target, ex);
-                        } finally {
-                            latch.countDown();
+    public CompletableFuture<Void> updateServerDetails(ServerDetails target) {
+        return sourceServerQueryClient.getServerInfo(target.getAddress())
+                .whenComplete((server, ex) -> {
+                    if (ex != null) {
+                        if (ex.getCause() instanceof ReadTimeoutException) {
+                            target.setStatus(ServerStatus.TIMED_OUT);
+                        } else {
+                            target.setStatus(ServerStatus.onError(ex));
                         }
-                    });
-            ThreadUtil.sleepUninterrupted(5);
-        });
-
-        //Update country details
-        log.info("updateServerEntries() :: Updating country details for new {} server entries", servers.size());
-        servers.forEach(this::updateCountryDetails);
-
-        log.info("updateServerDetails() :: Waiting for completion of server details update");
-        latch.await();
+                        log.debug("Error on server request", ex);
+                    } else {
+                        copySourceServerDetails(target, server);
+                        updateCountryDetails(target);
+                    }
+                }).thenAccept(sourceServer -> {
+                });
     }
 
     @Override
-    public void updatePlayerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(servers.size());
-        log.info("updatePlayerDetails() :: Running player details update for {} active and non-empty servers", servers.size());
+    public CompletableFuture<Void> updatePlayerDetails(ServerDetails target) {
+        return sourceServerQueryClient.getPlayers(target.getAddress())
+                .thenApply(entityMapper::map)
+                .thenApply(FXCollections::observableList)
+                .thenAccept(playerList -> {
+                    if (!Platform.isFxApplicationThread())
+                        Platform.runLater(() -> target.setPlayers(playerList));
+                    else
+                        target.setPlayers(playerList);
+                });
+    }
 
+    @Override
+    public CompletableFuture<Void> updateServerRules(ServerDetails target) {
+        return sourceServerQueryClient.getServerRules(target.getAddress())
+                .thenApply(FXCollections::observableMap)
+                .thenAccept(rulesMap -> {
+                    if (!Platform.isFxApplicationThread())
+                        Platform.runLater(() -> target.setRules(rulesMap));
+                    else
+                        target.setRules(rulesMap);
+                });
+    }
+
+    @Override
+    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
+    public CompletableFuture<Void> updateServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
+        log.info("updateServerDetails() :: Running server details update for {} servers", servers.size());
+        List<CompletableFuture<?>> cfList = Collections.synchronizedList(new ArrayList<>());
         servers.parallelStream().forEach(target -> {
-            sourceServerQueryClient.getPlayers(target.getAddress()).whenComplete((playerList, ex) -> {
-                try {
-                    if (ex == null)
-                        target.setPlayers(FXCollections.observableArrayList(entityMapper.map(playerList)));
-                    GuiHelper.invokeIfPresent(callback, target, ex);
-                } finally {
-                    latch.countDown();
-                }
-            });
-            ThreadUtil.sleepUninterrupted(5);
+            CompletableFuture<?> future = updateServerDetails(target)
+                    .handle((BiFunction<Void, Throwable, Void>) (aVoid, ex) -> {
+                        GuiHelper.invokeIfPresent(callback, target, ex);
+                        return null;
+                    });
+            cfList.add(future);
+            ThreadUtil.sleepUninterrupted(10);
         });
-        log.info("updatePlayerDetails() :: Waiting for completion of server players update");
-        latch.await();
+        return CompletableFuture.allOf(cfList.toArray(new CompletableFuture[0]));
     }
 
     @Override
-    public void updateServerRules(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(servers.size());
-        log.info("updateServerRules() :: Running server rules update for {} active servers", servers.size());
-        servers.parallelStream().forEach(info -> {
-            sourceServerQueryClient.getServerRules(info.getAddress()).whenComplete((rulesMap, ex) -> {
-                try {
-                    if (ex == null)
-                        info.setRules(FXCollections.observableMap(rulesMap));
-                    GuiHelper.invokeIfPresent(callback, info, ex);
-                } finally {
-                    latch.countDown();
-                }
+    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
+    public CompletableFuture<Void> updatePlayerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
+        List<CompletableFuture<?>> cfList = Collections.synchronizedList(new ArrayList<>());
+        log.info("updatePlayerDetails() :: Running player details update for {} active and non-empty servers", servers.size());
+        servers.parallelStream().forEach(target -> {
+            CompletableFuture<?> cf = updatePlayerDetails(target).handle((playerList, ex) -> {
+                GuiHelper.invokeIfPresent(callback, target, ex);
+                return target;
             });
-            ThreadUtil.sleepUninterrupted(5);
+            cfList.add(cf);
+            ThreadUtil.sleepUninterrupted(10);
         });
-        log.info("updateServerRules() :: Waiting for completion of server rulse update");
-        latch.await();
+        return CompletableFuture.allOf(cfList.toArray(new CompletableFuture[0]));
+    }
+
+    @Override
+    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
+    public CompletableFuture<Void> updateServerRules(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
+        List<CompletableFuture<?>> cfList = Collections.synchronizedList(new ArrayList<>());
+        log.info("updateServerRules() :: Running server rules update for {} active servers", servers.size());
+        servers.parallelStream().forEach(target -> {
+            CompletableFuture<?> cf = updateServerRules(target).handle((rulesMap, ex) -> {
+                GuiHelper.invokeIfPresent(callback, target, ex);
+                return target;
+            });
+            cfList.add(cf);
+            ThreadUtil.sleepUninterrupted(10);
+        });
+        return CompletableFuture.allOf(cfList.toArray(new CompletableFuture[0]));
     }
 
     @Override
@@ -199,6 +224,8 @@ public class SourceServerServiceImpl implements SourceServerService {
     }
 
     @Override
+    @Async(Qualifiers.STEAM_EXECUTOR_SERVICE)
+    @Transactional(readOnly = true)
     public CompletableFuture<Integer> findServerListByApp(List<ServerDetails> servers, SteamApp app, WorkProgressCallback<ServerDetails> callback) {
         try {
             if (servers == null)
@@ -282,6 +309,11 @@ public class SourceServerServiceImpl implements SourceServerService {
     }
 
     @Override
+    public List<ServerDetails> findBookmarkedServers(SteamApp app) {
+        return serverDetailsRepository.findBookmarksByApp(app);
+    }
+
+    @Override
     public int updateServerEntrieFromWebApi(SteamApp app, List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
         AtomicInteger added = new AtomicInteger();
 
@@ -294,7 +326,10 @@ public class SourceServerServiceImpl implements SourceServerService {
                 //If the server entry exists, update. Otherwise, add the new entry
                 if (serverInfo.isPresent()) {
                     ServerDetails details = serverInfo.get();
-                    details.setName(server.getName());
+
+                    BeanUtils.copyProperties(server, details, "id");
+
+                    /*details.setName(server.getName());
                     details.setGameDirectory(server.getGameDirectory());
                     details.setVersion(server.getVersion());
                     details.setPlayerCount(server.getPlayerCount());
@@ -303,7 +338,7 @@ public class SourceServerServiceImpl implements SourceServerService {
                     details.setSecure(server.isSecure());
                     details.setDedicated(server.isDedicated());
                     details.setOperatingSystem(server.getOperatingSystem());
-                    details.setSteamId(server.getSteamId());
+                    details.setSteamId(server.getSteamId());*/
                 } else {
                     //Set steam app
                     server.setSteamApp(app);
@@ -349,11 +384,11 @@ public class SourceServerServiceImpl implements SourceServerService {
     }
 
     //TODO: Move to util class
-    private void copySourceServerDetails(ServerDetails target, SourceServer source) {
+    private ServerDetails copySourceServerDetails(ServerDetails target, SourceServer source) {
         target.setName(source.getName());
         target.setServerTags(source.getServerTags());
-        target.setPlayerCount(source.getNumOfPlayers());
-        target.setMaxPlayerCount(source.getMaxPlayers());
+        target.setPlayerCount((int) source.getNumOfPlayers());
+        target.setMaxPlayerCount((int) source.getMaxPlayers());
         target.setGameDirectory(source.getGameDirectory());
         target.setDescription(source.getGameDescription());
         target.setGameId(source.getGameId());
@@ -364,6 +399,8 @@ public class SourceServerServiceImpl implements SourceServerService {
         target.setOperatingSystem(OperatingSystem.valueOf(source.getOperatingSystem()));
         target.setVersion(source.getGameVersion());
         target.setStatus(ServerStatus.ACTIVE);
+
+        return target;
     }
 
     @Autowired

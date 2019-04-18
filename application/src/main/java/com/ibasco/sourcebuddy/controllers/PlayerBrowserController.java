@@ -33,7 +33,8 @@ public class PlayerBrowserController extends BaseController {
     public void initialize(Stage stage, Node rootNode) {
         setupPlayerInfoTable();
         setupContextMenu();
-        serverDetailsModel.getServerSelectionModel().selectedItemProperty().addListener(this::updatePlayerTableOnSelection);
+
+        //serverDetailsModel.getServerSelectionModel().selectedItemProperty().addListener(this::updatePlayerTableOnSelection);
     }
 
     private void setupPlayerInfoTable() {
@@ -52,6 +53,21 @@ public class PlayerBrowserController extends BaseController {
         //noinspection unchecked
         tvPlayerTable.getColumns().addAll(indexCol, nameCol, scoreCol, durationCol);
         tvPlayerTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        serverDetailsModel.selectedServerProperty().addListener(this::updatePlayerListOnSelection);
+    }
+
+    private void updatePlayerListOnSelection(ObservableValue<? extends ServerDetails> observableValue, ServerDetails oldValue, ServerDetails newValue) {
+        if (oldValue != null && oldValue.playersProperty().isBound()) {
+            oldValue.playersProperty().unbind();
+        }
+        if (newValue != null) {
+            tvPlayerTable.itemsProperty().bind(newValue.playersProperty());
+            tvPlayerTable.refresh();
+        } else {
+            tvPlayerTable.itemsProperty().unbind();
+            tvPlayerTable.setItems(null);
+        }
     }
 
     private void setupContextMenu() {

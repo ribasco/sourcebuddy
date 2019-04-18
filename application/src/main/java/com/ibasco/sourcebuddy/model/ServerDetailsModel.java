@@ -1,16 +1,20 @@
 package com.ibasco.sourcebuddy.model;
 
+import com.ibasco.sourcebuddy.domain.ConfigProfile;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
+import com.ibasco.sourcebuddy.service.ConfigService;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.TableSelectionModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Component
@@ -20,26 +24,54 @@ public class ServerDetailsModel {
 
     private static final ReadWriteLock serverListLock = new ReentrantReadWriteLock();
 
+    private static final ReentrantLock lock = new ReentrantLock();
+
     public static final Lock WRITE_LOCK = serverListLock.writeLock();
 
     public static final Lock READ_LOCK = serverListLock.readLock();
+
+    private ConfigService configService;
+
+    private ObjectProperty<ConfigProfile> activeProfile = new SimpleObjectProperty<>();
 
     private BooleanProperty serverListUpdating = new SimpleBooleanProperty();
 
     private BooleanProperty serverDetailsUpdating = new SimpleBooleanProperty();
 
-    private ObjectProperty<TableSelectionModel<ServerDetails>> serverSelectionModel = new SimpleObjectProperty<>();
+    private ListProperty<ServerDetails> selectedServers = new SimpleListProperty<>(FXCollections.observableArrayList());
+
+    private ObjectProperty<ServerDetails> selectedServer = new SimpleObjectProperty<>();
 
     private ListProperty<ServerDetails> serverDetails = new SimpleListProperty<>(FXCollections.synchronizedObservableList(FXCollections.observableArrayList()));
 
     private StringProperty statusMessage = new SimpleStringProperty();
+
+    private ObjectProperty<TreeDataModel<ServerDetails>> managedServers = new SimpleObjectProperty<>();
+
+    @PostConstruct
+    void init() {
+        ConfigProfile defaultProfile = configService.getDefaultProfile();
+        if (defaultProfile == null) {
+            log.debug("No default profile assigned. Creating new default profile");
+            defaultProfile = configService.saveProfile(configService.createProfile());
+            configService.setDefaultProfile(defaultProfile);
+            log.debug("Saved default profile: {}", defaultProfile);
+        }
+        log.debug("Setting active profile: {}", defaultProfile);
+        setActiveProfile(defaultProfile);
+    }
 
     public ObservableList<ServerDetails> getServerDetails() {
         return serverDetails.get();
     }
 
     public void setServerDetails(ObservableList<ServerDetails> serverDetails) {
-        this.serverDetails.set(serverDetails);
+        try {
+            WRITE_LOCK.lock();
+            this.serverDetails.set(serverDetails);
+        } finally {
+            WRITE_LOCK.unlock();
+        }
     }
 
     public ListProperty<ServerDetails> serverDetailsProperty() {
@@ -56,18 +88,6 @@ public class ServerDetailsModel {
 
     public StringProperty statusMessageProperty() {
         return statusMessage;
-    }
-
-    public TableSelectionModel<ServerDetails> getServerSelectionModel() {
-        return serverSelectionModel.get();
-    }
-
-    public void setServerSelectionModel(TableSelectionModel<ServerDetails> serverSelectionModel) {
-        this.serverSelectionModel.set(serverSelectionModel);
-    }
-
-    public ObjectProperty<TableSelectionModel<ServerDetails>> serverSelectionModelProperty() {
-        return serverSelectionModel;
     }
 
     public boolean isServerListUpdating() {
@@ -92,5 +112,58 @@ public class ServerDetailsModel {
 
     public void setServerDetailsUpdating(boolean serverDetailsUpdating) {
         this.serverDetailsUpdating.set(serverDetailsUpdating);
+    }
+
+    public ObservableList<ServerDetails> getSelectedServers() {
+        return selectedServers.get();
+    }
+
+    public ListProperty<ServerDetails> selectedServersProperty() {
+        return selectedServers;
+    }
+
+    public void setSelectedServers(ObservableList<ServerDetails> selectedServers) {
+        this.selectedServers.set(selectedServers);
+    }
+
+    public ServerDetails getSelectedServer() {
+        return selectedServer.get();
+    }
+
+    public ObjectProperty<ServerDetails> selectedServerProperty() {
+        return selectedServer;
+    }
+
+    public void setSelectedServer(ServerDetails selectedServer) {
+        this.selectedServer.set(selectedServer);
+    }
+
+    public TreeDataModel<ServerDetails> getManagedServers() {
+        return managedServers.get();
+    }
+
+    public ObjectProperty<TreeDataModel<ServerDetails>> managedServersProperty() {
+        return managedServers;
+    }
+
+    public void setManagedServers(TreeDataModel<ServerDetails> managedServers) {
+        this.managedServers.set(managedServers);
+    }
+
+    public ConfigProfile getActiveProfile() {
+        return activeProfile.get();
+    }
+
+    public ObjectProperty<ConfigProfile> activeProfileProperty() {
+        return activeProfile;
+    }
+
+    public void setActiveProfile(ConfigProfile activeProfile) {
+        this.activeProfile.set(activeProfile);
+    }
+
+    @Autowired
+    void setConfigService(ConfigService configService) {
+        this.configService = configService;
     }
 }

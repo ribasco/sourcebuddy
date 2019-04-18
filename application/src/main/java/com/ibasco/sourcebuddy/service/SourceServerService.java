@@ -18,8 +18,23 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface SourceServerService {
 
-    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
-    CompletableFuture<Void> updateAllServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) throws InterruptedException;
+    /**
+     * Update all server details (info, players and rules)
+     *
+     * @param servers
+     *         The list of servers to update. If empty, the method will return immediately.
+     * @param callback
+     *         The callback for progress updates
+     *
+     * @return The future isntance of the task
+     */
+    CompletableFuture<Void> updateAllServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
+
+    CompletableFuture<Void> updateServerDetails(ServerDetails servers);
+
+    CompletableFuture<Void> updatePlayerDetails(ServerDetails servers);
+
+    CompletableFuture<Void> updateServerRules(ServerDetails servers);
 
     /**
      * Performs an asynchronous server info query on the list of provided servers. Note: This method will block until all queries have finished processing.
@@ -28,11 +43,8 @@ public interface SourceServerService {
      *         The list of servers to query on
      * @param callback
      *         The callback for progress updates
-     *
-     * @throws InterruptedException
-     *         thrown when the operation has been interrupted by an external process (e.g. task cancellation)
      */
-    void updateServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) throws InterruptedException;
+    CompletableFuture<Void> updateServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
     /**
      * Performs an asynchronous player query on the list of provided servers. Note: This method will block until all queries have finished processing
@@ -41,11 +53,8 @@ public interface SourceServerService {
      *         The list of servers to query on
      * @param callback
      *         The callback for progress updates
-     *
-     * @throws InterruptedException
-     *         thrown when the operation has been interrupted by an external process (e.g. task cancellation)
      */
-    void updatePlayerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) throws InterruptedException;
+    CompletableFuture<Void> updatePlayerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
     /**
      * Performs an asynchronous server rules query on the list of provided servers. Note: This method will block until all queries have finished processing
@@ -54,11 +63,8 @@ public interface SourceServerService {
      *         The list of servers to query on
      * @param callback
      *         The callback for progress updates
-     *
-     * @throws InterruptedException
-     *         thrown when the operation has been interrupted by an external process (e.g. task cancellation)
      */
-    void updateServerRules(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) throws InterruptedException;
+    CompletableFuture<Void> updateServerRules(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
     /**
      * Updates the country information of a single server.
@@ -111,8 +117,6 @@ public interface SourceServerService {
      *
      * @return The number of new servers added to the list
      */
-    @Async(Qualifiers.STEAM_EXECUTOR_SERVICE)
-    @Transactional(readOnly = true)
     CompletableFuture<Integer> findServerListByApp(List<ServerDetails> servers, SteamApp app, WorkProgressCallback<ServerDetails> callback);
 
     /**
@@ -144,6 +148,8 @@ public interface SourceServerService {
     void updateBookmarkFlag(ServerDetails server, boolean value);
 
     List<ServerDetails> findBookmarkedServers();
+
+    List<ServerDetails> findBookmarkedServers(SteamApp app);
 
     int updateServerEntrieFromWebApi(SteamApp app, List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 

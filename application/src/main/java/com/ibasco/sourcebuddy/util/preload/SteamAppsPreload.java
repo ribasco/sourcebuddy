@@ -1,14 +1,14 @@
 package com.ibasco.sourcebuddy.util.preload;
 
+import com.ibasco.sourcebuddy.annotations.PreloadOrder;
 import com.ibasco.sourcebuddy.model.SteamGamesModel;
 import com.ibasco.sourcebuddy.service.SteamService;
 import com.ibasco.sourcebuddy.util.PreloadTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
+@PreloadOrder(1)
 public class SteamAppsPreload extends PreloadTask {
 
     private static final Logger log = LoggerFactory.getLogger(SteamAppsPreload.class);

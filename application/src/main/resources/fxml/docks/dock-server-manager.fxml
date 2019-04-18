@@ -1,13 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.control.TextArea?>
+
 <?import javafx.scene.layout.*?>
-<AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.ServerManagerController">
+<?import org.controlsfx.control.textfield.CustomTextField?>
+<?import org.fxmisc.richtext.StyleClassedTextArea?>
+<VBox xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.ServerManagerController">
     <children>
-        <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+        <AnchorPane VBox.vgrow="ALWAYS">
             <children>
-                <TextArea prefHeight="200.0" prefWidth="200.0"/>
+                <VBox layoutX="2.0" layoutY="2.0" prefWidth="579.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <children>
+                        <StyleClassedTextArea fx:id="taRconLog" editable="false" VBox.vgrow="ALWAYS"/>
+                        <CustomTextField fx:id="tfRconCommand"/>
+                    </children>
+                </VBox>
             </children>
-        </VBox>
+        </AnchorPane>
     </children>
-</AnchorPane>
+</VBox>

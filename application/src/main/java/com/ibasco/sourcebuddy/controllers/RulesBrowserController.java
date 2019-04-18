@@ -4,6 +4,8 @@ import com.ibasco.sourcebuddy.components.GuiHelper;
 import com.ibasco.sourcebuddy.domain.KeyValueInfo;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.ObjectBinding;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -17,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 public class RulesBrowserController extends BaseController {
@@ -31,7 +34,26 @@ public class RulesBrowserController extends BaseController {
     @Override
     public void initialize(Stage stage, Node rootNode) {
         GuiHelper.setupKeyValueTable(tvRulesTable);
-        serverDetailsModel.getServerSelectionModel().selectedItemProperty().addListener(this::updateRulesSelection);
+        serverDetailsModel.selectedServerProperty().addListener(this::updateOnSelection);
+    }
+
+    private void updateOnSelection(ObservableValue<? extends ServerDetails> observableValue, ServerDetails oldValue, ServerDetails newValue) {
+        if (oldValue != null && oldValue.rulesProperty().isBound()) {
+            oldValue.rulesProperty().unbind();
+        }
+        if (newValue != null) {
+            ObjectBinding<ObservableList<KeyValueInfo>> ob = Bindings.createObjectBinding(() -> {
+                if (newValue.getRules() != null) {
+                    return newValue.getRules().entrySet().stream().map(e -> new KeyValueInfo(e.getKey(), e.getValue())).collect(Collectors.toCollection(FXCollections::observableArrayList));
+                }
+                return FXCollections.observableArrayList();
+            }, newValue.rulesProperty());
+            tvRulesTable.itemsProperty().bind(ob);
+            tvRulesTable.refresh();
+        } else {
+            tvRulesTable.itemsProperty().unbind();
+            tvRulesTable.setItems(null);
+        }
     }
 
     private void updateRulesSelection(ObservableValue observableValue, ServerDetails oldValue, ServerDetails newValue) {

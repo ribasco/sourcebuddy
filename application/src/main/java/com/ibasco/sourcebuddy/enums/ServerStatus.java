@@ -12,16 +12,33 @@ public enum ServerStatus {
 
     private String description;
 
+    private Throwable exception;
+
     ServerStatus(int status, String description) {
+        this(status, description, null);
+    }
+
+    ServerStatus(int status, String description, Throwable exception) {
         this.status = status;
         this.description = description;
+        this.exception = exception;
     }
 
     public String getDescription() {
         return description;
     }
 
+    public Throwable getException() {
+        return exception;
+    }
+
     public int getStatus() {
+        return status;
+    }
+
+    public static ServerStatus onError(Throwable ex) {
+        ServerStatus status = ServerStatus.ERRORED;
+        status.exception = ex;
         return status;
     }
 }

@@ -1,6 +1,9 @@
 package com.ibasco.sourcebuddy.components;
 
 import com.ibasco.sourcebuddy.domain.KeyValueInfo;
+import com.ibasco.sourcebuddy.gui.cells.DecoratedTableCell;
+import com.ibasco.sourcebuddy.gui.cells.DecoratedTreeTableCell;
+import com.ibasco.sourcebuddy.gui.decorators.CellDecorator;
 import com.ibasco.sourcebuddy.service.AppService;
 import com.ibasco.sourcebuddy.util.Delta;
 import com.ibasco.sourcebuddy.util.WorkProgressCallback;
@@ -13,12 +16,16 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TreeItemPropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import org.apache.commons.lang3.StringUtils;
 import org.controlsfx.control.MasterDetailPane;
+import org.controlsfx.control.NotificationPane;
 import org.dockfx.DockNode;
 import org.dockfx.DockTitleBar;
 import org.slf4j.Logger;
@@ -37,6 +44,16 @@ public class GuiHelper {
     private static final Logger log = LoggerFactory.getLogger(GuiHelper.class);
 
     private AppService appService;
+
+    private ViewManager viewManager;
+
+    public Parent getLoadingPlaceholder(String message) {
+        VBox placeholderView = viewManager.loadDetachedView("/fragments/placeholder");
+        Label lbl = findNode(placeholderView, Label.class);
+        if (lbl != null)
+            lbl.setText(message);
+        return placeholderView;
+    }
 
     @SuppressWarnings("Duplicates")
     public static void moveStageOnDrag(Scene scene) {
@@ -86,6 +103,28 @@ public class GuiHelper {
         tableView.getColumns().addAll(nameCol, valueCol);
     }
 
+    public static <S, T> TreeTableColumn<S, T> createBasicTreeColumn(TreeTableView<S> treeTableView, String label, String propertyName) {
+        return createBasicTreeColumn(treeTableView, label, propertyName, null, null);
+    }
+
+    public static <S, T> TreeTableColumn<S, T> createBasicTreeColumn(TreeTableView<S> treeTableView, String label, String propertyName, Callback<TreeTableColumn<S, T>, TreeTableCell<S, T>> cellFactory) {
+        return createBasicTreeColumn(treeTableView, label, propertyName, null, cellFactory);
+    }
+
+    public static <S, T> TreeTableColumn<S, T> createBasicTreeColumn(TreeTableView<S> treeTableView, String label, String propertyName, Callback<TreeTableColumn.CellDataFeatures<S, T>, ObservableValue<T>> cellValueFactory, Callback<TreeTableColumn<S, T>, TreeTableCell<S, T>> cellFactory) {
+        TreeTableColumn<S, T> column = new TreeTableColumn<>(label);
+        if (cellValueFactory != null) {
+            column.setCellValueFactory(cellValueFactory);
+        } else {
+            if (!StringUtils.isBlank(propertyName))
+                column.setCellValueFactory(new TreeItemPropertyValueFactory<>(propertyName));
+        }
+        if (cellFactory != null)
+            column.setCellFactory(cellFactory);
+        treeTableView.getColumns().add(column);
+        return column;
+    }
+
     public static <A, B> TableColumn<A, B> createBasicColumn(TableView<A> table, String label, String propertyName) {
         return createBasicColumn(table, label, propertyName, true);
     }
@@ -118,6 +157,26 @@ public class GuiHelper {
         return column;
     }
 
+    public static <T, U> TreeTableCell<T, U> createTreeTableCell(BiConsumer<U, TreeTableCell<T, U>> callback) {
+        return new TreeTableCell<>() {
+            @Override
+            protected void updateItem(U item, boolean empty) {
+                super.updateItem(item, empty);
+                if (item == null || empty) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle(null);
+                } else {
+                    callback.accept(item, this);
+                }
+            }
+        };
+    }
+
+    public static <S, T> TreeTableCell<S, T> createDecoratedTreeTableCell(CellDecorator<S, T> decorator) {
+        return new DecoratedTreeTableCell<>(decorator);
+    }
+
     public static <T, U> TableCell<T, U> createTableCell(BiConsumer<U, TableCell<T, U>> callback) {
         return new TableCell<>() {
             @Override
@@ -132,6 +191,10 @@ public class GuiHelper {
                 }
             }
         };
+    }
+
+    public static <T, U> TableCell<T, U> createDecoratedTableCell(CellDecorator<T, U> decorator) {
+        return new DecoratedTableCell<>(decorator);
     }
 
     public static <T> int mergeList(final List<T> source, List<T> target) {
@@ -198,12 +261,17 @@ public class GuiHelper {
                 callback.accept(child);
             }
             if (find != null) {
-                if (child.getClass().isAssignableFrom(find))
+                if (child.getClass().isAssignableFrom(find)) {
                     //noinspection unchecked
                     return (T) child;
+                }
             }
             if (child instanceof Parent) {
-                findNode((Parent) child, find, level + 1, callback);
+                Node found = (Node) findNode((Parent) child, find, level + 1, callback);
+                if (found != null) {
+                    //noinspection unchecked
+                    return (T) found;
+                }
             }
         }
         return null;
@@ -280,8 +348,24 @@ public class GuiHelper {
         tbParent.getChildren().remove(toolBar);
     }
 
+    public static NotificationPane findNotificationPane(Parent parent) {
+        for (Node node : parent.getChildrenUnmodifiable()) {
+            //log.debug("\t> findNotificationPane() :: Processing node: {}", node);
+            if (node instanceof NotificationPane)
+                return (NotificationPane) node;
+            if (node instanceof Parent)
+                findNotificationPane((Parent) node);
+        }
+        return null;
+    }
+
     @Autowired
     public void setAppService(AppService appService) {
         this.appService = appService;
+    }
+
+    @Autowired
+    public void setViewManager(ViewManager viewManager) {
+        this.viewManager = viewManager;
     }
 }

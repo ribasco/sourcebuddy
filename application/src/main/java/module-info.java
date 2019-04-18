@@ -1,6 +1,8 @@
 module sourcebuddy.app {
     exports com.ibasco.sourcebuddy;
     exports com.ibasco.sourcebuddy.events;
+    exports com.ibasco.sourcebuddy.repository;
+    exports com.ibasco.sourcebuddy.exceptions;
     exports com.ibasco.sourcebuddy.util.dialect to org.hibernate.orm.core;
     exports com.ibasco.sourcebuddy.domain to spring.beans, org.apache.commons.lang3, spring.data.commons;
     exports com.ibasco.sourcebuddy.service to spring.core, spring.beans, spring.aop;
@@ -10,14 +12,17 @@ module sourcebuddy.app {
     exports com.ibasco.sourcebuddy.enums to spring.data.jpa, spring.beans, spring.core;
     exports com.ibasco.sourcebuddy.service.impl to spring.beans, spring.core;
     exports com.ibasco.sourcebuddy.tasks to spring.beans, spring.core;
-    exports com.ibasco.sourcebuddy.data.converters to org.hibernate.orm.core;
-    exports com.ibasco.sourcebuddy.data.types to org.hibernate.orm.core;
     exports com.ibasco.sourcebuddy.controllers to spring.context, spring.core, spring.beans;
     exports com.ibasco.sourcebuddy.util.preload to spring.beans, spring.context;
     exports com.ibasco.sourcebuddy.gui.tableview.cells to spring.beans, spring.context;
-    exports com.ibasco.sourcebuddy.util.factory to spring.beans, spring.context;
+    exports com.ibasco.sourcebuddy.gui.tableview.factory to spring.beans, spring.context;
+    exports com.ibasco.sourcebuddy.gui.treetableview.cells to spring.beans, spring.context;
+    exports com.ibasco.sourcebuddy.gui.treetableview.factory to spring.beans, spring.context;
+    exports com.ibasco.sourcebuddy.gui.decorators to spring.beans, spring.context;
     exports com.ibasco.sourcebuddy.controllers.fragments to spring.beans, spring.context;
-
+    exports com.ibasco.sourcebuddy.repository.impl to spring.beans, spring.context, spring.data.commons;
+    
+    opens com.ibasco.sourcebuddy.repository.impl to spring.core;
     opens com.ibasco.sourcebuddy to spring.core;
     opens com.ibasco.sourcebuddy.config to spring.core, spring.beans, spring.context;
     opens com.ibasco.sourcebuddy.controllers to javafx.fxml, spring.beans, spring.core;
@@ -29,7 +34,10 @@ module sourcebuddy.app {
     opens com.ibasco.sourcebuddy.util to spring.core, spring.beans;
     opens com.ibasco.sourcebuddy.controllers.fragments to javafx.fxml;
     opens com.ibasco.sourcebuddy.gui.tableview.cells to spring.core, spring.beans;
+    opens com.ibasco.sourcebuddy.model to spring.beans, spring.core, spring.context;
+    opens com.ibasco.sourcebuddy.util.preload to spring.core;
 
+    requires org.apache.commons.text;
     requires sourcebuddy.controls;
     requires java.net.http;
     requires com.jfoenix;
@@ -70,5 +78,6 @@ module sourcebuddy.app {
     requires spring.data.commons;
     requires spring.core;
     requires jdk.internal.opt;
+    requires richtextfx;
     //requires dockfx;
 }

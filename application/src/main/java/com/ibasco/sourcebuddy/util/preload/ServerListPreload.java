@@ -1,9 +1,9 @@
 package com.ibasco.sourcebuddy.util.preload;
 
+import com.ibasco.sourcebuddy.annotations.PreloadOrder;
 import com.ibasco.sourcebuddy.util.PreloadTask;
-import org.springframework.stereotype.Component;
 
-@Component
+@PreloadOrder(2)
 public class ServerListPreload extends PreloadTask {
 
     @Override

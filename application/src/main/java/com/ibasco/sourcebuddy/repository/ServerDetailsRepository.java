@@ -14,6 +14,13 @@ import java.util.UUID;
 @Repository
 public interface ServerDetailsRepository extends JpaRepository<ServerDetails, UUID> {
 
+    default ServerDetails findByAddress(InetSocketAddress address) {
+        return findByAddress(address.getAddress().getHostAddress(), address.getPort());
+    }
+
+    @Query("select a from ServerDetails  a where a.ipAddress = :addr and a.port = :port")
+    ServerDetails findByAddress(@Param("addr") String ipAddress, @Param("port") int port);
+
     @Query("select a from ServerDetails a where a.steamApp = :steamApp")
     List<ServerDetails> findBySteamApp(@Param("steamApp") SteamApp steamApp);
 

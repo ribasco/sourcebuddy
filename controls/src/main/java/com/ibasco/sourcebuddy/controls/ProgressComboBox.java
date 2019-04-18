@@ -51,7 +51,7 @@ public class ProgressComboBox<T> extends ComboBox<T> {
         @Override
         protected void invalidated() {
             progressIndicator.setVisible(get());
-            setDisable(get());
+            //setDisable(get());
             if (get()) {
                 setButtonCell(buttonCell);
             } else

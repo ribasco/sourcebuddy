@@ -32,6 +32,12 @@
     -sb-control-light: #3E4143;
     -sb-control-darker: #212121;
 
+    -sb-status-error-fg-light: rgba(255, 49, 51, 0.75);
+    -sb-status-error-fg-dark: rgba(155, 32, 33, 0.75);
+
+    -sb-status-error-bg-light: rgba(149, 58, 54, 0.33);
+    -sb-status-error-bg-dark: rgba(149, 58, 54, 0.18);
+
     -sb-cell-label: #8C8C8C;
     -sb-cell-label-highlight: #BABABA;
     -sb-cell-disabled-label: #666666;
@@ -41,5 +47,5 @@
     -sb-cell-even: #262626;
 
     -sb-cell-selected-highlight: #53BE6B;
-    -sb-control-prompt: rgba(80, 175, 95, 0.86);
+    -sb-control-prompt: rgba(63, 127, 63, 0.86);
 }

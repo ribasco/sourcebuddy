@@ -2,10 +2,12 @@ package com.ibasco.sourcebuddy.components;
 
 import com.ibasco.sourcebuddy.constants.Qualifiers;
 import com.ibasco.sourcebuddy.tasks.BaseTask;
+import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.Property;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.concurrent.Task;
 import javafx.concurrent.Worker;
 import org.slf4j.Logger;
@@ -14,25 +16,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 @Component
-public class TaskManager implements Closeable {
+public class TaskManager {
 
     private static final Logger log = LoggerFactory.getLogger(TaskManager.class);
 
-    private ObservableList<Task<?>> taskList = FXCollections.observableArrayList();
+    private ObservableMap<Task<?>, CompletableFuture<?>> taskMap = FXCollections.observableHashMap();
 
-    private Map<Task<?>, CompletableFuture<Void>> taskMap = new HashMap<>();
+    private IntegerProperty runningTasks = new SimpleIntegerProperty();
 
     private ThreadPoolExecutor executorService;
 
@@ -43,13 +38,13 @@ public class TaskManager implements Closeable {
         this.executorService = (ThreadPoolExecutor) executorService;
     }
 
-    public <T extends Task<?>> CompletableFuture<Void> runTask(Class<T> taskClass, Object... args) {
+    public <T extends Task<U>, U> CompletableFuture<U> run(Class<T> taskClass, Object... args) {
         if (taskClass == null)
             throw new IllegalArgumentException("Task class cannot be null");
         T task = springHelper.getBean(taskClass, args);
         if (task == null)
             throw new IllegalStateException("Could not locate task: " + taskClass.getSimpleName());
-        CompletableFuture<Void> cf = new CompletableFuture<>();
+        CompletableFuture<U> cf = new CompletableFuture<>();
         taskMap.put(task, cf);
         attachTaskMonitor(task);
         executorService.execute(task);
@@ -57,27 +52,12 @@ public class TaskManager implements Closeable {
         return cf;
     }
 
-    @Deprecated
-    public <T extends Task<?>> T executeTask(Class<T> taskClass, Object... args) {
-        if (taskClass == null)
-            throw new IllegalArgumentException("Task class cannot be null");
-        T task = springHelper.getBean(taskClass, args);
-        if (task == null)
-            throw new IllegalStateException("Could not locate task: " + taskClass.getSimpleName());
-        executeTask(task);
-        return task;
+    public <T extends Task<?>> boolean isRunning(Class<T> taskClass) {
+        return taskMap.entrySet().stream().anyMatch(p -> p.getKey().getClass().equals(taskClass) && !p.getKey().isDone());
     }
 
-    @Deprecated
-    public void executeTask(Task<?> task) {
-        if (task == null)
-            throw new IllegalArgumentException("Task cannot be null");
-        if (taskList.contains(task))
-            throw new IllegalStateException("Task is already on the list: " + task);
-        attachTaskMonitor(task);
-        executorService.execute(task);
-        taskList.add(task);
-        log.debug("executeTask() :: Submitted task '{}' on pool (Active: {}, Max Pool Size: {})", task.getClass().getSimpleName(), executorService.getActiveCount(), executorService.getMaximumPoolSize());
+    public ObservableMap<Task<?>, CompletableFuture<?>> getTaskMap() {
+        return taskMap;
     }
 
     private void attachTaskMonitor(Task<?> task) {
@@ -86,14 +66,6 @@ public class TaskManager implements Closeable {
 
     private void detachTaskMonitor(Task<?> task) {
         task.stateProperty().removeListener(this::taskListener);
-    }
-
-    public List<Task> getRunningTasks() {
-        return taskList.stream().filter(p -> p.getState().equals(Worker.State.RUNNING)).collect(Collectors.toList());
-    }
-
-    public long getRunningTasksCount() {
-        return taskList.stream().filter(p -> p.getState().equals(Worker.State.RUNNING)).count();
     }
 
     private void taskListener(ObservableValue<? extends Worker.State> stateProperty, Worker.State oldState, Worker.State newState) {
@@ -110,43 +82,50 @@ public class TaskManager implements Closeable {
                 break;
             case SCHEDULED:
                 //log.debug("TASK_SCHEDULED :: {}", taskName);
-                if (!taskList.contains(task))
-                    taskList.add(task);
                 break;
             case RUNNING:
                 //log.debug("TASK_RUNNING :: {}", taskName);
                 break;
             case CANCELLED:
-                //log.debug("TASK_CANCELLED :: {}", taskName);
-                if (taskMap.containsKey(task)) {
-                    CompletableFuture<Void> cf = taskMap.get(task);
-                    cf.completeExceptionally(new InterruptedException("Task cancelled"));
-                    taskMap.remove(task);
+                try {
+                    log.warn("TASK_CANCELLED :: {}", taskName);
+                    if (taskMap.containsKey(task)) {
+                        CompletableFuture<?> cf = taskMap.get(task);
+                        cf.cancel(true);
+                        taskMap.remove(task);
+                    }
+                } finally {
+                    detachTaskMonitor(task);
                 }
-                detachTaskMonitor(task);
-                taskList.remove(task);
                 break;
             case FAILED:
-                //log.debug("TASK_FAILED :: {}", taskName);
-                Throwable err = task.getException();
-                log.error("Exception occured during task run", err);
-                if (taskMap.containsKey(task)) {
-                    CompletableFuture<Void> cf = taskMap.get(task);
-                    cf.completeExceptionally(err);
-                    taskMap.remove(task);
+                try {
+                    //log.debug("TASK_FAILED :: {}", taskName);
+                    Throwable err = task.getException();
+                    log.error("Exception occured during task run", err);
+                    if (taskMap.containsKey(task)) {
+                        CompletableFuture<?> cf = taskMap.get(task);
+                        cf.completeExceptionally(err);
+                        taskMap.remove(task);
+                    }
+                } finally {
+                    detachTaskMonitor(task);
                 }
-                detachTaskMonitor(task);
-                taskList.remove(task);
                 break;
             case SUCCEEDED:
-                //log.debug("TASK_SUCCESS :: {}", taskName);
-                if (taskMap.containsKey(task)) {
-                    CompletableFuture<Void> cf = taskMap.get(task);
-                    cf.complete(null);
-                    taskMap.remove(task);
+                try {
+                    if (taskMap.containsKey(task)) {
+                        //log.debug("TASK_SUCCESS :: {}", taskName);
+                        //noinspection unchecked
+                        CompletableFuture<Object> cf = (CompletableFuture<Object>) taskMap.get(task);
+                        cf.complete(task.getValue());
+                        taskMap.remove(task);
+                    } else {
+                        log.warn("TASK_SUCCESS but could not find task in map: {}", task);
+                    }
+                } finally {
+                    detachTaskMonitor(task);
                 }
-                detachTaskMonitor(task);
-                taskList.remove(task);
                 break;
             default:
                 break;
@@ -160,18 +139,16 @@ public class TaskManager implements Closeable {
         }
     }
 
-    public ObservableList<Task<?>> getTaskList() {
-        return taskList;
+    public int getRunningTasks() {
+        return runningTasks.get();
     }
 
-    @Override
-    public void close() throws IOException {
-        try {
-            this.executorService.shutdownNow();
-            this.executorService.awaitTermination(3, TimeUnit.SECONDS);
-        } catch (InterruptedException ignored) {
+    public IntegerProperty runningTasksProperty() {
+        return runningTasks;
+    }
 
-        }
+    public void setRunningTasks(int runningTasks) {
+        this.runningTasks.set(runningTasks);
     }
 
     @Autowired

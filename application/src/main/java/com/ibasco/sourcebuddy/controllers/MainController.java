@@ -1,29 +1,24 @@
 package com.ibasco.sourcebuddy.controllers;
 
-import static com.ibasco.sourcebuddy.components.GuiHelper.findNode;
 import com.ibasco.sourcebuddy.components.TaskManager;
 import com.ibasco.sourcebuddy.constants.Icons;
 import com.ibasco.sourcebuddy.constants.Views;
-import com.ibasco.sourcebuddy.domain.SteamApp;
+import com.ibasco.sourcebuddy.domain.ConfigProfile;
+import com.ibasco.sourcebuddy.domain.ManagedServer;
 import com.ibasco.sourcebuddy.events.ApplicationInitEvent;
 import com.ibasco.sourcebuddy.gui.skins.CustomTaskProgressViewSkin;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
-import com.ibasco.sourcebuddy.service.SteamService;
-import com.ibasco.sourcebuddy.tasks.UpdateMasterServerListTask;
-import com.ibasco.sourcebuddy.tasks.UpdateServerDetailsTask;
+import com.ibasco.sourcebuddy.service.ConfigService;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
-import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
+import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
@@ -39,7 +34,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
-import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 @Controller
 public class MainController extends BaseController {
@@ -60,12 +55,6 @@ public class MainController extends BaseController {
     private NotificationPane npMain;
 
     @FXML
-    private Button btnUpdateServerDetails;
-
-    @FXML
-    private Button btnUpdateMasterList;
-
-    @FXML
     private CheckComboBox cbDocks;
     //</editor-fold>
 
@@ -75,15 +64,17 @@ public class MainController extends BaseController {
 
     private TaskManager taskManager;
 
-    private SteamService steamQueryService;
-
     private TaskProgressView<Task<?>> taskProgressView;
 
     private Button btnServiceStatus;
 
+    @FXML
+    private Button btnSave;
+
+    private ConfigService configService;
+
     @Override
     public void initialize(Stage stage, Node rootNode) {
-
         setupDocks(stage);
         setupTaskProgressView();
         updateSplitPaneResizable(dpMainDock.getChildren(), 0);
@@ -91,7 +82,17 @@ public class MainController extends BaseController {
         setupServiceStatusPopOver();
         setupStatusBar();
 
-        //Notify listeners
+        btnSave.setOnAction(event -> {
+            ConfigProfile profile = configService.createProfile();
+            ManagedServer managedServer = new ManagedServer();
+            managedServer.setProfile(profile);
+            managedServer.setServerDetails(serverDetailsModel.getSelectedServer());
+            profile.getManagedServers().add(managedServer);
+            configService.saveProfile(profile);
+            configService.setDefaultProfile(profile);
+            log.debug("Successfully saved profile: {}", profile);
+        });
+
         publishEvent(new ApplicationInitEvent(this, stage));
     }
 
@@ -108,53 +109,32 @@ public class MainController extends BaseController {
         taskProgressView.setSkin(new CustomTaskProgressViewSkin<>(taskProgressView));
 
         taskProgressView.getTasks().addListener((ListChangeListener<Task<?>>) c -> {
-            while (c.next()) {
-                int added = c.getAddedSize();
-                if (added > 0) {
-                    //getNotificationManager().showError(npMain, "Task added");
-                    btnServiceStatus.setEffect(borderGlow);
-                    btnServiceStatus.setText(String.format("Status [%d]", added));
-                } else {
-                    btnServiceStatus.setText("Status");
-                    btnServiceStatus.setEffect(null);
-                }
+            int size = taskProgressView.getTasks().size();
+            if (size > 0) {
+                btnServiceStatus.setText(String.format("Status [%d]", size));
+                btnServiceStatus.setEffect(borderGlow);
+            } else {
+                btnServiceStatus.setText("Status");
+                btnServiceStatus.setEffect(null);
             }
         });
+
         log.debug("setupTaskProgressView() :: Bindings content between TaskProgressView's task list and task manager's task list");
-        Bindings.bindContent(taskProgressView.getTasks(), taskManager.getTaskList());
+        taskManager.getTaskMap().addListener(this::handleTaskMapChangeEvents);
+    }
+
+    private void handleTaskMapChangeEvents(MapChangeListener.Change<? extends Task<?>, ? extends CompletableFuture<?>> change) {
+        if (change.wasAdded()) {
+            taskProgressView.getTasks().add(change.getKey());
+            log.debug("Added new task on task list: {}", change.getKey());
+        } else if (change.wasRemoved()) {
+            taskProgressView.getTasks().remove(change.getKey());
+            log.debug("Removed task from task list: {}", change.getKey());
+        }
     }
 
     private void setupMainToolbar() {
-        btnUpdateMasterList.setOnAction(event -> {
-            Optional<String> value = prompt("Enter steam id", "Enter steam id");
-            if (value.isPresent()) {
-                int appId = Integer.valueOf(value.get());
 
-                Optional<SteamApp> steamApp = steamQueryService.findSteamAppById(appId);
-                if (steamApp.isPresent()) {
-                    taskManager.executeTask(UpdateMasterServerListTask.class, steamApp);
-                }
-
-            }
-            /*int[] appIds = new int[] {550};
-            for (int appId : appIds) {
-                Optional<SteamApp> steamApp = steamQueryService.findSteamAppById(appId);
-                if (steamApp.isEmpty())
-                    continue;
-                taskManager.executeTask(UpdateMasterServerListTask.class, steamApp);
-            }*/
-        });
-
-        btnUpdateServerDetails.setOnAction(event -> {
-            taskManager.executeTask(UpdateServerDetailsTask.class, serverDetailsModel.getServerDetails());
-        });
-    }
-
-    private Optional<String> prompt(String header, String content) {
-        TextInputDialog textInputDialog = new TextInputDialog();
-        textInputDialog.setHeaderText(header);
-        textInputDialog.setContentText(content);
-        return textInputDialog.showAndWait();
     }
 
     private void setupStatusBar() {
@@ -190,26 +170,6 @@ public class MainController extends BaseController {
         Pane serverChatPane = viewManager.loadView(Views.DOCK_SERVER_CHAT);
         //Pane gameBrowserPane = viewManager.loadView(Views.DOCK_GAME_BROWSER);
 
-        dpMainDock.addEventHandler(DockEvent.DOCK_RELEASED, new EventHandler<DockEvent>() {
-            @Override
-            public void handle(DockEvent event) {
-                DockNode dockNode = (DockNode) event.getContents();
-
-                Parent content = (Parent) dockNode.getContents();
-                //findNode(content.getChildrenUnmodifiable(), 0);
-                //findNodeX(content, 0);
-                //log.debug("Dock: Node: {}, Parent: {}, Parent UP: {}, Content: {}, Width: {}, Height: {}", dockNode, dockNode.getParent(), dockNode.getParent().getParent(), dockNode.getContents(), dockNode.getWidth(), dockNode.getHeight());
-                MasterDetailPane n = findNode(content, MasterDetailPane.class);
-
-                //dockNode.setPrefSize(100, 200);
-                if (n != null) {
-
-                    log.debug("Found {}, Last Dock Pos: {}", n, dockNode.getLastDockPos());
-                }
-
-            }
-        });
-
         dpMainDock.addEventHandler(DockEvent.DOCK_RELEASED, event -> updateSplitPaneResizable(dpMainDock.getChildren(), 0));
 
         DockNode serverBrowserDock = new DockNode(serverBrowserPane, "Servers", serverBrowserImage);
@@ -227,7 +187,7 @@ public class MainController extends BaseController {
         rulesBrowserDock.setPrefWidth(350);
         rulesBrowserDock.dock(dpMainDock, DockPos.BOTTOM, playerBrowserDock);
 
-        DockNode serverManagerDock = new DockNode(serverManagerPane, "Server Manager", serverManagerImage);
+        DockNode serverManagerDock = new DockNode(serverManagerPane, "Control Panel", serverManagerImage);
         serverManagerDock.dock(dpMainDock, DockPos.BOTTOM, serverBrowserDock);
 
         DockNode logsDock = new DockNode(logsPane, "Logs", logsImage);
@@ -266,7 +226,7 @@ public class MainController extends BaseController {
     }
 
     @Autowired
-    public void setSteamQueryService(SteamService steamQueryService) {
-        this.steamQueryService = steamQueryService;
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
     }
 }

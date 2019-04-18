@@ -7,6 +7,7 @@ import com.ibasco.sourcebuddy.components.NotificationManager;
 import com.ibasco.sourcebuddy.components.SpringHelper;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
 import com.ibasco.sourcebuddy.repository.ServerDetailsRepository;
+import com.ibasco.sourcebuddy.repository.impl.CustomRepositoryImpl;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
 import com.ibasco.sourcebuddy.util.preload.SteamAppsPreload;
 import com.maxmind.geoip2.DatabaseReader;
@@ -42,6 +43,7 @@ import java.util.concurrent.*;
 @EnableTransactionManagement
 @EnableJpaAuditing(auditorAwareRef = "auditAwareBean")
 @EnableJpaRepositories(
+        repositoryBaseClass = CustomRepositoryImpl.class,
         considerNestedRepositories = true,
         basePackageClasses = ServerDetailsRepository.class
 )
