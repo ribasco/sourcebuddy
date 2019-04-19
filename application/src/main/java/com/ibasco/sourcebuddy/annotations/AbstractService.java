@@ -1,13 +1,13 @@
 package com.ibasco.sourcebuddy.annotations;
 
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.lang.annotation.*;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Component
+@Service
 @Inherited
-public @interface BaseComponent {
+public @interface AbstractService {
 
 }
