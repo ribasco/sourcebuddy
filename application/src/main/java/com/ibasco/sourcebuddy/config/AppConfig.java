@@ -2,7 +2,9 @@ package com.ibasco.sourcebuddy.config;
 
 import com.google.gson.Gson;
 import com.ibasco.sourcebuddy.Bootstrap;
-import com.ibasco.sourcebuddy.annotations.BaseComponent;
+import com.ibasco.sourcebuddy.annotations.AbstractComponent;
+import com.ibasco.sourcebuddy.annotations.AbstractController;
+import com.ibasco.sourcebuddy.annotations.AbstractService;
 import com.ibasco.sourcebuddy.components.NotificationManager;
 import com.ibasco.sourcebuddy.components.SpringHelper;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
@@ -38,7 +40,7 @@ import java.util.concurrent.*;
 @Configuration
 @ComponentScan(
         basePackageClasses = {Bootstrap.class, NotificationManager.class, ServerDetailsModel.class, SteamAppsPreload.class, SpringHelper.class},
-        includeFilters = @ComponentScan.Filter(BaseComponent.class)
+        includeFilters = {@ComponentScan.Filter({AbstractComponent.class, AbstractController.class, AbstractService.class})}
 )
 @EnableTransactionManagement
 @EnableJpaAuditing(auditorAwareRef = "auditAwareBean")
@@ -97,27 +99,30 @@ public class AppConfig implements AsyncConfigurer {
 
     @Bean(destroyMethod = "shutdownNow")
     public ExecutorService taskExecutorService() {
-        int num = Runtime.getRuntime().availableProcessors() + 1;
-        log.info("taskExecutorService() : Using default number of threads: {}", num);
-        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+        log.info("taskExecutorService() : Using default number of threads: {}", getPoolSize());
+        return new ThreadPoolExecutor(getPoolSize(), Integer.MAX_VALUE,
                                       60L, TimeUnit.SECONDS,
-                                      new SynchronousQueue<>(),
+                                      new LinkedBlockingDeque<>(),
                                       taskThreadFactory());
+    }
+
+    private int getPoolSize() {
+        return Runtime.getRuntime().availableProcessors() + 1;
     }
 
     @Bean(destroyMethod = "shutdownNow")
     public ExecutorService steamWebExecutorService() {
-        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+        return new ThreadPoolExecutor(getPoolSize(), Integer.MAX_VALUE,
                                       60L, TimeUnit.SECONDS,
-                                      new SynchronousQueue<>(),
+                                      new LinkedBlockingDeque<>(),
                                       steamWebApiThreadFactory());
     }
 
     @Bean(destroyMethod = "shutdownNow")
     public ExecutorService sourceQueryExecutorService() {
-        return new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+        return new ThreadPoolExecutor(getPoolSize(), Integer.MAX_VALUE,
                                       60L, TimeUnit.SECONDS,
-                                      new SynchronousQueue<>(),
+                                      new LinkedBlockingDeque<>(),
                                       sourceQueryThreadFactory());
     }
 

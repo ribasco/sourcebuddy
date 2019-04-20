@@ -79,7 +79,7 @@ public class Bootstrap extends Application implements ApplicationContextAware {
         log.info("Found {} pre-load tasks", tasks.size());
 
         for (PreloadTask task : tasks) {
-            log.info("> Executing pre-load task: {}", task);
+            log.info("Executing pre-load task: {}", task);
             executePreloadTaskAndWait(task);
         }
     }

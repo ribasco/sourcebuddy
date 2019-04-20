@@ -42,7 +42,7 @@ public class ServerBrowserTableViewFactory {
 
     private ServerNameCellDecorator serverNameCellDecorator;
 
-    public TableCell<ServerDetails, Country> drawCountryIcon(TableColumn<ServerDetails, Country> column) {
+    public TableCell<ServerDetails, Country> country(TableColumn<ServerDetails, Country> column) {
         return createDecoratedTableCell(serverCountryCellDecorator);
     }
 
@@ -54,7 +54,7 @@ public class ServerBrowserTableViewFactory {
         });
     }
 
-    public TableCell<ServerDetails, SteamApp> drawSteamApp(TableColumn<ServerDetails, SteamApp> abTableColumn) {
+    public TableCell<ServerDetails, SteamApp> steamApp(TableColumn<ServerDetails, SteamApp> abTableColumn) {
         return createTableCell((item, cell) -> {
             cell.setText(item.getName());
             //cell.setGraphic(new Hyperlink(item.toString()));
@@ -63,11 +63,11 @@ public class ServerBrowserTableViewFactory {
         });
     }
 
-    public TableCell<ServerDetails, ServerStatus> drawStatusInd(TableColumn<ServerDetails, ServerStatus> column) {
+    public TableCell<ServerDetails, ServerStatus> statusInd(TableColumn<ServerDetails, ServerStatus> column) {
         return createDecoratedTableCell(serverStatusCellDecorator);
     }
 
-    public TableCell<ServerDetails, Boolean> drawBookmarkNode(TableColumn<ServerDetails, Boolean> column) {
+    public TableCell<ServerDetails, Boolean> bookmark(TableColumn<ServerDetails, Boolean> column) {
         return createTableCell((item, cell) -> {
             Rating rating = new Rating(1);
             BooleanProperty bp = (BooleanProperty) cell.getTableColumn().getCellObservableValue(cell.getIndex());
@@ -83,15 +83,15 @@ public class ServerBrowserTableViewFactory {
         });
     }
 
-    public TableCell<ServerDetails, String> drawTags(TableColumn<ServerDetails, String> column) {
+    public TableCell<ServerDetails, String> tags(TableColumn<ServerDetails, String> column) {
         return createDecoratedTableCell(serverTagCellDecorator);
     }
 
-    public TableCell<ServerDetails, String> drawServerName(TableColumn<ServerDetails, String> column) {
+    public TableCell<ServerDetails, String> serverName(TableColumn<ServerDetails, String> column) {
         return createDecoratedTableCell(serverNameCellDecorator);
     }
 
-    public TableCell<ServerDetails, OperatingSystem> drawOperatingSystem(TableColumn<ServerDetails, OperatingSystem> column) {
+    public TableCell<ServerDetails, OperatingSystem> operatingSystem(TableColumn<ServerDetails, OperatingSystem> column) {
         return createTableCell(new BiConsumer<OperatingSystem, TableCell<ServerDetails, OperatingSystem>>() {
             @Override
             public void accept(OperatingSystem os, TableCell<ServerDetails, OperatingSystem> cell) {

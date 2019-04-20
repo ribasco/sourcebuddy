@@ -261,7 +261,7 @@ public class GuiHelper {
                 callback.accept(child);
             }
             if (find != null) {
-                if (child.getClass().isAssignableFrom(find)) {
+                if (child.getClass().equals(find)) {
                     //noinspection unchecked
                     return (T) child;
                 }

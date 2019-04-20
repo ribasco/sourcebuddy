@@ -6,9 +6,7 @@ import javafx.scene.Node;
 import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 
-@Controller
 public class ServerLogsController extends BaseController {
 
     @FXML

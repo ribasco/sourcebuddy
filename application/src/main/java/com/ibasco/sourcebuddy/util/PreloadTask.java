@@ -1,6 +1,6 @@
 package com.ibasco.sourcebuddy.util;
 
-import com.ibasco.sourcebuddy.annotations.BaseComponent;
+import com.ibasco.sourcebuddy.annotations.AbstractComponent;
 import com.ibasco.sourcebuddy.model.PreloadModel;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
-@BaseComponent
+@AbstractComponent
 abstract public class PreloadTask extends Task<Void> {
 
     private static final Logger log = LoggerFactory.getLogger(PreloadTask.class);
@@ -50,7 +50,7 @@ abstract public class PreloadTask extends Task<Void> {
 
     @Override
     protected void updateMessage(String message) {
-        log.debug("updateMessage() :: {}", message);
+        log.debug("{} :: {}", getClass().getSimpleName(), message);
         Platform.runLater(() -> {
             super.updateMessage(message);
             preloadModel.setMessage(message);

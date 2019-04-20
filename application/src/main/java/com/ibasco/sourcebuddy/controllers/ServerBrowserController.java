@@ -1,12 +1,15 @@
 package com.ibasco.sourcebuddy.controllers;
 
-import static com.ibasco.sourcebuddy.components.GuiHelper.*;
+import static com.ibasco.sourcebuddy.components.GuiHelper.createBasicColumn;
+import static com.ibasco.sourcebuddy.components.GuiHelper.createBasicTreeColumn;
+import com.ibasco.sourcebuddy.constants.Views;
 import com.ibasco.sourcebuddy.controls.ProgressComboBox;
 import com.ibasco.sourcebuddy.domain.ConfigProfile;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
 import com.ibasco.sourcebuddy.enums.ServerStatus;
 import com.ibasco.sourcebuddy.gui.converters.BasicObjectStringConverter;
+import com.ibasco.sourcebuddy.gui.listeners.VetoChangeListener;
 import com.ibasco.sourcebuddy.gui.tableview.factory.ServerBrowserTableViewFactory;
 import com.ibasco.sourcebuddy.gui.tableview.rows.HighlightRow;
 import com.ibasco.sourcebuddy.gui.treetableview.cells.FormattedTreeTableCell;
@@ -15,33 +18,35 @@ import com.ibasco.sourcebuddy.model.ServerDetailsModel;
 import com.ibasco.sourcebuddy.model.SteamGamesModel;
 import com.ibasco.sourcebuddy.model.TreeDataModel;
 import com.ibasco.sourcebuddy.service.ServerManager;
-import com.ibasco.sourcebuddy.service.SourceServerService;
 import com.ibasco.sourcebuddy.service.impl.SingleServerDetailsRefreshService;
 import com.ibasco.sourcebuddy.tasks.BuildBookmarkServerTreeTask;
 import com.ibasco.sourcebuddy.tasks.BuildManagedServersTreeTask;
-import com.ibasco.sourcebuddy.tasks.SwitchGameTask;
+import com.ibasco.sourcebuddy.tasks.FetchServersByApp;
 import com.ibasco.sourcebuddy.tasks.UpdateAllServerDetailsTask;
+import com.jfoenix.controls.JFXDialog;
+import com.jfoenix.controls.JFXDialogLayout;
 import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
-import org.controlsfx.control.MasterDetailPane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("Duplicates")
 @Controller
@@ -50,9 +55,6 @@ public class ServerBrowserController extends BaseController {
     private static final Logger log = LoggerFactory.getLogger(ServerBrowserController.class);
 
     //<editor-fold desc="FXML Properties">
-    @FXML
-    private MasterDetailPane mdpServerBrowser;
-
     @FXML
     private TableView<ServerDetails> tvServerBrowser;
 
@@ -88,6 +90,15 @@ public class ServerBrowserController extends BaseController {
 
     @FXML
     private Tab tabServerBrowser;
+
+    @FXML
+    private StackPane spServerBrowser;
+
+    @FXML
+    private Button btnAddGame;
+
+    @FXML
+    private Button btnAddServer;
     //</editor-fold>
 
     private ServerDetailsModel serverDetailsModel;
@@ -97,10 +108,6 @@ public class ServerBrowserController extends BaseController {
     private BookmarksTreeTableCellFactory bookmarksTreeTableViewFactory;
 
     private ServerBrowserTableViewFactory serverBrowserTableCellFactory;
-
-    private SourceServerService sourceServerQueryService;
-
-    private FilteredList<ServerDetails> filteredServerDetailsList;
 
     private SingleServerDetailsRefreshService singleUpdateService;
 
@@ -114,8 +121,18 @@ public class ServerBrowserController extends BaseController {
         setupManagedServersTable();
         setupGameSelectionBox();
         setupSingleServerUpdateService();
-
-        hideDetailPaneOnHeightChange(mdpServerBrowser, 300);
+        btnRefreshServerList.setOnAction(event -> updateServerEntriesByApp(steamGamesModel.getSelectedGame()));
+        btnAddServer.setOnAction(event -> {
+            JFXDialog dialog = createServerBrowserDialog("Add new server", Views.DIALOG_ADD_SERVER);
+            dialog.show();
+        });
+        btnAddGame.setOnAction(event -> {
+            JFXDialog dialog = createServerBrowserDialog("Add new game", Views.DOCK_GAME_BROWSER, new Button("Add"));
+            dialog.setPrefSize(800, 400);
+            dialog.setMinWidth(800);
+            dialog.setMinHeight(400);
+            dialog.show();
+        });
 
         btnSetDefaultGame.setOnAction(this::setDefaultGame);
         tpServers.setTabDragPolicy(TabPane.TabDragPolicy.REORDER);
@@ -124,9 +141,20 @@ public class ServerBrowserController extends BaseController {
         steamGamesModel.setSelectedGame(serverDetailsModel.getActiveProfile().getDefaultGame());
     }
 
+    private JFXDialog createServerBrowserDialog(String heading, String viewName, Node... actions) {
+        Region view = getViewManager().loadView(viewName);
+        JFXDialog dialog = new JFXDialog();
+        dialog.setDialogContainer(spServerBrowser);
+        JFXDialogLayout content = new JFXDialogLayout();
+        content.setActions(actions);
+        content.setHeading(new Label(heading));
+        content.setBody(view);
+        dialog.setContent(content);
+        return dialog;
+    }
+
     private void setDefaultGame(ActionEvent actionEvent) {
         SteamApp app = cbBookmarkedGames.getValue();
-
         ConfigProfile profile = serverDetailsModel.getActiveProfile();
         profile.setDefaultGame(app);
         getConfigService().saveProfile(profile);
@@ -146,71 +174,73 @@ public class ServerBrowserController extends BaseController {
         if (newTab == null) {
             return;
         }
-
         //Load items on tab selection
         if (newTab.equals(tabBookmarks)) {
             refreshBookmarksTable();
         } else if (newTab.equals(tabManagedServers)) {
             refreshManagedServersTable();
+        } else if (newTab.equals(tabServerBrowser)) {
+
         }
+    }
+
+    private void updateServerEntriesByApp(SteamApp app) {
+        if (taskManager.isRunning(FetchServersByApp.class) ||
+                serverDetailsModel.isServerDetailsUpdating() ||
+                serverDetailsModel.isServerListUpdating()) {
+            return;
+        }
+
+        serverDetailsModel.setSelectedServer(null);
+        serverDetailsModel.setServerListUpdating(true);
+        tvServerBrowser.itemsProperty().unbind();
+        serverDetailsModel.setServerDetails(null);
+        tvServerBrowser.setItems(null);
+
+        Label placeHolder = new Label();
+        placeHolder.setText(String.format("Updating server list for '%s'", app.getName()));
+        tvServerBrowser.setPlaceholder(placeHolder);
+
+        FetchServersByApp task = springHelper.getBean(FetchServersByApp.class, app);
+        CompletableFuture<List<ServerDetails>> fut = taskManager.run(task);
+        fut.thenAccept(servers -> {
+            serverDetailsModel.setServerDetails(FXCollections.observableArrayList(servers));
+            tvServerBrowser.itemsProperty().bind(serverDetailsModel.serverDetailsProperty());
+            serverDetailsModel.setServerListUpdating(false);
+        }).thenCompose(aVoid -> {
+            serverDetailsModel.setServerDetailsUpdating(true);
+            return taskManager.run(UpdateAllServerDetailsTask.class, serverDetailsModel.getServerDetails());
+        }).whenComplete((aVoid, throwable) -> {
+            try {
+                if (throwable != null) {
+                    notificationManager.showError("Error occured during update %s", throwable.getMessage());
+                    return;
+                }
+                getNotificationManager().showInfo("Completed updating server details");
+            } finally {
+                serverDetailsModel.setServerDetailsUpdating(false);
+                serverDetailsModel.setServerListUpdating(false);
+            }
+        });
     }
 
     private void updateSteamAppServerEntries(ObservableValue<? extends SteamApp> observableValue, SteamApp oldApp, SteamApp newApp) {
-        if (newApp != null) {
-            if (taskManager.isRunning(SwitchGameTask.class) || serverDetailsModel.isServerListUpdating()) {
-                getNotificationManager().showWarning("Task is already running or Server list is currently getting populated");
-                if (oldApp != null)
-                    steamGamesModel.setSelectedGame(oldApp);
-                return;
-            }
-
-            serverDetailsModel.setSelectedServer(null);
-            serverDetailsModel.setServerListUpdating(true);
-            tvServerBrowser.itemsProperty().unbind();
-            serverDetailsModel.getServerDetails().clear();
-            tvServerBrowser.setItems(null);
-
-            Label placeHolder = new Label();
-            placeHolder.setText(String.format("Updating server list for '%s'", newApp.getName()));
-            tvServerBrowser.setPlaceholder(placeHolder);
-
-            taskManager.run(SwitchGameTask.class, newApp)
-                    .thenAccept(aVoid -> {
-                        tvServerBrowser.itemsProperty().bind(serverDetailsModel.serverDetailsProperty());
-                        serverDetailsModel.setServerListUpdating(false);
-                    })
-                    .thenCompose(aVoid -> {
-                        serverDetailsModel.setServerDetailsUpdating(true);
-                        return taskManager.run(UpdateAllServerDetailsTask.class, serverDetailsModel.getServerDetails());
-                    })
-                    .whenComplete((aVoid, throwable) -> {
-                        try {
-                            if (throwable != null) {
-                                notificationManager.showError("Error occured during update %s", throwable.getMessage());
-                                return;
-                            }
-                            getNotificationManager().showInfo("Completed updating server details");
-                        } finally {
-                            serverDetailsModel.setServerDetailsUpdating(false);
-                            serverDetailsModel.setServerListUpdating(false);
-                            Platform.runLater(() -> tvServerBrowser.setPlaceholder(null));
-                        }
-                    });
-        }
+        if (newApp != null)
+            updateServerEntriesByApp(newApp);
     }
 
     private void setupGameSelectionBox() {
-        cbBookmarkedGames.valueProperty().bindBidirectional(steamGamesModel.selectedGameProperty());
-        cbBookmarkedGames.valueProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                if (!serverDetailsModel.isServerListUpdating() && !serverDetailsModel.isServerDetailsUpdating()) {
-                    steamGamesModel.setSelectedGame(newValue);
-                } else {
-                    log.debug("Server entries are still being updated");
+        cbBookmarkedGames.getSelectionModel().selectedItemProperty().addListener(new VetoChangeListener<>(cbBookmarkedGames.getSelectionModel()) {
+            @Override
+            protected boolean isInvalidChange(SteamApp oldValue, SteamApp newValue) {
+                boolean invalid = taskManager.isRunning(UpdateAllServerDetailsTask.class);
+                if (invalid) {
+                    getNotificationManager().showWarning("Task is already running or Server list is currently getting populated");
                 }
+                return invalid;
             }
         });
-
+        cbBookmarkedGames.valueProperty().bindBidirectional(steamGamesModel.selectedGameProperty());
         cbBookmarkedGames.itemsProperty().bind(steamGamesModel.bookmarkedAppListProperty());
         cbBookmarkedGames.setConverter(new BasicObjectStringConverter<>());
         cbBookmarkedGames.showProgressProperty().bind(serverDetailsModel.serverListUpdatingProperty().or(serverDetailsModel.serverDetailsUpdatingProperty()));
@@ -232,12 +262,13 @@ public class ServerBrowserController extends BaseController {
                     log.debug("Building list from tree...");
                     buildListFromTree(r, serverList);
 
-                    if (taskManager.isRunning(UpdateAllServerDetailsTask.class)) {
-                        log.warn("Already running");
+                    UpdateAllServerDetailsTask task = springHelper.getBean(UpdateAllServerDetailsTask.class, serverList);
+                    if (taskManager.contains(task)) {
+                        log.debug("refreshBookmarksTable() :: An existing task is already running. Skipping.");
                         return null;
                     }
 
-                    return taskManager.run(UpdateAllServerDetailsTask.class, serverList);
+                    return taskManager.run(task);
                 });
     }
 
@@ -258,11 +289,12 @@ public class ServerBrowserController extends BaseController {
                     ObservableList<ServerDetails> serverList = FXCollections.observableArrayList();
                     buildListFromTree(r, serverList);
 
-                    if (taskManager.isRunning(UpdateAllServerDetailsTask.class)) {
+                    UpdateAllServerDetailsTask task = springHelper.getBean(UpdateAllServerDetailsTask.class, serverList);
+                    if (taskManager.contains(task)) {
+                        log.debug("refreshManagedServersTable() :: An existing task is already running. Skipping.");
                         return null;
                     }
-
-                    return taskManager.run(UpdateAllServerDetailsTask.class, serverList);
+                    return taskManager.run(task);
                 });
     }
 
@@ -302,26 +334,24 @@ public class ServerBrowserController extends BaseController {
     private void setupServerBrowserTable() {
         tvServerBrowser.getColumns().clear();
         tvServerBrowser.setRowFactory(param -> new HighlightRow<>(p -> ServerStatus.TIMED_OUT.equals(p.getStatus()), "timeout"));
-
-        filteredServerDetailsList = serverDetailsModel.getServerDetails().filtered(p -> true);
-        tvServerBrowser.setItems(filteredServerDetailsList);
+        tvServerBrowser.setItems(serverDetailsModel.getServerDetails().filtered(p -> true));
         tvServerBrowser.setPlaceholder(new Label(""));
 
         Bindings.bindContent(serverDetailsModel.getSelectedServers(), tvServerBrowser.getSelectionModel().getSelectedItems());
 
-        createBasicColumn(tvServerBrowser, "Bookmark", "bookmarked", serverBrowserTableCellFactory::drawBookmarkNode);
-        createBasicColumn(tvServerBrowser, "Server Name", "name", serverBrowserTableCellFactory::drawServerName);
+        createBasicColumn(tvServerBrowser, "Bookmark", "bookmarked", serverBrowserTableCellFactory::bookmark);
+        createBasicColumn(tvServerBrowser, "Server Name", "name", serverBrowserTableCellFactory::serverName);
         createBasicColumn(tvServerBrowser, "IP Address", "ipAddress");
         createBasicColumn(tvServerBrowser, "Port", "port");
         createBasicColumn(tvServerBrowser, "Player Count", "playerCount");
         createBasicColumn(tvServerBrowser, "Max Players", "maxPlayerCount");
         createBasicColumn(tvServerBrowser, "Current Map", "mapName");
-        createBasicColumn(tvServerBrowser, "Game", "steamApp", serverBrowserTableCellFactory::drawSteamApp);
-        createBasicColumn(tvServerBrowser, "Status", "status", serverBrowserTableCellFactory::drawStatusInd);
-        createBasicColumn(tvServerBrowser, "Country", "country", serverBrowserTableCellFactory::drawCountryIcon);
-        createBasicColumn(tvServerBrowser, "OS", "operatingSystem", serverBrowserTableCellFactory::drawOperatingSystem);
+        createBasicColumn(tvServerBrowser, "Game", "steamApp", serverBrowserTableCellFactory::steamApp);
+        createBasicColumn(tvServerBrowser, "Status", "status", serverBrowserTableCellFactory::statusInd);
+        createBasicColumn(tvServerBrowser, "Country", "country", serverBrowserTableCellFactory::country);
+        createBasicColumn(tvServerBrowser, "OS", "operatingSystem", serverBrowserTableCellFactory::operatingSystem);
         createBasicColumn(tvServerBrowser, "Update Date", "updateDate");
-        createBasicColumn(tvServerBrowser, "Tags", "serverTags", serverBrowserTableCellFactory::drawTags).setPrefWidth(200);
+        createBasicColumn(tvServerBrowser, "Tags", "serverTags", serverBrowserTableCellFactory::tags).setPrefWidth(200);
 
         ContextMenu cMenu = new ContextMenu();
 
@@ -383,7 +413,6 @@ public class ServerBrowserController extends BaseController {
         createBasicTreeColumn(ttvBookmarkedServers, "Status", "status", bookmarksTreeTableViewFactory::statusIndicator);
         createBasicTreeColumn(ttvBookmarkedServers, "Country", "country", bookmarksTreeTableViewFactory::country);
         createBasicTreeColumn(ttvBookmarkedServers, "Tags", "serverTags", bookmarksTreeTableViewFactory::serverTags);
-        //createBasicTreeColumn(ttvBookmarkedServers, "Game", "steamApp", bookmarksTreeTableViewFactory);
 
         ttvBookmarkedServers.setTreeColumn(nameCol);
         ttvBookmarkedServers.getSelectionModel().selectedItemProperty().addListener(this::updateServerSelection);
@@ -409,11 +438,10 @@ public class ServerBrowserController extends BaseController {
     }
 
     private void updateServerSelection(ObservableValue<? extends TreeItem<ServerDetails>> observableValue, TreeItem<ServerDetails> oldValue, TreeItem<ServerDetails> newValue) {
-        if (newValue != null) {
+        if (newValue != null)
             serverDetailsModel.setSelectedServer(newValue.getValue());
-        } else {
+        else
             serverDetailsModel.setSelectedServer(null);
-        }
     }
 
     @Autowired
@@ -424,11 +452,6 @@ public class ServerBrowserController extends BaseController {
     @Autowired
     public void setServerBrowserTableCellFactory(ServerBrowserTableViewFactory serverBrowserTableCellFactory) {
         this.serverBrowserTableCellFactory = serverBrowserTableCellFactory;
-    }
-
-    @Autowired
-    public void setSourceServerQueryService(SourceServerService sourceServerQueryService) {
-        this.sourceServerQueryService = sourceServerQueryService;
     }
 
     @Autowired

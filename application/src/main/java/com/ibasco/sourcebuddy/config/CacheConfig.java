@@ -1,5 +1,6 @@
 package com.ibasco.sourcebuddy.config;
 
+import com.ibasco.sourcebuddy.constants.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
@@ -12,6 +13,6 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager("steamApps");
+        return new ConcurrentMapCacheManager(Cache.STEAM_APPS);
     }
 }

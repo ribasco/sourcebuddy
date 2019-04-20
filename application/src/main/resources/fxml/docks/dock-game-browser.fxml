@@ -5,9 +5,9 @@
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.VBox?>
-<VBox prefHeight="388.0" prefWidth="346.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.GameBrowserController">
+<VBox prefHeight="400.0" prefWidth="800.0" minWidth="800" minHeight="400" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.GameBrowserController">
     <children>
-        <TableView fx:id="tvGameBrowser" VBox.vgrow="ALWAYS"/>
+        <TableView fx:id="tvGameBrowser" prefHeight="365.0" prefWidth="805.0" VBox.vgrow="ALWAYS"/>
         <ToolBar fx:id="tbGameFilter">
             <items>
                 <TextField fx:id="tfGameFilter" prefHeight="25.0" prefWidth="201.0" promptText="Search Game"/>

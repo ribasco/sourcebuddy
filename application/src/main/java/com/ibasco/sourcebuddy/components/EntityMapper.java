@@ -1,6 +1,7 @@
 package com.ibasco.sourcebuddy.components;
 
 import com.ibasco.agql.protocols.valve.source.query.pojos.SourcePlayer;
+import com.ibasco.agql.protocols.valve.source.query.pojos.SourceServer;
 import com.ibasco.agql.protocols.valve.steam.webapi.pojos.SteamSourceServer;
 import com.ibasco.agql.protocols.valve.steam.webapi.pojos.StoreAppDetails;
 import com.ibasco.sourcebuddy.domain.PlayerInfo;
@@ -16,6 +17,20 @@ import java.util.stream.Collectors;
 
 @Component
 public class EntityMapper {
+
+    public void copy(ServerDetails target, SourceServer source) {
+        target.setName(source.getName());
+        target.setServerTags(source.getServerTags());
+        target.setPlayerCount((int) source.getNumOfPlayers());
+        target.setMaxPlayerCount((int) source.getMaxPlayers());
+        target.setGameDirectory(source.getGameDirectory());
+        target.setDescription(source.getGameDescription());
+        target.setGameId(source.getGameId());
+        target.setMapName(source.getMapName());
+        target.setGameId(source.getGameId());
+        target.setOperatingSystem(OperatingSystem.valueOf(source.getOperatingSystem()));
+        target.setVersion(source.getGameVersion());
+    }
 
     public SteamAppDetails map(StoreAppDetails storeAppDetails, SteamApp app) {
         if (storeAppDetails == null)

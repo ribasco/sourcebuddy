@@ -5,6 +5,7 @@ import com.ibasco.agql.protocols.valve.steam.webapi.interfaces.SteamApps;
 import com.ibasco.agql.protocols.valve.steam.webapi.interfaces.SteamGameServerService;
 import com.ibasco.agql.protocols.valve.steam.webapi.interfaces.SteamStorefront;
 import com.ibasco.sourcebuddy.components.EntityMapper;
+import com.ibasco.sourcebuddy.constants.Cache;
 import com.ibasco.sourcebuddy.constants.Qualifiers;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
@@ -16,6 +17,7 @@ import javafx.scene.image.Image;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Async;
 
@@ -62,6 +64,7 @@ public class SteamServiceImpl implements SteamService {
     }
 
     @Override
+    @Cacheable(Cache.STEAM_APPS)
     public Optional<SteamApp> findSteamAppById(int id) {
         return steamAppRepository.findById(id);
     }

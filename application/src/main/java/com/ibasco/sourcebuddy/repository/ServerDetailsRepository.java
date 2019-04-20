@@ -2,6 +2,7 @@ package com.ibasco.sourcebuddy.repository;
 
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
+import com.ibasco.sourcebuddy.util.Check;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -9,17 +10,19 @@ import org.springframework.stereotype.Repository;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
 public interface ServerDetailsRepository extends JpaRepository<ServerDetails, UUID> {
 
-    default ServerDetails findByAddress(InetSocketAddress address) {
+    default Optional<ServerDetails> findByAddress(InetSocketAddress address) {
+        Check.requireNonNull(address, "Address cannot be null");
         return findByAddress(address.getAddress().getHostAddress(), address.getPort());
     }
 
     @Query("select a from ServerDetails  a where a.ipAddress = :addr and a.port = :port")
-    ServerDetails findByAddress(@Param("addr") String ipAddress, @Param("port") int port);
+    Optional<ServerDetails> findByAddress(@Param("addr") String ipAddress, @Param("port") int port);
 
     @Query("select a from ServerDetails a where a.steamApp = :steamApp")
     List<ServerDetails> findBySteamApp(@Param("steamApp") SteamApp steamApp);

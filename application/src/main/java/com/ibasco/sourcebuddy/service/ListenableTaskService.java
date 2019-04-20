@@ -1,6 +1,6 @@
 package com.ibasco.sourcebuddy.service;
 
-import com.ibasco.sourcebuddy.annotations.BaseComponent;
+import com.ibasco.sourcebuddy.annotations.AbstractComponent;
 import javafx.beans.property.ReadOnlyObjectProperty;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.concurrent.ScheduledService;
@@ -13,7 +13,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import javax.annotation.PostConstruct;
 import java.util.concurrent.ExecutorService;
 
-@BaseComponent
+@AbstractComponent
 abstract public class ListenableTaskService<T> extends ScheduledService<T> {
 
     private static final Logger log = LoggerFactory.getLogger(ListenableTaskService.class);

@@ -444,7 +444,7 @@ public class ServerDetails extends AuditableEntity<String> {
         ServerDetails that = (ServerDetails) o;
         if (getIpAddress() == null || that.getIpAddress() == null)
             return false;
-        return getIpAddress().equals(that.getIpAddress()) && getPort() == that.getPort();
+        return getIpAddress().equals(that.getIpAddress()) && getPort().equals(that.getPort());
     }
 
     @Override

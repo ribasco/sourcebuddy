@@ -1,5 +1,6 @@
 package com.ibasco.sourcebuddy.controllers;
 
+import com.ibasco.sourcebuddy.annotations.AbstractController;
 import com.ibasco.sourcebuddy.components.*;
 import static com.ibasco.sourcebuddy.components.GuiHelper.findNotificationPane;
 import com.ibasco.sourcebuddy.constants.Beans;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 
+@AbstractController
 abstract public class BaseController implements Initializable {
 
     private static final Logger log = LoggerFactory.getLogger(BaseController.class);

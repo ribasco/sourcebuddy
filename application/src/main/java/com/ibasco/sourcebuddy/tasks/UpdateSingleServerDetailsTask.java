@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 import org.springframework.context.annotation.Scope;
 
+import java.util.Objects;
+
 @Scope(SCOPE_PROTOTYPE)
 public class UpdateSingleServerDetailsTask extends BaseTask<Void> {
 
@@ -28,7 +30,6 @@ public class UpdateSingleServerDetailsTask extends BaseTask<Void> {
             return null;
         }
         log.debug("[Start: {}] Updating server details for '{}'", this.hashCode(), details);
-
         try {
             sourceServerService.updateServerDetails(details).join();
             sourceServerService.updatePlayerDetails(details).join();
@@ -43,5 +44,18 @@ public class UpdateSingleServerDetailsTask extends BaseTask<Void> {
     @Autowired
     public void setSourceServerService(SourceServerService sourceServerService) {
         this.sourceServerService = sourceServerService;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        UpdateSingleServerDetailsTask that = (UpdateSingleServerDetailsTask) o;
+        return details.equals(that.details);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(details);
     }
 }

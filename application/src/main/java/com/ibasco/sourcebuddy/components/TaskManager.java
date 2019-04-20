@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -38,22 +39,47 @@ public class TaskManager {
         this.executorService = (ThreadPoolExecutor) executorService;
     }
 
-    public <T extends Task<U>, U> CompletableFuture<U> run(Class<T> taskClass, Object... args) {
+    public <T extends BaseTask<U>, U> CompletableFuture<U> run(Class<T> taskClass, Object... args) {
         if (taskClass == null)
             throw new IllegalArgumentException("Task class cannot be null");
         T task = springHelper.getBean(taskClass, args);
+        return run(task);
+    }
+
+    public <T extends BaseTask<U>, U> CompletableFuture<U> run(T task) {
         if (task == null)
-            throw new IllegalStateException("Could not locate task: " + taskClass.getSimpleName());
+            throw new IllegalArgumentException("Task cannot be null");
         CompletableFuture<U> cf = new CompletableFuture<>();
-        taskMap.put(task, cf);
-        attachTaskMonitor(task);
-        executorService.execute(task);
-        log.debug("runTask() :: Submitted task '{}' on pool (Active: {}, Max Pool Size: {})", task.getClass().getSimpleName(), executorService.getActiveCount(), executorService.getMaximumPoolSize());
+        try {
+            cf.whenComplete((u, ex) -> {
+                if (ex instanceof CancellationException) {
+                    if (!task.isCancelled())
+                        task.cancel(true);
+                }
+            });
+            taskMap.put(task, cf);
+            attachTaskMonitor(task);
+            log.debug("run() :: Submitted task '{}' on pool (Active: {}, Max Pool Size: {})", task.getClass().getSimpleName(), executorService.getActiveCount(), executorService.getMaximumPoolSize());
+        } finally {
+            executorService.execute(task);
+        }
         return cf;
     }
 
+    public <T extends Task<?>> boolean isRunning(Task<?> task) {
+        return taskMap.entrySet().stream().anyMatch(p -> p.getKey().equals(task) && p.getKey().isRunning());
+    }
+
     public <T extends Task<?>> boolean isRunning(Class<T> taskClass) {
-        return taskMap.entrySet().stream().anyMatch(p -> p.getKey().getClass().equals(taskClass) && !p.getKey().isDone());
+        return taskMap.entrySet().stream().anyMatch(p -> p.getKey().getClass().equals(taskClass) && !p.getKey().isRunning());
+    }
+
+    public <T extends Task<?>> boolean contains(Class<T> taskClass) {
+        return taskMap.entrySet().stream().anyMatch(p -> p.getKey().getClass().equals(taskClass));
+    }
+
+    public boolean contains(Task<?> task) {
+        return taskMap.containsKey(task);
     }
 
     public ObservableMap<Task<?>, CompletableFuture<?>> getTaskMap() {

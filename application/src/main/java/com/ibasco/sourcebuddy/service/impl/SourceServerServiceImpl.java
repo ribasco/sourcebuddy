@@ -13,7 +13,6 @@ import com.ibasco.sourcebuddy.constants.Qualifiers;
 import com.ibasco.sourcebuddy.domain.Country;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
-import com.ibasco.sourcebuddy.enums.OperatingSystem;
 import com.ibasco.sourcebuddy.enums.ServerStatus;
 import com.ibasco.sourcebuddy.repository.CountryRepository;
 import com.ibasco.sourcebuddy.repository.ServerDetailsRepository;
@@ -27,17 +26,20 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Example;
 import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
+@Service
 @Transactional
 public class SourceServerServiceImpl implements SourceServerService {
 
@@ -91,7 +93,7 @@ public class SourceServerServiceImpl implements SourceServerService {
         //Save to database
         if (!servers.isEmpty()) {
             log.info("updateAllServerDetails() :: Saving {} entries to database", servers.size());
-            saveServerList(servers);
+            save(servers);
             log.info("updateAllServerDetails() :: Successfully saved {} entries to database", servers.size());
         }
 
@@ -110,10 +112,10 @@ public class SourceServerServiceImpl implements SourceServerService {
                         }
                         log.debug("Error on server request", ex);
                     } else {
-                        copySourceServerDetails(target, server);
-                        updateCountryDetails(target);
+                        copyAndUpdateDetails(target, server);
+                        target.setStatus(ServerStatus.ACTIVE);
                     }
-                }).thenAccept(sourceServer -> {
+                }).thenAccept(s -> {
                 });
     }
 
@@ -192,6 +194,17 @@ public class SourceServerServiceImpl implements SourceServerService {
     }
 
     @Override
+    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
+    public CompletableFuture<ServerDetails> findServerDetails(InetSocketAddress address) {
+        Optional<ServerDetails> res = serverDetailsRepository.findByAddress(address.getAddress().getHostAddress(), address.getPort());
+        return res.map(CompletableFuture::completedFuture)
+                .orElseGet(() -> {
+                    final ServerDetails details = new ServerDetails(address);
+                    return updateServerDetails(details).thenApply(aVoid -> details);
+                });
+    }
+
+    @Override
     public void updateCountryDetails(ServerDetails details) {
         if (details.getCountry() != null)
             return;
@@ -218,14 +231,28 @@ public class SourceServerServiceImpl implements SourceServerService {
     }
 
     @Override
-    public void saveServerList(Collection<ServerDetails> servers) {
+    public void save(Collection<ServerDetails> servers) {
         serverDetailsRepository.saveAll(servers);
         serverDetailsRepository.flush();
     }
 
     @Override
+    public void save(ServerDetails server) {
+        serverDetailsRepository.saveAndFlush(server);
+    }
+
+    @Override
+    public boolean exists(ServerDetails serverDetails) {
+        return serverDetailsRepository.exists(Example.of(serverDetails));
+    }
+
+    @Override
+    public boolean exists(InetSocketAddress address) {
+        return serverDetailsRepository.findByAddress(address.getAddress().getHostAddress(), address.getPort()).isPresent();
+    }
+
+    @Override
     @Async(Qualifiers.STEAM_EXECUTOR_SERVICE)
-    @Transactional(readOnly = true)
     public CompletableFuture<Integer> findServerListByApp(List<ServerDetails> servers, SteamApp app, WorkProgressCallback<ServerDetails> callback) {
         try {
             if (servers == null)
@@ -233,17 +260,19 @@ public class SourceServerServiceImpl implements SourceServerService {
             if (app == null || app.getId() <= 0)
                 throw new IllegalArgumentException("Steam app is either invalid or not specified (null)");
 
+            log.info("findServerListByApp() :: Checking if server entries are present in the database for app = {}", app);
+
             //Fetch server list from repository
             List<ServerDetails> serverEntities = serverDetailsRepository.findBySteamApp(app);
 
-            log.debug("findServerListByApp() :: Found a total of {} server detail entries from the repository", serverEntities.size());
+            log.info("findServerListByApp() :: Found a total of {} server detail entries from the repository", serverEntities.size());
 
             int added = 0;
 
             if (serverEntities.size() > 0) {
                 servers.addAll(serverEntities);
                 added = serverEntities.size();
-                log.debug("findServerListByApp() :: Added {} entities from the repository to the existing cache (New list size: {})", added, servers.size());
+                log.info("findServerListByApp() :: Added {} entities from the repository to the existing cache (New list size: {})", added, servers.size());
             }
 
             return CompletableFuture.completedFuture(added);
@@ -278,7 +307,7 @@ public class SourceServerServiceImpl implements SourceServerService {
             added = updateServerEntriesFromMaster(app, servers, callback);
         }
 
-        log.debug("updateNewServerEntries() :: Added total of {} entries to the list", added);
+        log.debug("fetchNewServerEntries() :: Added total of {} entries to the list", added);
 
         //Save to repository
         if (!servers.isEmpty()) {
@@ -317,19 +346,20 @@ public class SourceServerServiceImpl implements SourceServerService {
     public int updateServerEntrieFromWebApi(SteamApp app, List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
         AtomicInteger added = new AtomicInteger();
 
+        final Object mutext = new Object();
+
         log.debug("updateServerEntrieFromWebApi() :: Updating server entries from Web API (Total existing: {})", servers.size());
         steamQueryService.findGameServers(filter.appId(app.getId()), 30000, server -> {
             //Multiple threads maybe accessing this callback at the same time, need to synchronize
-            synchronized (servers) {
+            synchronized (mutext) {
                 Optional<ServerDetails> serverInfo = servers.stream().filter(server::equals).findFirst();
 
                 //If the server entry exists, update. Otherwise, add the new entry
                 if (serverInfo.isPresent()) {
                     ServerDetails details = serverInfo.get();
 
-                    BeanUtils.copyProperties(server, details, "id");
-
-                    /*details.setName(server.getName());
+                    //BeanUtils.copyProperties(server, details, "id");
+                    details.setName(server.getName());
                     details.setGameDirectory(server.getGameDirectory());
                     details.setVersion(server.getVersion());
                     details.setPlayerCount(server.getPlayerCount());
@@ -338,7 +368,7 @@ public class SourceServerServiceImpl implements SourceServerService {
                     details.setSecure(server.isSecure());
                     details.setDedicated(server.isDedicated());
                     details.setOperatingSystem(server.getOperatingSystem());
-                    details.setSteamId(server.getSteamId());*/
+                    details.setSteamId(server.getSteamId());
                 } else {
                     //Set steam app
                     server.setSteamApp(app);
@@ -383,24 +413,21 @@ public class SourceServerServiceImpl implements SourceServerService {
         return serverDetailsRepository.countByApp(app);
     }
 
-    //TODO: Move to util class
-    private ServerDetails copySourceServerDetails(ServerDetails target, SourceServer source) {
-        target.setName(source.getName());
-        target.setServerTags(source.getServerTags());
-        target.setPlayerCount((int) source.getNumOfPlayers());
-        target.setMaxPlayerCount((int) source.getMaxPlayers());
-        target.setGameDirectory(source.getGameDirectory());
-        target.setDescription(source.getGameDescription());
-        target.setGameId(source.getGameId());
-        target.setMapName(source.getMapName());
-        target.setGameId(source.getGameId());
-
-        //target.setAppId((int) source.getAppId());
-        target.setOperatingSystem(OperatingSystem.valueOf(source.getOperatingSystem()));
-        target.setVersion(source.getGameVersion());
-        target.setStatus(ServerStatus.ACTIVE);
-
-        return target;
+    /**
+     * Copy properties from source to target and update steam app and country information
+     *
+     * @param target
+     *         The target entity
+     * @param source
+     *         The source entity
+     */
+    private void copyAndUpdateDetails(ServerDetails target, SourceServer source) {
+        entityMapper.copy(target, source);
+        if (target.getSteamApp() == null) {
+            Optional<SteamApp> res = steamQueryService.findSteamAppById(source.getAppId());
+            res.ifPresent(target::setSteamApp);
+        }
+        updateCountryDetails(target);
     }
 
     @Autowired

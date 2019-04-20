@@ -22,12 +22,10 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 
 import java.time.Duration;
 import java.util.function.Predicate;
 
-@Controller
 public class GameBrowserController extends BaseController {
 
     private static final Logger log = LoggerFactory.getLogger(GameBrowserController.class);
@@ -128,7 +126,7 @@ public class GameBrowserController extends BaseController {
 
     private ContextMenu createGameBrowserCMenu() {
         ContextMenu cMenu = new ContextMenu();
-        MenuItem miAddBookmark = new MenuItem("Add Bookmark");
+        MenuItem miAddBookmark = new MenuItem("Add Game");
         miAddBookmark.setOnAction(event -> {
             SteamApp app = tvGameBrowser.getSelectionModel().getSelectedItem();
             if (app != null) {

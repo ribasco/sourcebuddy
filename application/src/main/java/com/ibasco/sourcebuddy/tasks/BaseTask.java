@@ -1,6 +1,6 @@
 package com.ibasco.sourcebuddy.tasks;
 
-import com.ibasco.sourcebuddy.annotations.BaseComponent;
+import com.ibasco.sourcebuddy.annotations.AbstractComponent;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.util.WorkProgressCallback;
 import javafx.beans.property.ObjectProperty;
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@BaseComponent
+@AbstractComponent
 public abstract class BaseTask<T> extends Task<T> {
 
     private static final Logger log = LoggerFactory.getLogger(BaseTask.class);
@@ -104,5 +104,6 @@ public abstract class BaseTask<T> extends Task<T> {
     public void setDuration(Duration duration) {
         this.duration.set(duration);
     }
+
 }
 

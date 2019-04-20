@@ -19,4 +19,8 @@ public class Views {
     public static final String DOCK_SERVER_CHAT = "/docks/dock-server-chat";
 
     public static final String DOCK_GAME_BROWSER = "/docks/dock-game-browser";
+
+    public static final String DIALOG_ADD_SERVER = "/dialogs/dialog-add-server";
+
+    public static final String DIALOG_ADD_GAME = "/dialogs/dialog-add-game";
 }

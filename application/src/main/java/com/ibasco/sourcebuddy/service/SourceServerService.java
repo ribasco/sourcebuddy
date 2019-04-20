@@ -7,6 +7,7 @@ import com.ibasco.sourcebuddy.util.WorkProgressCallback;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -67,6 +68,16 @@ public interface SourceServerService {
     CompletableFuture<Void> updateServerRules(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
     /**
+     * Retrieves the server details of the address specified (if applicable)
+     *
+     * @param address
+     *         The server address to query
+     *
+     * @return The server details or null if no server information was received from the server
+     */
+    CompletableFuture<ServerDetails> findServerDetails(InetSocketAddress address);
+
+    /**
      * Updates the country information of a single server.
      *
      * @param details
@@ -87,7 +98,19 @@ public interface SourceServerService {
      * @param servers
      *         List of servers to save
      */
-    void saveServerList(Collection<ServerDetails> servers);
+    void save(Collection<ServerDetails> servers);
+
+    /**
+     * Save a single server entity to the database
+     *
+     * @param server
+     *         The server to be saved
+     */
+    void save(ServerDetails server);
+
+    boolean exists(ServerDetails serverDetails);
+
+    boolean exists(InetSocketAddress address);
 
     /**
      * Retrieves a list of servers from the repository

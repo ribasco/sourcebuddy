@@ -8,10 +8,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class ServiceConfig {
 
-    @Bean
+    /*@Bean
     public SourceServerService sourceServerService() {
         return new SourceServerServiceImpl();
-    }
+    }*/
 
     @Bean
     public SteamService steamService() {
