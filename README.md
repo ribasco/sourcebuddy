@@ -1,1 +1,1 @@
-# sourcebuddy (in development)
+# sourcebuddy (under development)
