@@ -30,7 +30,7 @@ public interface ServerDetailsRepository extends JpaRepository<ServerDetails, UU
     @Query("select a from ServerDetails a where a.bookmarked = 1 and a.steamApp = :steamApp")
     List<ServerDetails> findBookmarksByApp(@Param("steamApp") SteamApp steamApp);
 
-    @Query("select distinct a.steamApp from ServerDetails a where a.bookmarked = 1")
+    @Query("select distinct a.steamApp from ServerDetails a where a.bookmarked = true")
     List<SteamApp> findBookmarkedSteamApps();
 
     @Query("select a from ServerDetails a where a.bookmarked = 1")

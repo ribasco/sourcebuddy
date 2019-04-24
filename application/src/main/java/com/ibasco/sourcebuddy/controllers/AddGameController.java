@@ -1,6 +1,6 @@
 package com.ibasco.sourcebuddy.controllers;
 
-import com.ibasco.sourcebuddy.model.SteamGamesModel;
+import com.ibasco.sourcebuddy.model.SteamAppsModel;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.TableColumn;
@@ -27,7 +27,7 @@ public class AddGameController extends DialogController {
     @FXML
     private TableColumn colName;
 
-    private SteamGamesModel steamGamesModel;
+    private SteamAppsModel steamGamesModel;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
@@ -35,7 +35,7 @@ public class AddGameController extends DialogController {
     }
 
     @Autowired
-    public void setSteamGamesModel(SteamGamesModel steamGamesModel) {
+    public void setSteamGamesModel(SteamAppsModel steamGamesModel) {
         this.steamGamesModel = steamGamesModel;
     }
 }

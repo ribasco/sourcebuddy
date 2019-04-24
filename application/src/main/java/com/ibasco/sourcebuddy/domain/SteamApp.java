@@ -1,5 +1,6 @@
 package com.ibasco.sourcebuddy.domain;
 
+import com.google.gson.annotations.Expose;
 import javafx.beans.property.*;
 
 import javax.persistence.*;
@@ -19,6 +20,7 @@ public class SteamApp extends AuditableEntity<String> implements Comparable<Stea
 
     private static final long serialVersionUID = 7154581209265575164L;
 
+    @Expose
     private IntegerProperty id = new SimpleIntegerProperty();
 
     private StringProperty name = new SimpleStringProperty();
@@ -30,6 +32,11 @@ public class SteamApp extends AuditableEntity<String> implements Comparable<Stea
     private ObjectProperty<SteamAppDetails> appDetails = new SimpleObjectProperty<>();
 
     public SteamApp() {
+    }
+
+    public SteamApp(Integer appId, String name) {
+        setId(appId);
+        setName(name);
     }
 
     public SteamApp(com.ibasco.agql.protocols.valve.steam.webapi.pojos.SteamApp steamApp) {
@@ -64,7 +71,7 @@ public class SteamApp extends AuditableEntity<String> implements Comparable<Stea
         return name;
     }
 
-    @OneToOne(mappedBy = "steamApp", orphanRemoval = true)
+    @OneToOne(mappedBy = "steamApp", cascade = CascadeType.REFRESH, orphanRemoval = true)
     public SteamAppDetails getAppDetails() {
         return appDetails.get();
     }

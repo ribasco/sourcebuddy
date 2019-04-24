@@ -34,7 +34,7 @@ public class FetchServersByApp extends BaseTask<List<ServerDetails>> {
         if (serverDetails.isEmpty()) {
             log.debug("FetchServersByApp :: we do not yet have any entries in the repository, fetch a new one from steam/master server");
             //we do not yet have any entries in the repository, fetch a new one from steam/master server
-            long total = sourceServerService.fetchNewServerEntries(app, createWorkProgressCallback("Fetching new server entries from steam/master", -1));
+            long total = sourceServerService.fetchNewServerEntries(app, createWorkProgressCallback("Fetching new server entries from steam/master", serverDetails.size()));
 
             if (total > 0) {
                 log.debug("FetchServersByApp :: Fetching new server list from repository");

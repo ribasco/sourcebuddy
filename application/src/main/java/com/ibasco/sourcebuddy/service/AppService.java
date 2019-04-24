@@ -4,9 +4,9 @@ import java.time.Duration;
 
 public interface AppService {
 
-    int runTaskAfter(Duration duration, Runnable action);
+    int runAfter(Duration duration, Runnable action);
 
-    boolean touchTask(Runnable action);
+    boolean reset(Runnable action);
 
     boolean cancelTask(Runnable action);
 }

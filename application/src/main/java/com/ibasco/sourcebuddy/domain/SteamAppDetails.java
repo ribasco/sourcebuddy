@@ -1,5 +1,6 @@
 package com.ibasco.sourcebuddy.domain;
 
+import com.google.gson.annotations.Expose;
 import javafx.beans.property.*;
 
 import javax.persistence.*;
@@ -29,20 +30,27 @@ public class SteamAppDetails extends AuditableEntity<String> {
 
     private IntegerProperty id = new SimpleIntegerProperty();
 
+    @Expose
     private ObjectProperty<SteamApp> steamApp = new SimpleObjectProperty<>();
 
+    @Expose
     private StringProperty name = new SimpleStringProperty();
 
+    @Expose
     private StringProperty shortDescription = new SimpleStringProperty();
 
+    @Expose
     private StringProperty detailedDescription = new SimpleStringProperty();
 
+    @Expose
     private StringProperty headerImageUrl = new SimpleStringProperty();
 
+    @Expose
     private StringProperty type = new SimpleStringProperty();
 
     private BooleanProperty emptyDetails = new SimpleBooleanProperty();
 
+    @Expose
     private ObjectProperty<byte[]> headerImage = new SimpleObjectProperty<>();
 
     @Id
@@ -183,6 +191,10 @@ public class SteamAppDetails extends AuditableEntity<String> {
 
     @Override
     public String toString() {
-        return getName();
+        SteamApp app = getSteamApp();
+        if (app == null) {
+            return "N/A";
+        }
+        return app.toString();
     }
 }

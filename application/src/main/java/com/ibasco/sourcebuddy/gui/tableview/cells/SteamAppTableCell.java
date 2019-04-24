@@ -44,9 +44,7 @@ public class SteamAppTableCell extends TableCell<SteamApp, Integer> {
     private ProgressIndicator pi = new ProgressIndicator();
 
     private class AppDetailCacheEntry {
-
         Image image;
-
         SteamAppDetails details;
 
         private AppDetailCacheEntry(Image image, SteamAppDetails details) {
@@ -65,13 +63,13 @@ public class SteamAppTableCell extends TableCell<SteamApp, Integer> {
         if (appId == null || empty) {
             setText(null);
             setStyle("");
+            setGraphic(null);
         } else {
             if (getTableRow() == null)
                 return;
             SteamApp app = getTableRow().getItem();
 
             if (app == null) {
-                log.warn("App instance is null for id {}", appId);
                 setGraphic(null);
                 setText(null);
                 return;
@@ -86,9 +84,7 @@ public class SteamAppTableCell extends TableCell<SteamApp, Integer> {
 
             //Check existing cached entry
             if (cacheEntry != null) {
-                log.debug("findAppDetails({}) :: Got details from cache", app.getId());
-                SteamAppDetails details = cacheEntry.details;
-                updateCell(details, cacheEntry.image);
+                updateCell(cacheEntry.details, cacheEntry.image);
                 return;
             }
 

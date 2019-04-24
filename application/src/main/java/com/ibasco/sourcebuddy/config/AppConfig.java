@@ -1,12 +1,15 @@
 package com.ibasco.sourcebuddy.config;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.ibasco.sourcebuddy.Bootstrap;
 import com.ibasco.sourcebuddy.annotations.AbstractComponent;
 import com.ibasco.sourcebuddy.annotations.AbstractController;
 import com.ibasco.sourcebuddy.annotations.AbstractService;
+import com.ibasco.sourcebuddy.components.HttpDownloader;
 import com.ibasco.sourcebuddy.components.NotificationManager;
 import com.ibasco.sourcebuddy.components.SpringHelper;
+import com.ibasco.sourcebuddy.components.gson.JsonTypeAdapter;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
 import com.ibasco.sourcebuddy.repository.ServerDetailsRepository;
 import com.ibasco.sourcebuddy.repository.impl.CustomRepositoryImpl;
@@ -14,9 +17,11 @@ import com.ibasco.sourcebuddy.util.ResourceUtil;
 import com.ibasco.sourcebuddy.util.preload.SteamAppsPreload;
 import com.maxmind.geoip2.DatabaseReader;
 import org.apache.commons.dbcp2.BasicDataSource;
+import org.hildan.fxgson.FxGson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -30,11 +35,9 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.IOException;
-import java.net.HttpURLConnection;
 import java.net.InetAddress;
-import java.net.URI;
 import java.net.http.HttpClient;
-import java.util.Scanner;
+import java.util.Map;
 import java.util.concurrent.*;
 
 @Configuration
@@ -59,7 +62,7 @@ public class AppConfig implements AsyncConfigurer {
     @Value("${app.public-api-endpoint}")
     private String publicIpApiEndpoint;
 
-    private final int DEFAULT_THREADS = Runtime.getRuntime().availableProcessors() * 2;
+    private final int DEFAULT_THREADS = Runtime.getRuntime().availableProcessors() + 1;
 
     @Bean
     @Profile("test")
@@ -73,19 +76,11 @@ public class AppConfig implements AsyncConfigurer {
     }
 
     @Bean("publicIp")
-    public InetAddress retrievePublicIp() {
+    public InetAddress retrievePublicIp(HttpDownloader downloader) {
         try {
             log.info("Retrieving public ipAddress from {}", publicIpApiEndpoint);
-            var httpClient = (HttpURLConnection) URI.create(publicIpApiEndpoint).toURL().openConnection();
-            httpClient.setRequestMethod("GET");
-            var httpResponse = httpClient.getInputStream();
-            var scn = new Scanner(httpResponse);
-            var json_sb = new StringBuilder();
-            while (scn.hasNext()) {
-                json_sb.append(scn.next());
-            }
-            PublicIp publicIp = gsonProvider().fromJson(json_sb.toString(), PublicIp.class);
-            return InetAddress.getByName(publicIp.ipAddress);
+            CompletableFuture<PublicIp> publicIp = downloader.downloadJson(publicIpApiEndpoint, PublicIp.class, null);
+            return InetAddress.getByName(publicIp.join().ipAddress);
         } catch (IOException e) {
             log.error("Error during http client initialization", e);
         }
@@ -93,8 +88,15 @@ public class AppConfig implements AsyncConfigurer {
     }
 
     @Bean("gsonProvider")
-    public Gson gsonProvider() {
-        return new Gson();
+    public Gson gsonProvider(ConfigurableApplicationContext context) {
+        GsonBuilder gb = FxGson.fullBuilder();
+        Map<String, JsonTypeAdapter> typeAdapters = context.getBeansOfType(JsonTypeAdapter.class);
+        for (var entry : typeAdapters.entrySet()) {
+            JsonTypeAdapter adapter = entry.getValue();
+            log.info("Registering type adapter: {}", adapter.getClass().getSimpleName());
+            gb.registerTypeAdapter(adapter.getType(), adapter);
+        }
+        return gb.excludeFieldsWithoutExposeAnnotation().create();
     }
 
     @Bean(destroyMethod = "shutdownNow")

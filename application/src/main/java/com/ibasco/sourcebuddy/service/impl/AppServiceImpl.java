@@ -25,7 +25,6 @@ public class AppServiceImpl implements AppService {
     private Map<Integer, ScheduledTask> scheduledTasks = new HashMap<>();
 
     class ScheduledTask {
-
         ScheduledFuture<?> future;
 
         Duration duration;
@@ -39,19 +38,14 @@ public class AppServiceImpl implements AppService {
         }
     }
 
-    @Autowired
-    public void setScheduledTaskService(ScheduledExecutorService scheduledTaskService) {
-        this.scheduledTaskService = scheduledTaskService;
-    }
-
     @Override
-    public int runTaskAfter(Duration delay, Runnable action) {
+    public int runAfter(Duration delay, Runnable action) {
         if (action == null)
             throw new IllegalArgumentException("runTaskAfter () :: Action cannot be null");
         int id = getTaskId(action);
 
         if (scheduledTasks.containsKey(id)) {
-            log.debug("runTaskAfter() :: Task already scheduled: {}", id);
+            //log.debug("runTaskAfter() :: Task already scheduled: {}", id);
             return -1;
         }
 
@@ -60,7 +54,7 @@ public class AppServiceImpl implements AppService {
                 try {
                     action.run();
                 } finally {
-                    log.debug("runTaskAfter() :: Completed task (total: {})", scheduledTasks.size());
+                    //log.debug("runTaskAfter() :: Completed task (total: {})", scheduledTasks.size());
                     scheduledTasks.remove(action.hashCode());
                 }
             });
@@ -71,14 +65,14 @@ public class AppServiceImpl implements AppService {
     }
 
     @Override
-    public boolean touchTask(Runnable action) {
+    public boolean reset(Runnable action) {
         Check.requireNonNull(action, "touchTask() :: Action cannot be null");
         int id = getTaskId(action);
         ScheduledTask task = scheduledTasks.get(id);
         if (task != null) {
             if (cancelTask(action)) {
-                runTaskAfter(task.duration, task.action);
-                log.debug("touchTask() :: Restarting scheduled task = {}", task.action.hashCode());
+                runAfter(task.duration, task.action);
+                //log.debug("touchTask() :: Restarting scheduled task = {}", task.action.hashCode());
                 return true;
             }
         }
@@ -107,5 +101,10 @@ public class AppServiceImpl implements AppService {
         if (action != null)
             return action.hashCode();
         throw new IllegalStateException("getTaskId() :: Action cannot be null");
+    }
+
+    @Autowired
+    public void setScheduledTaskService(ScheduledExecutorService scheduledTaskService) {
+        this.scheduledTaskService = scheduledTaskService;
     }
 }

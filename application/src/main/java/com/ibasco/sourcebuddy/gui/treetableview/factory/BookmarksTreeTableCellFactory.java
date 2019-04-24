@@ -1,7 +1,9 @@
 package com.ibasco.sourcebuddy.gui.treetableview.factory;
 
+import static com.ibasco.sourcebuddy.components.GuiHelper.createDecoratedTreeTableCell;
 import com.ibasco.sourcebuddy.domain.Country;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
+import com.ibasco.sourcebuddy.enums.OperatingSystem;
 import com.ibasco.sourcebuddy.enums.ServerStatus;
 import com.ibasco.sourcebuddy.gui.decorators.ServerCountryCellDecorator;
 import com.ibasco.sourcebuddy.gui.decorators.ServerNameCellDecorator;
@@ -13,6 +15,7 @@ import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTableColumn;
 import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.text.WordUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -41,8 +44,11 @@ public class BookmarksTreeTableCellFactory implements Callback<TreeTableColumn<S
     }
 
     public TreeTableCell<ServerDetails, String> serverName(TreeTableColumn<ServerDetails, String> column) {
-
         return new FormattedTreeTableCell<>("root-col", p -> StringUtils.isBlank(p.getIpAddress()));//new BookmarksTreeTableCell<>(serverNameCellDecorator);
+    }
+
+    public TreeTableCell<ServerDetails, OperatingSystem> operatingSystem(TreeTableColumn<ServerDetails, OperatingSystem> col) {
+        return createDecoratedTreeTableCell((item, cell) -> cell.setText(WordUtils.capitalizeFully(item.name())));
     }
 
     @Override

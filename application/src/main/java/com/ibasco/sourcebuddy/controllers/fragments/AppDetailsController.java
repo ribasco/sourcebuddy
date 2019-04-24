@@ -26,7 +26,6 @@ public class AppDetailsController extends FragmentController {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        log.debug("Got instances: {}, {}", lblGameDescription, lblGameTitle);
     }
 
     public void updateDetails(SteamAppDetails details) {

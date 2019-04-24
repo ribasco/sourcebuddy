@@ -138,6 +138,8 @@ public interface SteamService {
 
     SteamAppDetails saveSteamAppDetails(SteamAppDetails steamAppDetails);
 
+    void saveSteamAppDetails(Iterable<SteamAppDetails> steamAppDetails);
+
     CompletableFuture<Image> fetchHeaderImage(SteamAppDetails details);
 
     CompletableFuture<byte[]> fetchHeaderImageRaw(SteamAppDetails details);

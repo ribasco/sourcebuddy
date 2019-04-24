@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PostConstruct;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Component
@@ -23,8 +22,6 @@ public class ServerDetailsModel {
     private static final Logger log = LoggerFactory.getLogger(ServerDetailsModel.class);
 
     private static final ReadWriteLock serverListLock = new ReentrantReadWriteLock();
-
-    private static final ReentrantLock lock = new ReentrantLock();
 
     public static final Lock WRITE_LOCK = serverListLock.writeLock();
 
@@ -62,7 +59,12 @@ public class ServerDetailsModel {
     }
 
     public ObservableList<ServerDetails> getServerDetails() {
-        return serverDetails.get();
+        try {
+            READ_LOCK.lock();
+            return serverDetails.get();
+        } finally {
+            READ_LOCK.unlock();
+        }
     }
 
     public void setServerDetails(ObservableList<ServerDetails> serverDetails) {

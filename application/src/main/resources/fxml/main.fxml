@@ -24,6 +24,11 @@
                         <MenuItem mnemonicParsing="false" text="Preferences"/>
                     </items>
                 </Menu>
+                <Menu mnemonicParsing="false" text="View">
+                    <items>
+                        <MenuItem mnemonicParsing="false" text="Action 1"/>
+                    </items>
+                </Menu>
                 <Menu mnemonicParsing="false" text="Help">
                     <items>
                         <MenuItem mnemonicParsing="false" text="About"/>
@@ -34,7 +39,6 @@
         <ToolBar prefHeight="40.0" prefWidth="200.0">
             <items>
                 <Button fx:id="btnSave" contentDisplay="CENTER" mnemonicParsing="false" prefHeight="25.0" prefWidth="82.0" text="Save"/>
-                <Button fx:id="btnUpdateMasterList" mnemonicParsing="false" prefHeight="25.0" prefWidth="114.0" text="Update Game"/>
             </items>
         </ToolBar>
         <NotificationPane fx:id="npMain" VBox.vgrow="ALWAYS">

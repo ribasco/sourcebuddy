@@ -13,7 +13,7 @@ import java.net.InetSocketAddress;
 import java.util.Objects;
 
 @Entity
-@Table(name = ServerDetails.TABLE_NAME)
+@Table(name = ServerDetails.TABLE_NAME, indexes = {@Index(name = "IDX_BOOKMARK", columnList = ServerDetails.BOOKMARKED)})
 public class ServerDetails extends AuditableEntity<String> {
 
     static final String TABLE_NAME = "SB_SERVER_DETAILS";

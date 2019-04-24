@@ -1,9 +1,12 @@
 package com.ibasco.sourcebuddy.components;
 
+import com.ibasco.sourcebuddy.constants.Views;
 import com.ibasco.sourcebuddy.domain.KeyValueInfo;
+import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.gui.cells.DecoratedTableCell;
 import com.ibasco.sourcebuddy.gui.cells.DecoratedTreeTableCell;
 import com.ibasco.sourcebuddy.gui.decorators.CellDecorator;
+import com.ibasco.sourcebuddy.model.TreeDataModel;
 import com.ibasco.sourcebuddy.service.AppService;
 import com.ibasco.sourcebuddy.util.Delta;
 import com.ibasco.sourcebuddy.util.WorkProgressCallback;
@@ -35,8 +38,10 @@ import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Component
 public class GuiHelper {
@@ -48,11 +53,43 @@ public class GuiHelper {
     private ViewManager viewManager;
 
     public Parent getLoadingPlaceholder(String message) {
-        VBox placeholderView = viewManager.loadDetachedView("/fragments/placeholder");
+        VBox placeholderView = viewManager.loadDetachedView(Views.FRAGMENT_PLACEHOLDER);
         Label lbl = findNode(placeholderView, Label.class);
         if (lbl != null)
             lbl.setText(message);
         return placeholderView;
+    }
+
+    public static TreeItem<ServerDetails> convertToTreeItem(TreeDataModel<ServerDetails> data) {
+        TreeItem<ServerDetails> root = new TreeItem<>();
+        root.setExpanded(true);
+        copyTreeDataToTreeItem(data, root);
+        return root;
+    }
+
+    public static void copyTreeDataToTreeItem(TreeDataModel<ServerDetails> source, TreeItem<ServerDetails> target) {
+        for (TreeDataModel<ServerDetails> child : source.getChildren()) {
+            TreeItem<ServerDetails> childRoot = new TreeItem<>(child.getItem());
+            childRoot.setExpanded(true);
+            target.getChildren().add(childRoot);
+            if (!child.getChildren().isEmpty()) {
+                copyTreeDataToTreeItem(child, childRoot);
+            }
+        }
+    }
+
+    public static <S, T> TreeDataModel<T> mapToTreeDataModel(Map<S, List<T>> map, Function<S, T> childFactory) {
+        TreeDataModel<T> root = new TreeDataModel<>();
+        for (var entry : map.entrySet()) {
+            List<T> childList = entry.getValue();
+            TreeDataModel<T> childRoot = new TreeDataModel<>(childFactory.apply(entry.getKey())); //new ServerDetails(entry.getKey().getName())
+            root.getChildren().add(childRoot);
+            for (T server : childList) {
+                TreeDataModel<T> serverTree = new TreeDataModel<>(server);
+                childRoot.getChildren().add(serverTree);
+            }
+        }
+        return root;
     }
 
     @SuppressWarnings("Duplicates")
@@ -320,7 +357,7 @@ public class GuiHelper {
                     tbParent.getChildren().remove(toolBar);
                 } else {
                     tbParent.getChildren().add(toolBar);
-                    appService.runTaskAfter(Duration.ofSeconds(5), removeTbTask);
+                    appService.runAfter(Duration.ofSeconds(5), removeTbTask);
                     log.debug("Scheduled close task : {}", removeTbTask);
                     toolBar.requestFocus();
                 }
@@ -341,7 +378,7 @@ public class GuiHelper {
                 }
             }
             if (tbParent.getChildren().contains(toolBar))
-                appService.touchTask(removeTbTask);
+                appService.reset(removeTbTask);
         });
 
         activateOnNode.setOnKeyPressed(keyEventHandler);

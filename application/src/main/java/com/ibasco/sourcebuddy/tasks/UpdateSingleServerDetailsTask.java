@@ -31,13 +31,12 @@ public class UpdateSingleServerDetailsTask extends BaseTask<Void> {
         }
         log.debug("[Start: {}] Updating server details for '{}'", this.hashCode(), details);
         try {
-            sourceServerService.updateServerDetails(details).join();
-            sourceServerService.updatePlayerDetails(details).join();
-            sourceServerService.updateServerRules(details).join();
+            sourceServerService.updateServerDetails(details).get();
+            sourceServerService.updatePlayerDetails(details).get();
+            sourceServerService.updateServerRules(details).get();
         } finally {
             log.debug("[End: {}] Updating server details for '{}'", this.hashCode(), details);
         }
-
         return null;
     }
 

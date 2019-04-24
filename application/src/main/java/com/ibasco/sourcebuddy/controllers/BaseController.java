@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.context.event.EventListener;
 
 import java.net.URL;
@@ -155,7 +154,6 @@ abstract public class BaseController implements Initializable {
         return configService;
     }
 
-    @Lazy
     @Autowired
     protected void setGuiHelper(GuiHelper guiHelper) {
         this.guiHelper = guiHelper;

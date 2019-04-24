@@ -3,12 +3,11 @@ package com.ibasco.sourcebuddy.controllers;
 import com.ibasco.sourcebuddy.components.TaskManager;
 import com.ibasco.sourcebuddy.constants.Icons;
 import com.ibasco.sourcebuddy.constants.Views;
-import com.ibasco.sourcebuddy.domain.ConfigProfile;
-import com.ibasco.sourcebuddy.domain.ManagedServer;
 import com.ibasco.sourcebuddy.events.ApplicationInitEvent;
 import com.ibasco.sourcebuddy.gui.skins.CustomTaskProgressViewSkin;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
 import com.ibasco.sourcebuddy.service.ConfigService;
+import com.ibasco.sourcebuddy.service.UpdateService;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
@@ -66,6 +65,8 @@ public class MainController extends BaseController {
 
     private Button btnServiceStatus;
 
+    private UpdateService updateService;
+
     @FXML
     private Button btnSave;
 
@@ -79,17 +80,6 @@ public class MainController extends BaseController {
         setupMainToolbar();
         setupServiceStatusPopOver();
         setupStatusBar();
-
-        btnSave.setOnAction(event -> {
-            ConfigProfile profile = configService.createProfile();
-            ManagedServer managedServer = new ManagedServer();
-            managedServer.setProfile(profile);
-            managedServer.setServerDetails(serverDetailsModel.getSelectedServer());
-            profile.getManagedServers().add(managedServer);
-            configService.saveProfile(profile);
-            configService.setDefaultProfile(profile);
-            log.debug("Successfully saved profile: {}", profile);
-        });
 
         publishEvent(new ApplicationInitEvent(this, stage));
     }
@@ -166,7 +156,7 @@ public class MainController extends BaseController {
         Pane serverManagerPane = viewManager.loadView(Views.DOCK_SERVER_MANAGER);
         Pane logsPane = viewManager.loadView(Views.DOCK_LOGS);
         Pane serverChatPane = viewManager.loadView(Views.DOCK_SERVER_CHAT);
-        //Pane gameBrowserPane = viewManager.loadView(Views.DOCK_GAME_BROWSER);
+        Pane gameBrowserPane = viewManager.loadView(Views.DOCK_GAME_BROWSER);
 
         dpMainDock.addEventHandler(DockEvent.DOCK_RELEASED, event -> updateSplitPaneResizable(dpMainDock.getChildren(), 0));
 
@@ -194,11 +184,11 @@ public class MainController extends BaseController {
         DockNode serverChatDock = new DockNode(serverChatPane, "Server Chat", chatImage);
         serverChatDock.dock(dpMainDock, DockPos.CENTER, serverManagerDock);
 
-        /*DockNode gameBrowserDock = new DockNode(gameBrowserPane, "Game Browser");
+        DockNode gameBrowserDock = new DockNode(gameBrowserPane, "Game Browser");
         gameBrowserDock.setId("dockGameBrowsr");
         gameBrowserDock.setPrefWidth(230);
         gameBrowserDock.setMinWidth(250);
-        gameBrowserDock.dock(dpMainDock, DockPos.LEFT);*/
+        gameBrowserDock.dock(dpMainDock, DockPos.LEFT);
     }
 
     private void updateSplitPaneResizable(ObservableList<Node> items, int level) {
@@ -226,5 +216,10 @@ public class MainController extends BaseController {
     @Autowired
     public void setConfigService(ConfigService configService) {
         this.configService = configService;
+    }
+
+    @Autowired
+    public void setUpdateService(UpdateService updateService) {
+        this.updateService = updateService;
     }
 }

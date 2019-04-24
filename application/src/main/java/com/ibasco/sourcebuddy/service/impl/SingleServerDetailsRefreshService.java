@@ -1,6 +1,7 @@
 package com.ibasco.sourcebuddy.service.impl;
 
 import com.ibasco.sourcebuddy.domain.ServerDetails;
+import com.ibasco.sourcebuddy.model.ServerDetailsModel;
 import com.ibasco.sourcebuddy.service.ListenableTaskService;
 import com.ibasco.sourcebuddy.tasks.UpdateSingleServerDetailsTask;
 import javafx.beans.property.ObjectProperty;
@@ -24,7 +25,12 @@ public class SingleServerDetailsRefreshService extends ListenableTaskService<Voi
 
     @Override
     protected Task<Void> createNewTask() {
-        return getApplicationContext().getBean(UpdateSingleServerDetailsTask.class, serverDetails.get());
+        try {
+            ServerDetailsModel.READ_LOCK.lock();
+            return getApplicationContext().getBean(UpdateSingleServerDetailsTask.class, serverDetails.get());
+        } finally {
+            ServerDetailsModel.READ_LOCK.unlock();
+        }
     }
 
     public ServerDetails getServerDetails() {

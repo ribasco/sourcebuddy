@@ -3,7 +3,6 @@ module sourcebuddy.app {
     exports com.ibasco.sourcebuddy.events;
     exports com.ibasco.sourcebuddy.repository;
     exports com.ibasco.sourcebuddy.exceptions;
-    exports com.ibasco.sourcebuddy.util.dialect to org.hibernate.orm.core;
     exports com.ibasco.sourcebuddy.domain to spring.beans, org.apache.commons.lang3, spring.data.commons;
     exports com.ibasco.sourcebuddy.service to spring.core, spring.beans, spring.aop;
     exports com.ibasco.sourcebuddy.components to spring.beans, spring.core;
@@ -21,7 +20,9 @@ module sourcebuddy.app {
     exports com.ibasco.sourcebuddy.gui.decorators to spring.beans, spring.context;
     exports com.ibasco.sourcebuddy.controllers.fragments to spring.beans, spring.context;
     exports com.ibasco.sourcebuddy.repository.impl to spring.beans, spring.context, spring.data.commons;
-    
+    exports com.ibasco.sourcebuddy.components.gson to spring.beans, spring.context;
+    exports com.ibasco.sourcebuddy.gui.listeners to spring.beans, spring.context;
+
     opens com.ibasco.sourcebuddy.repository.impl to spring.core;
     opens com.ibasco.sourcebuddy to spring.core;
     opens com.ibasco.sourcebuddy.config to spring.core, spring.beans, spring.context;
@@ -79,5 +80,7 @@ module sourcebuddy.app {
     requires spring.core;
     requires jdk.internal.opt;
     requires richtextfx;
+    requires fx.gson;
+    requires org.apache.commons.codec;
     //requires dockfx;
 }

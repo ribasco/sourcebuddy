@@ -75,11 +75,10 @@ public class UpdateAllServerDetailsTask extends BaseTask<Void> {
         return null;
     }
 
-    private CompletableFuture<Void> runFutureTask(BiFunction<List<ServerDetails>, WorkProgressCallback<ServerDetails>, CompletableFuture<Void>> action, String desc, List<ServerDetails> serverList, int workSize) throws Exception {
+    private void runFutureTask(BiFunction<List<ServerDetails>, WorkProgressCallback<ServerDetails>, CompletableFuture<Void>> action, String desc, List<ServerDetails> serverList, int workSize) throws Exception {
         CompletableFuture<Void> cf = action.apply(serverList, createWorkProgressCallback(desc, workSize));
         taskFutures.add(cf);
         cf.get();
-        return cf;
     }
 
     @Autowired

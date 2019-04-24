@@ -131,7 +131,6 @@ public class SteamServiceImpl implements SteamService {
     public CompletableFuture<SteamAppDetails> findAppDetails(SteamApp app, boolean processResources) {
         Optional<SteamAppDetails> details = steamAppDetailsRepository.findByApp(app);
         if (details.isPresent()) {
-            //log.debug("Retrieved from repository :: {}", details.get());
             return CompletableFuture.completedFuture(details.get());
         }
         return steamStorefrontApi.getAppDetails(app.getId())
@@ -184,6 +183,11 @@ public class SteamServiceImpl implements SteamService {
     @Override
     public SteamAppDetails saveSteamAppDetails(SteamAppDetails steamAppDetails) {
         return steamAppDetailsRepository.save(steamAppDetails);
+    }
+
+    @Override
+    public void saveSteamAppDetails(Iterable<SteamAppDetails> steamAppDetails) {
+        steamAppDetailsRepository.saveAll(steamAppDetails);
     }
 
     @Override

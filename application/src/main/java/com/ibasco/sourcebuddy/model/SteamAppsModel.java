@@ -8,21 +8,34 @@ import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
+import javafx.util.Callback;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
 @Component
-public class SteamGamesModel {
+public class SteamAppsModel {
 
-    private ObservableList<SteamApp> blSteamApps = FXCollections.observableArrayList(param -> new Observable[] {param.bookmarkedProperty()});
+    private ListProperty<SteamApp> steamAppList = new SimpleListProperty<>() {
+        private boolean updating = false;
 
-    private FilteredList<SteamApp> blBookmarkedApps = new FilteredList<>(blSteamApps, SteamApp::isBookmarked);
+        @Override
+        protected void invalidated() {
+            if (updating)
+                return;
+            try {
+                updating = true;
+                ObservableList<SteamApp> lst = get();
+                if (lst == null)
+                    return;
+                Callback<SteamApp, Observable[]> extractor = param -> new Observable[] {param.bookmarkedProperty()};
+                set(FXCollections.observableList(lst, extractor));
+            } finally {
+                updating = false;
+            }
 
-    private ListProperty<SteamApp> steamAppList = new SimpleListProperty<>(blSteamApps);
-
-    private ListProperty<SteamApp> bookmarkedAppList = new SimpleListProperty<>(blBookmarkedApps);
+        }
+    };
 
     private ObjectProperty<SteamApp> selectedGame = new SimpleObjectProperty<>();
 
@@ -47,19 +60,11 @@ public class SteamGamesModel {
     }
 
     public void setSteamAppList(List<SteamApp> steamAppList) {
-        this.steamAppList.clear();
-        this.steamAppList.addAll(steamAppList);
-    }
-
-    public ObservableList<SteamApp> getBookmarkedAppList() {
-        return bookmarkedAppList.get();
-    }
-
-    public ListProperty<SteamApp> bookmarkedAppListProperty() {
-        return bookmarkedAppList;
-    }
-
-    public void setBookmarkedAppList(ObservableList<SteamApp> bookmarkedAppList) {
-        this.bookmarkedAppList.set(bookmarkedAppList);
+        if (steamAppList == null) {
+            this.steamAppList.set(null);
+            return;
+        }
+        Callback<SteamApp, Observable[]> extractor = param -> new Observable[] {param.bookmarkedProperty()};
+        this.steamAppList.set(FXCollections.observableList(steamAppList, extractor));
     }
 }

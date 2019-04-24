@@ -23,4 +23,6 @@ public class Views {
     public static final String DIALOG_ADD_SERVER = "/dialogs/dialog-add-server";
 
     public static final String DIALOG_ADD_GAME = "/dialogs/dialog-add-game";
+
+    public static final String FRAGMENT_PLACEHOLDER = "/fragments/placeholder";
 }
