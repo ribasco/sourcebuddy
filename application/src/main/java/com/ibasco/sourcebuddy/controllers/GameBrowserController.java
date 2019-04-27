@@ -5,19 +5,23 @@ import static com.ibasco.sourcebuddy.components.GuiHelper.createBasicColumn;
 import com.ibasco.sourcebuddy.controllers.fragments.AppDetailsController;
 import com.ibasco.sourcebuddy.domain.SteamApp;
 import com.ibasco.sourcebuddy.domain.SteamAppDetails;
+import com.ibasco.sourcebuddy.enums.SteamAppListFilter;
+import com.ibasco.sourcebuddy.gui.converters.MappedObjectStringConverter;
 import com.ibasco.sourcebuddy.gui.listeners.RunnableTextChangeListener;
 import com.ibasco.sourcebuddy.gui.tableview.cells.BookmarkTableCell;
 import com.ibasco.sourcebuddy.gui.tableview.cells.SteamAppDetailsCell;
 import com.ibasco.sourcebuddy.gui.tableview.cells.SteamAppTableCell;
+import com.ibasco.sourcebuddy.gui.tableview.factory.PulsingTableRowFactory;
 import com.ibasco.sourcebuddy.model.SteamAppsModel;
 import com.ibasco.sourcebuddy.service.SteamService;
-import javafx.beans.binding.Bindings;
+import com.ibasco.sourcebuddy.tasks.FetchServersByApp;
+import com.ibasco.sourcebuddy.tasks.UpdateAllServerDetailsTask;
+import javafx.application.Platform;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -29,6 +33,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Optional;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Predicate;
 
 public class GameBrowserController extends BaseController {
@@ -54,7 +61,7 @@ public class GameBrowserController extends BaseController {
     private Button btnClearFilter;
 
     @FXML
-    private ToggleGroup filterGroup;
+    private ComboBox<SteamAppListFilter> cbAppFilter;
     //</editor-fold>
 
     private SteamService steamService;
@@ -65,7 +72,7 @@ public class GameBrowserController extends BaseController {
 
     private ListProperty<SteamApp> filteredApps = new SimpleListProperty<>();
 
-    private ObjectProperty<Predicate<? super SteamApp>> filterPredicate = new SimpleObjectProperty<>(p -> true);
+    private ObjectProperty<Predicate<SteamApp>> filterPredicate = new SimpleObjectProperty<>(p -> true);
 
     private Runnable applyFilterCallback = new Runnable() {
         @Override
@@ -85,25 +92,51 @@ public class GameBrowserController extends BaseController {
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
-        log.debug("Game browser initialized");
         setupGameBrowserTable();
-
-        filteredApps.bind(Bindings.createObjectBinding(() -> {
-            if (steamGameModel.getSteamAppList() != null) {
-                FilteredList<SteamApp> filteredList = steamGameModel.getSteamAppList().filtered(p -> true);
-                filteredList.predicateProperty().bindBidirectional(filterPredicate);
-                return filteredList;
-            }
-            return FXCollections.emptyObservableList();
-        }, steamGameModel.steamAppListProperty()));
-
-        //steamGameModel.steamAppListProperty().bind();
+        filteredApps.bind(GuiHelper.createFilteredListBinding(steamGameModel.steamAppListProperty(), filterPredicate));
         tvGameBrowser.itemsProperty().bind(filteredApps);
-        RunnableTextChangeListener filterChangeListener = springHelper.getBean(RunnableTextChangeListener.class, applyFilterCallback);
-        tfGameFilter.textProperty().addListener(filterChangeListener);
+
+        tvGameBrowser.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue == null)
+                return;
+            try {
+                Optional<CompletableFuture<?>> res = taskManager.getFuture(FetchServersByApp.class);
+                if (res.isPresent()) {
+                    log.info("Fetch steam app list in-progress");
+                    res.get().cancel(true);
+                } else {
+                    res = taskManager.getFuture(UpdateAllServerDetailsTask.class);
+                    if (res.isPresent()) {
+                        log.info("Fetch steam app list in-progress");
+                        res.get().cancel(true);
+                    }
+                }
+                log.info("Waiting for cancellation");
+                res.ifPresent(CompletableFuture::join);
+            } catch (CancellationException e) {
+                log.warn("Cancelled running task");
+            }
+            log.info("Selecting new game");
+            steamGameModel.setSelectedGame(newValue);
+        });
+
+        tfGameFilter.textProperty().addListener(springHelper.getBean(RunnableTextChangeListener.class, applyFilterCallback));
         guiHelper.setupToggableToolbar(tbGameFilter, tvGameBrowser);
         btnClearFilter.setOnAction(this::clearFilter);
         btnRefreshApps.setOnAction(this::refreshApps);
+        cbAppFilter.setItems(FXCollections.observableArrayList(SteamAppListFilter.values()));
+        cbAppFilter.setConverter(new MappedObjectStringConverter<>(SteamAppListFilter::getDescription));
+        cbAppFilter.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                Predicate<SteamApp> filter;
+                if (newValue == SteamAppListFilter.SHOW_BOOKMARKED) {
+                    filter = SteamApp::isBookmarked;
+                } else {
+                    filter = p -> true;
+                }
+                filterPredicate.set(filter);
+            }
+        });
     }
 
     private void refreshApps(ActionEvent actionEvent) {
@@ -115,7 +148,7 @@ public class GameBrowserController extends BaseController {
                 getNotificationManager().showError("Could not retrieve steam app list: " + ex.getMessage());
                 return;
             }
-            steamGameModel.setSteamAppList(steamApps);
+            Platform.runLater(() -> steamGameModel.setSteamAppList(steamApps));
         });
     }
 
@@ -126,17 +159,21 @@ public class GameBrowserController extends BaseController {
     private void setupGameBrowserTable() {
         tvGameBrowser.getColumns().clear();
 
+        int descPrefWidth = MIN_WIDTH + (int) (MIN_WIDTH * 0.3f);
+
         TableColumn<SteamApp, Integer> col02 = createBasicColumn(tvGameBrowser, "Thumbnail", "id", this::drawSteamAppCell);
         col02.setMinWidth(MIN_WIDTH);
         col02.setMaxWidth(MIN_WIDTH);
 
         TableColumn<SteamApp, SteamAppDetails> col03 = createBasicColumn(tvGameBrowser, "Description", "appDetails", this::drawAppDetailsCell, false);
-        col03.setPrefWidth(MIN_WIDTH * 2);
+        col03.setPrefWidth(descPrefWidth);
+
+        tvGameBrowser.setRowFactory(new PulsingTableRowFactory<>());
         tvGameBrowser.widthProperty().addListener((observable, oldValue, newValue) -> {
             Double newWidth = (Double) newValue;
             if (newWidth == null)
                 return;
-            if (newWidth > (MIN_WIDTH * 2)) {
+            if (newWidth > (descPrefWidth)) {
                 if (!tvGameBrowser.getColumns().contains(col03)) {
                     tvGameBrowser.getColumns().add(col03);
                     tvGameBrowser.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);

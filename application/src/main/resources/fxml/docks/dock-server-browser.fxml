@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.ibasco.sourcebuddy.controls.ProgressComboBox?>
 <?import com.jfoenix.controls.JFXProgressBar?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import org.controlsfx.control.CheckComboBox?>
+<?import javafx.scene.text.Font?>
+<?import org.controlsfx.control.*?>
 <VBox prefHeight="513.0" prefWidth="1216.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.ServerBrowserController">
     <children>
         <AnchorPane prefHeight="513.0" prefWidth="1094.0" VBox.vgrow="ALWAYS">
@@ -19,18 +19,35 @@
                                         <children>
                                             <VBox>
                                                 <children>
-                                                    <ToolBar fx:id="tbServerPanel" prefHeight="40.0" prefWidth="200.0">
+                                                    <ToolBar prefHeight="40.0" prefWidth="200.0">
                                                         <items>
-                                                            <TextField prefHeight="32.0" prefWidth="214.0" promptText="Filter" styleClass="sb-text-field"/>
-                                                            <CheckComboBox prefHeight="32.0" prefWidth="137.0" title="Tags"/>
-                                                            <CheckComboBox prefHeight="32.0" prefWidth="171.0" title="Country"/>
-                                                            <CheckComboBox prefHeight="32.0" prefWidth="156.0" title="Others"/>
+                                                            <Label fx:id="lblSelectedGame" text="&lt;Game&gt;" textFill="#72eb2d">
+                                                                <font>
+                                                                    <Font name="Consolas" size="16.0"/>
+                                                                </font>
+                                                            </Label>
                                                             <Pane HBox.hgrow="ALWAYS"/>
-                                                            <ProgressComboBox fx:id="cbBookmarkedGames" nodeOrientation="LEFT_TO_RIGHT" prefHeight="32.0" prefWidth="191.0" promptText="Select Game"/>
-                                                            <Button fx:id="btnSetDefaultGame" mnemonicParsing="false" prefHeight="32.0" prefWidth="82.0" text="Set Default"/>
-                                                            <Button fx:id="btnAddGame" mnemonicParsing="false" prefHeight="32.0" text="Add Game"/>
-                                                            <Button fx:id="btnAddServer" mnemonicParsing="false" prefHeight="32.0" text="Add Server"/>
-                                                            <Button fx:id="btnRefreshServerList" mnemonicParsing="false" prefHeight="32.0" prefWidth="82.0" text="Refresh"/>
+                                                            <Button fx:id="btnSetDefaultGame" mnemonicParsing="false" prefHeight="32.0" prefWidth="128.0" text="Set Default Game"/>
+                                                            <Button fx:id="btnUpdateServerList" mnemonicParsing="false" prefHeight="32.0" text="Update Server List"/>
+                                                            <Button fx:id="btnRefreshServerList" mnemonicParsing="false" prefHeight="32.0" prefWidth="103.0" text="Refresh Details"/>
+                                                            <Button fx:id="btnAddServer" mnemonicParsing="false" prefHeight="32.0" prefWidth="92.0" text="Add Server"/>
+                                                        </items>
+                                                        <padding>
+                                                            <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>
+                                                        </padding>
+                                                    </ToolBar>
+                                                    <ToolBar fx:id="tbServerPanel" prefHeight="40.0" prefWidth="1216.0">
+                                                        <items>
+                                                            <TextField fx:id="tfFilterText" prefWidth="153.0" promptText="Filter" styleClass="sb-text-field"/>
+                                                            <CheckComboBox fx:id="cbFilterTags" prefWidth="137.0" showCheckedCount="true" title="Tags"/>
+                                                            <CheckComboBox fx:id="cbFilterCountry" prefWidth="171.0" showCheckedCount="true" title="Country"/>
+                                                            <CheckComboBox fx:id="cbFilterMaps" prefWidth="156.0" showCheckedCount="true" title="Maps"/>
+                                                            <CheckComboBox fx:id="cbFilterStatus" prefWidth="120.0" showCheckedCount="true" title="Status"/>
+                                                            <CheckComboBox fx:id="cbFilterOs" prefWidth="106.0" showCheckedCount="true" title="OS"/>
+                                                            <CheckComboBox fx:id="cbFilterMisc" showCheckedCount="true" title="Misc"/>
+                                                            <Pane HBox.hgrow="ALWAYS"/>
+                                                            <TextField fx:id="tfSearchPlayer" promptText="Search Player" styleClass="sb-text-field"/>
+                                                            <Button fx:id="btnClearFilters" mnemonicParsing="false" prefWidth="55.0" text="Clear"/>
                                                         </items>
                                                         <padding>
                                                             <Insets bottom="5.0" left="10.0" right="10.0" top="5.0"/>

@@ -39,7 +39,7 @@ public class ServerDetailsModel {
 
     private ObjectProperty<ServerDetails> selectedServer = new SimpleObjectProperty<>();
 
-    private ListProperty<ServerDetails> serverDetails = new SimpleListProperty<>(FXCollections.synchronizedObservableList(FXCollections.observableArrayList()));
+    private ListProperty<ServerDetails> serverDetails = new SimpleListProperty<>();
 
     private StringProperty statusMessage = new SimpleStringProperty();
 

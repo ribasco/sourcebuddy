@@ -13,15 +13,21 @@ import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SplitPane;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.controlsfx.control.*;
 import org.dockfx.DockEvent;
@@ -32,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.net.URL;
 import java.util.concurrent.CompletableFuture;
 
 public class MainController extends BaseController {
@@ -67,14 +74,15 @@ public class MainController extends BaseController {
 
     private UpdateService updateService;
 
-    @FXML
-    private Button btnSave;
-
     private ConfigService configService;
+
+    @FXML
+    private MenuItem miPreferences;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
         setupDocks(stage);
+        setupMenuBar();
         setupTaskProgressView();
         updateSplitPaneResizable(dpMainDock.getChildren(), 0);
         setupMainToolbar();
@@ -82,6 +90,27 @@ public class MainController extends BaseController {
         setupStatusBar();
 
         publishEvent(new ApplicationInitEvent(this, stage));
+    }
+
+    private void setupMenuBar() {
+        miPreferences.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                Parent preferencesView = getViewManager().loadView(Views.PREFERENCES);
+                Scene scene;
+                if (preferencesView.getScene() == null) {
+                    scene = new Scene(preferencesView);
+                } else {
+                    scene = preferencesView.getScene();
+                }
+                URL res = ResourceUtil.loadResource("/styles/default.css");
+                scene.getStylesheets().setAll(res.toExternalForm());
+                Stage stage = new Stage();
+                stage.setScene(scene);
+                stage.initModality(Modality.APPLICATION_MODAL);
+                stage.showAndWait();
+            }
+        });
     }
 
     private void setupTaskProgressView() {

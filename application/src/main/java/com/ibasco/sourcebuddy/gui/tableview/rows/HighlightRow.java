@@ -28,6 +28,7 @@ public class HighlightRow<T> extends TableRow<T> {
             setText(null);
             setGraphic(null);
             setStyle(null);
+            getStyleClass().removeAll(Collections.singleton(highlightClass));
         } else {
             ObservableList<String> styleClass = getStyleClass();
             if (predicate.test(item)) {

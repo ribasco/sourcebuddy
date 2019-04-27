@@ -21,7 +21,7 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="Edit">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="Preferences"/>
+                        <MenuItem fx:id="miPreferences" mnemonicParsing="false" text="Preferences"/>
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="View">
@@ -36,16 +36,12 @@
                 </Menu>
             </menus>
         </MenuBar>
-        <ToolBar prefHeight="40.0" prefWidth="200.0">
-            <items>
-                <Button fx:id="btnSave" contentDisplay="CENTER" mnemonicParsing="false" prefHeight="25.0" prefWidth="82.0" text="Save"/>
-            </items>
-        </ToolBar>
+        <ToolBar prefHeight="40.0" prefWidth="200.0"/>
         <NotificationPane fx:id="npMain" VBox.vgrow="ALWAYS">
             <content>
                 <DockPane fx:id="dpMainDock" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS"/>
             </content>
         </NotificationPane>
-        <StatusBar fx:id="sbMainStatus"/>
+        <StatusBar fx:id="sbMainStatus" text=""/>
     </children>
 </VBox>

@@ -8,10 +8,19 @@ import com.ibasco.sourcebuddy.gui.cells.DecoratedTreeTableCell;
 import com.ibasco.sourcebuddy.gui.decorators.CellDecorator;
 import com.ibasco.sourcebuddy.model.TreeDataModel;
 import com.ibasco.sourcebuddy.service.AppService;
+import com.ibasco.sourcebuddy.util.Check;
 import com.ibasco.sourcebuddy.util.Delta;
 import com.ibasco.sourcebuddy.util.WorkProgressCallback;
+import javafx.beans.binding.Bindings;
+import javafx.beans.binding.ObjectBinding;
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.ObjectProperty;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableSet;
+import javafx.collections.SetChangeListener;
+import javafx.collections.transformation.FilteredList;
 import javafx.event.EventHandler;
 import javafx.geometry.Side;
 import javafx.scene.Node;
@@ -37,11 +46,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 @Component
 public class GuiHelper {
@@ -51,6 +63,37 @@ public class GuiHelper {
     private AppService appService;
 
     private ViewManager viewManager;
+
+    public static <T> ObjectBinding<ObservableList<T>> createFilteredListBinding(ListProperty<T> listProperty, ObjectProperty<Predicate<T>> predicate) {
+        return Bindings.createObjectBinding(() -> {
+            if (listProperty.get() != null) {
+                FilteredList<T> filteredList = listProperty.filtered(p -> true);
+                filteredList.predicateProperty().bind(predicate);
+                return filteredList;
+            }
+            return FXCollections.emptyObservableList();
+        }, listProperty);
+    }
+
+    public static List<String> extractServerTags(ServerDetails details) {
+        Check.requireNonNull(details, "Server details cannot be null");
+        String[] tags = StringUtils.split(details.getServerTags(), ";:, ");
+        return tags == null ? Collections.emptyList() : Arrays.asList(tags);
+    }
+
+    public static <T> void bindContent(List<T> list, ObservableSet<T> set) {
+        Check.requireNonNull(list, "List cannot be null");
+        Check.requireNonNull(set, "Observable set cannot be null");
+        set.addListener((SetChangeListener<T>) change -> {
+            if (change.wasAdded()) {
+                list.add(change.getElementAdded());
+            } else if (change.wasRemoved()) {
+                list.remove(change.getElementRemoved());
+            }
+        });
+        list.clear();
+        list.addAll(set);
+    }
 
     public Parent getLoadingPlaceholder(String message) {
         VBox placeholderView = viewManager.loadDetachedView(Views.FRAGMENT_PLACEHOLDER);

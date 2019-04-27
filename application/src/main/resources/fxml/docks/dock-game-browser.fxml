@@ -9,12 +9,7 @@
             <items>
                 <Button fx:id="btnRefreshApps" mnemonicParsing="false" text="Refresh"/>
                 <Button fx:id="btnClearFilter" mnemonicParsing="false" text="Clear Filter"/>
-                <RadioButton mnemonicParsing="false" text="Show All">
-                    <toggleGroup>
-                        <ToggleGroup fx:id="filterGroup"/>
-                    </toggleGroup>
-                </RadioButton>
-                <RadioButton mnemonicParsing="false" text="Show Processed" toggleGroup="$filterGroup"/>
+                <ComboBox fx:id="cbAppFilter" prefHeight="25.0" prefWidth="92.0" promptText="Filter"/>
             </items>
         </ToolBar>
         <TableView fx:id="tvGameBrowser" VBox.vgrow="ALWAYS"/>

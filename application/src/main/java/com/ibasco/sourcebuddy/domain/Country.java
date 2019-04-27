@@ -5,6 +5,7 @@ import javafx.beans.property.StringProperty;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
+import java.util.Objects;
 
 @Entity
 @Table(name = Country.TABLE_NAME)
@@ -46,5 +47,23 @@ public class Country extends AuditableEntity<String> {
 
     public StringProperty countryNameProperty() {
         return countryName;
+    }
+
+    @Override
+    public String toString() {
+        return getCountryName();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Country country = (Country) o;
+        return getCountryCode().equals(country.getCountryCode());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getCountryCode());
     }
 }

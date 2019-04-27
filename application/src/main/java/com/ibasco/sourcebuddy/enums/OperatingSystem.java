@@ -3,14 +3,17 @@ package com.ibasco.sourcebuddy.enums;
 import java.util.Arrays;
 
 public enum OperatingSystem {
-    WINDOWS('w'),
-    MAC('m'),
-    LINUX('l');
+    WINDOWS('w', "Windows"),
+    MAC('m', "Mac OS"),
+    LINUX('l', "Linux");
 
     private char code;
 
-    OperatingSystem(char code) {
+    private String name;
+
+    OperatingSystem(char code, String name) {
         this.code = code;
+        this.name = name;
     }
 
     public static OperatingSystem valueOf(char code) {
@@ -23,5 +26,9 @@ public enum OperatingSystem {
 
     public char getCode() {
         return code;
+    }
+
+    public String getName() {
+        return name;
     }
 }

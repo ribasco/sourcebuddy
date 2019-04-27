@@ -21,7 +21,7 @@ public class ServerTagCellDecorator implements CellDecorator<ServerDetails, Stri
     public void decorate(String item, IndexedCell<ServerDetails> cell) {
         HBox hbox = new HBox();
         hbox.setSpacing(5);
-        String[] tags = StringUtils.split(item, ";:,");
+        String[] tags = StringUtils.split(item, ";:, ");
         for (String tag : tags) {
             Label lTag = new Label(tag);
             //lTag.setStyle("-fx-background-color: rgba(117,157,255,0.84); -fx-text-fill: black; -fx-border-radius: 5 5 5 5; -fx-background-radius: 5 5 5 5; -fx-padding: 5px; -fx-font-weight: bold;");

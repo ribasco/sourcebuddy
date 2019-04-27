@@ -291,7 +291,7 @@ public class SourceServerServiceImpl implements SourceServerService {
         log.debug("fetchNewServerEntries() :: Fetching server list for app '{}'", app);
 
         //Retrieve existing server entries from the repository
-        List<ServerDetails> servers = serverDetailsRepository.findBySteamApp(app);
+        Set<ServerDetails> servers = new HashSet<>(serverDetailsRepository.findBySteamApp(app));
 
         log.debug("fetchNewServerEntries() :: Found {} server entries from the repository", servers.size());
 
@@ -343,7 +343,7 @@ public class SourceServerServiceImpl implements SourceServerService {
     }
 
     @Override
-    public int updateServerEntrieFromWebApi(SteamApp app, List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
+    public int updateServerEntrieFromWebApi(SteamApp app, Collection<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
         AtomicInteger added = new AtomicInteger();
 
         final Object mutext = new Object();
@@ -353,22 +353,9 @@ public class SourceServerServiceImpl implements SourceServerService {
             //Multiple threads maybe accessing this callback at the same time, need to synchronize
             synchronized (mutext) {
                 Optional<ServerDetails> serverInfo = servers.stream().filter(server::equals).findFirst();
-
                 //If the server entry exists, update. Otherwise, add the new entry
                 if (serverInfo.isPresent()) {
-                    ServerDetails details = serverInfo.get();
-
-                    //BeanUtils.copyProperties(server, details, "id");
-                    details.setName(server.getName());
-                    details.setGameDirectory(server.getGameDirectory());
-                    details.setVersion(server.getVersion());
-                    details.setPlayerCount(server.getPlayerCount());
-                    details.setMaxPlayerCount(server.getMaxPlayerCount());
-                    details.setMapName(server.getMapName());
-                    details.setSecure(server.isSecure());
-                    details.setDedicated(server.isDedicated());
-                    details.setOperatingSystem(server.getOperatingSystem());
-                    details.setSteamId(server.getSteamId());
+                    ServerDetails.copy(server, serverInfo.get());
                 } else {
                     //Set steam app
                     server.setSteamApp(app);
@@ -376,7 +363,6 @@ public class SourceServerServiceImpl implements SourceServerService {
                     servers.add(server);
                     added.incrementAndGet();
                 }
-
                 GuiHelper.invokeIfPresent(callback, server, null);
             }
         }).join();
@@ -385,7 +371,7 @@ public class SourceServerServiceImpl implements SourceServerService {
     }
 
     @Override
-    public int updateServerEntriesFromMaster(SteamApp app, List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
+    public int updateServerEntriesFromMaster(SteamApp app, Collection<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
         AtomicInteger added = new AtomicInteger();
         log.debug("updateServerEntriesFromMaster() :: Updating server entries from Master");
         masterServerQueryClient.getServerList(MasterServerType.SOURCE, MasterServerRegion.REGION_ALL, filter.appId(app.getId()), (serverAddress, senderAddress, ex) -> {

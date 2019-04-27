@@ -123,7 +123,7 @@ public class SteamAppTableCell extends TableCell<SteamApp, Integer> {
                 }
 
                 //Details existing in repository
-                log.debug("findAppDetails({}) :: Got details: {} (Cache Size: {})", app.getId(), steamAppDetails, steamCache.size());
+                //log.debug("findAppDetails({}) :: Got details: {} (Cache Size: {})", app.getId(), steamAppDetails, steamCache.size());
 
                 Image img = steamAppDetails.getHeaderImage() != null ? new Image(new ByteArrayInputStream(steamAppDetails.getHeaderImage())) : null;
                 steamCache.putIfAbsent(app, new AppDetailCacheEntry(img, steamAppDetails));
@@ -137,6 +137,7 @@ public class SteamAppTableCell extends TableCell<SteamApp, Integer> {
             setTextAlignment(TextAlignment.CENTER);
             setAlignment(Pos.BOTTOM_RIGHT);
 
+
             if (appDetails.getHeaderImage() != null) {
                 Tooltip tooltip = new Tooltip();
                 if (!StringUtils.isBlank(appDetails.getShortDescription())) {
@@ -149,7 +150,8 @@ public class SteamAppTableCell extends TableCell<SteamApp, Integer> {
                 tooltip.setWrapText(true);
                 tooltip.setShowDelay(javafx.util.Duration.millis(50));
                 setTooltip(tooltip);
-                setGraphic(createImageView(img));
+                ImageView image = createImageView(img);
+                setGraphic(image);
                 setText(null);
             } else {
                 setGraphic(null);

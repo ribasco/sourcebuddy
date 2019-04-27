@@ -174,9 +174,9 @@ public interface SourceServerService {
 
     List<ServerDetails> findBookmarkedServers(SteamApp app);
 
-    int updateServerEntrieFromWebApi(SteamApp app, List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
+    int updateServerEntrieFromWebApi(SteamApp app, Collection<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
-    int updateServerEntriesFromMaster(SteamApp app, List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
+    int updateServerEntriesFromMaster(SteamApp app, Collection<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
     long getTotalServerEntries(SteamApp app);
 

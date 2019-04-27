@@ -1,27 +1,26 @@
 package com.ibasco.sourcebuddy.controllers;
 
 import com.ibasco.sourcebuddy.components.GuiHelper;
-import static com.ibasco.sourcebuddy.components.GuiHelper.createBasicColumn;
-import static com.ibasco.sourcebuddy.components.GuiHelper.createBasicTreeColumn;
+import static com.ibasco.sourcebuddy.components.GuiHelper.*;
 import com.ibasco.sourcebuddy.constants.Views;
-import com.ibasco.sourcebuddy.controls.ProgressComboBox;
 import com.ibasco.sourcebuddy.domain.ConfigProfile;
+import com.ibasco.sourcebuddy.domain.Country;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
+import com.ibasco.sourcebuddy.enums.MiscFilters;
+import com.ibasco.sourcebuddy.enums.OperatingSystem;
 import com.ibasco.sourcebuddy.enums.ServerStatus;
-import com.ibasco.sourcebuddy.gui.converters.BasicObjectStringConverter;
+import com.ibasco.sourcebuddy.gui.converters.MappedObjectStringConverter;
 import com.ibasco.sourcebuddy.gui.tableview.factory.ServerBrowserTableViewFactory;
 import com.ibasco.sourcebuddy.gui.tableview.rows.HighlightRow;
 import com.ibasco.sourcebuddy.gui.treetableview.cells.FormattedTreeTableCell;
 import com.ibasco.sourcebuddy.gui.treetableview.factory.BookmarksTreeTableCellFactory;
 import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.model.ServerFilterModel;
 import com.ibasco.sourcebuddy.model.SteamAppsModel;
 import com.ibasco.sourcebuddy.service.ServerManager;
 import com.ibasco.sourcebuddy.service.impl.SingleServerDetailsRefreshService;
-import com.ibasco.sourcebuddy.tasks.BuildBookmarkServerTreeTask;
-import com.ibasco.sourcebuddy.tasks.BuildManagedServersTreeTask;
-import com.ibasco.sourcebuddy.tasks.FetchServersByApp;
-import com.ibasco.sourcebuddy.tasks.UpdateAllServerDetailsTask;
+import com.ibasco.sourcebuddy.tasks.*;
 import com.jfoenix.controls.JFXDialog;
 import com.jfoenix.controls.JFXDialogLayout;
 import com.jfoenix.controls.JFXProgressBar;
@@ -34,8 +33,8 @@ import javafx.beans.property.SimpleListProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.FilteredList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -45,13 +44,16 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.apache.commons.lang3.StringUtils;
+import org.controlsfx.control.CheckComboBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 @SuppressWarnings("Duplicates")
@@ -69,9 +71,6 @@ public class ServerBrowserController extends BaseController {
 
     @FXML
     private TreeTableView<ServerDetails> ttvManagedServers;
-
-    @FXML
-    private ProgressComboBox<SteamApp> cbBookmarkedGames;
 
     @FXML
     private Button btnSetDefaultGame;
@@ -101,10 +100,40 @@ public class ServerBrowserController extends BaseController {
     private StackPane spServerBrowser;
 
     @FXML
-    private Button btnAddGame;
+    private Button btnAddServer;
 
     @FXML
-    private Button btnAddServer;
+    private TextField tfFilterText;
+
+    @FXML
+    private CheckComboBox<String> cbFilterTags;
+
+    @FXML
+    private CheckComboBox<Country> cbFilterCountry;
+
+    @FXML
+    private CheckComboBox<String> cbFilterMaps;
+
+    @FXML
+    private CheckComboBox<ServerStatus> cbFilterStatus;
+
+    @FXML
+    private Button btnUpdateServerList;
+
+    @FXML
+    private CheckComboBox<OperatingSystem> cbFilterOs;
+
+    @FXML
+    private Label lblSelectedGame;
+
+    @FXML
+    private TextField tfSearchPlayer;
+
+    @FXML
+    private Button btnClearFilters;
+
+    @FXML
+    private CheckComboBox<MiscFilters> cbFilterMisc;
     //</editor-fold>
 
     private ServerDetailsModel serverDetailsModel;
@@ -119,46 +148,266 @@ public class ServerBrowserController extends BaseController {
 
     private ServerManager serverManager;
 
-    private ListProperty<SteamApp> filteredList = new SimpleListProperty<>();
+    private ObjectProperty<Predicate<ServerDetails>> serverDetailsPredicate = new SimpleObjectProperty<>(p -> true);
+
+    private ServerFilterModel serverFilterModel;
+
+    private ListProperty<ServerDetails> filteredServerList = new SimpleListProperty<>();
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
-
         setupServerTabPanel();
+        setupFilterComponents();
         setupServerBrowserTable();
         setupBookmarksTable();
         setupManagedServersTable();
-        setupGameSelectionBox();
         setupSingleServerUpdateService();
         setupButtons();
+
+        steamGamesModel.selectedGameProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null)
+                clearFilters(null);
+        });
+
+        updateServerListContent();
+
+        lblSelectedGame.textProperty().bind(Bindings.format("%s (Total: %d)", steamGamesModel.selectedGameProperty(), filteredServerList.sizeProperty()));
         tpServers.setTabDragPolicy(TabPane.TabDragPolicy.REORDER);
         pbServerLoad.visibleProperty().bind(serverDetailsModel.serverListUpdatingProperty());
         steamGamesModel.selectedGameProperty().addListener(this::updateSteamAppServerEntries);
         steamGamesModel.setSelectedGame(serverDetailsModel.getActiveProfile().getDefaultGame());
+        btnUpdateServerList.setOnAction(this::updateServerList);
+        btnClearFilters.setOnAction(this::clearFilters);
+    }
+
+    private void clearFilters(ActionEvent actionEvent) {
+        cbFilterOs.getCheckModel().clearChecks();
+        cbFilterStatus.getCheckModel().clearChecks();
+        cbFilterTags.getCheckModel().clearChecks();
+        cbFilterCountry.getCheckModel().clearChecks();
+        cbFilterMaps.getCheckModel().clearChecks();
+        cbFilterMisc.getCheckModel().clearChecks();
+        tfFilterText.clear();
+        tfSearchPlayer.clear();
+    }
+
+    private void updateServerList(ActionEvent actionEvent) {
+        if (taskManager.contains(UpdateMasterServerListTask.class)) {
+            log.warn("Task already running. Skipping");
+            return;
+        }
+        final SteamApp selectedGame = steamGamesModel.getSelectedGame();
+        UpdateMasterServerListTask task = springHelper.getBean(UpdateMasterServerListTask.class, selectedGame);
+        taskManager.run(task)
+                .whenComplete((aVoid, ex) -> {
+                    if (ex != null) {
+                        getNotificationManager().showError("Could not update server list: " + ex.getMessage());
+                        return;
+                    }
+                    Platform.runLater(() -> refreshServerListByApp(selectedGame));
+                });
+    }
+
+    private void setupFilterComponents() {
+        serverDetailsPredicate.bind(createServerDetailsPredicateBinding());
+
+        clearOnNewListSelection(serverFilterModel.getServerTags(), serverFilterModel.getCountries(), serverFilterModel.getMaps());
+
+        serverDetailsModel.serverDetailsProperty().addListener((ListChangeListener<ServerDetails>) c -> {
+            while (c.next()) {
+                if (c.wasUpdated()) {
+                    for (int i = c.getFrom(); i < c.getTo(); ++i) {
+                        ServerDetails details = serverDetailsModel.getServerDetails().get(i);
+                        if (details == null)
+                            continue;
+                        log.debug("Updated: {}", details);
+                        List<String> tags = GuiHelper.extractServerTags(details);
+                        if (!tags.isEmpty())
+                            serverFilterModel.getServerTags().addAll(tags);
+                        if (details.getCountry() != null)
+                            serverFilterModel.getCountries().add(details.getCountry());
+                        if (!StringUtils.isBlank(details.getMapName()))
+                            serverFilterModel.getMaps().add(details.getMapName());
+                    }
+                } else {
+                    for (ServerDetails details : c.getAddedSubList()) {
+                        if (details == null)
+                            continue;
+                        List<String> tags = GuiHelper.extractServerTags(details);
+                        if (!tags.isEmpty())
+                            serverFilterModel.getServerTags().addAll(tags);
+                        if (details.getCountry() != null)
+                            serverFilterModel.getCountries().add(details.getCountry());
+                        if (!StringUtils.isBlank(details.getMapName()))
+                            serverFilterModel.getMaps().add(details.getMapName());
+                    }
+                }
+            }
+        });
+
+        initializeFilterCheckComboBox(cbFilterStatus, ServerStatus.values(), ServerStatus::getDescription);
+        initializeFilterCheckComboBox(cbFilterOs, OperatingSystem.values(), OperatingSystem::getName);
+        initializeFilterCheckComboBox(cbFilterMisc, MiscFilters.values(), MiscFilters::getDescription);
+
+        //Bind selected properties to the model
+        bindCheckComboBoxSelection(cbFilterTags, serverFilterModel.getSelectedServerTags());
+        bindCheckComboBoxSelection(cbFilterCountry, serverFilterModel.getSelectedCountries());
+        bindCheckComboBoxSelection(cbFilterMaps, serverFilterModel.getSelectedMaps());
+        bindCheckComboBoxSelection(cbFilterStatus, serverFilterModel.getSelectedStatus());
+        bindCheckComboBoxSelection(cbFilterOs, serverFilterModel.getSelectedOs());
+        bindCheckComboBoxSelection(cbFilterMisc, serverFilterModel.getSelectedMiscFilters());
+
+        //Bind and populate content
+        GuiHelper.bindContent(cbFilterTags.getItems(), serverFilterModel.getServerTags());
+        GuiHelper.bindContent(cbFilterCountry.getItems(), serverFilterModel.getCountries());
+        GuiHelper.bindContent(cbFilterMaps.getItems(), serverFilterModel.getMaps());
+        GuiHelper.bindContent(cbFilterStatus.getItems(), FXCollections.observableSet(ServerStatus.values()));
+        GuiHelper.bindContent(cbFilterOs.getItems(), FXCollections.observableSet(OperatingSystem.values()));
+        GuiHelper.bindContent(cbFilterMisc.getItems(), FXCollections.observableSet(MiscFilters.values()));
+    }
+
+    private <T> void initializeFilterCheckComboBox(CheckComboBox<T> comboBox, T[] values, Function<T, String> labelMapper) {
+        comboBox.setConverter(new MappedObjectStringConverter<>(labelMapper));
+    }
+
+    private void clearOnNewListSelection(Collection<?>... collections) {
+        serverDetailsModel.serverDetailsProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                for (Collection<?> col : collections) {
+                    col.clear();
+                }
+            }
+        });
+    }
+
+    private <T> void bindCheckComboBoxSelection(CheckComboBox<T> checkComboBox, final Collection<T> collection) {
+        checkComboBox.getCheckModel().getCheckedItems().addListener((ListChangeListener<T>) c -> {
+            while (c.next()) {
+                if (c.wasAdded()) {
+                    collection.addAll(c.getAddedSubList());
+                } else if (c.wasRemoved()) {
+                    collection.removeAll(c.getRemoved());
+                }
+            }
+        });
+    }
+
+    private ObjectBinding<Predicate<ServerDetails>> createServerDetailsPredicateBinding() {
+        return Bindings.createObjectBinding(() -> {
+                                                String searchText = StringUtils.defaultString(tfFilterText.getText(), "").toLowerCase().trim();
+
+                                                Predicate<ServerDetails> textPredicate = s -> {
+                                                    if (StringUtils.isBlank(s.getName()))
+                                                        return true;
+                                                    String serverName = StringUtils.defaultString(s.getName(), "").trim().toLowerCase();
+                                                    String ipAddress = StringUtils.defaultString(s.getIpAddress(), "").toLowerCase();
+                                                    String port = s.getPort() != null ? String.valueOf(s.getPort()) : "";
+                                                    String mapName = StringUtils.defaultString(s.getMapName(), "").toLowerCase();
+                                                    String tags = StringUtils.defaultString(s.getServerTags(), "").toLowerCase();
+                                                    return serverName.contains(searchText) || ipAddress.contains(searchText) || port.contains(searchText) || mapName.contains(searchText) || tags.contains(searchText);
+                                                };
+
+                                                Predicate<ServerDetails> tagsPredicate = serverDetails -> {
+                                                    List<String> tags = GuiHelper.extractServerTags(serverDetails);
+                                                    if (serverFilterModel.getSelectedServerTags().isEmpty())
+                                                        return true;
+
+                                                    if (!ServerStatus.ACTIVE.equals(serverDetails.getStatus()) && !serverFilterModel.getSelectedServerTags().isEmpty())
+                                                        return false;
+
+                                                    if (tags.isEmpty() || serverFilterModel.getSelectedServerTags().isEmpty())
+                                                        return true;
+
+                                                    boolean test = true;
+                                                    for (String selectedTag : serverFilterModel.getSelectedServerTags()) {
+                                                        test = test && tags.contains(selectedTag);
+                                                    }
+                                                    return test;
+                                                };
+
+                                                Predicate<ServerDetails> countryPredicate = details -> {
+                                                    if (serverFilterModel.getSelectedCountries().isEmpty())
+                                                        return true;
+                                                    if (details.getCountry() == null && !serverFilterModel.getSelectedCountries().isEmpty())
+                                                        return false;
+                                                    return serverFilterModel.getSelectedCountries().contains(details.getCountry());
+                                                };
+
+                                                Predicate<ServerDetails> mapsPredicate = details -> {
+                                                    if (serverFilterModel.getSelectedMaps().isEmpty())
+                                                        return true;
+                                                    if (StringUtils.isBlank(details.getMapName()) && !serverFilterModel.getSelectedMaps().isEmpty())
+                                                        return false;
+                                                    return serverFilterModel.getSelectedMaps().contains(details.getMapName());
+                                                };
+
+                                                Predicate<ServerDetails> osPredicate = details -> {
+                                                    if (serverFilterModel.getSelectedOs().isEmpty())
+                                                        return true;
+                                                    return serverFilterModel.getSelectedOs().contains(details.getOperatingSystem());
+                                                };
+
+                                                Predicate<ServerDetails> statusPredicate = details -> {
+                                                    if (serverFilterModel.getSelectedStatus().isEmpty())
+                                                        return true;
+                                                    return serverFilterModel.getSelectedStatus().contains(details.getStatus());
+                                                };
+
+                                                Predicate<ServerDetails> playerPredicate = details -> {
+                                                    String playerSearchText = tfSearchPlayer.getText().toLowerCase().trim();
+                                                    if (StringUtils.isBlank(tfSearchPlayer.getText()))
+                                                        return true;
+
+                                                    if ((details.getPlayers() == null || details.getPlayers().isEmpty()) && !StringUtils.isBlank(playerSearchText)) {
+                                                        return false;
+                                                    }
+                                                    return details.getPlayers().stream()
+                                                            .anyMatch(p -> {
+                                                                String playerName = StringUtils.defaultString(p.getName(), "").toLowerCase().trim();
+                                                                return playerName.contains(playerSearchText);
+                                                            });
+                                                };
+
+                                                Predicate<ServerDetails> miscFiltersPredicate = details -> {
+                                                    boolean test = true;
+                                                    for (MiscFilters filter : serverFilterModel.getSelectedMiscFilters())
+                                                        test = test && filter.getMapper().apply(details);
+                                                    return test;
+                                                };
+
+                                                return textPredicate
+                                                        .and(tagsPredicate)
+                                                        .and(countryPredicate)
+                                                        .and(mapsPredicate)
+                                                        .and(osPredicate)
+                                                        .and(statusPredicate)
+                                                        .and(playerPredicate)
+                                                        .and(miscFiltersPredicate);
+                                            },
+                                            tfFilterText.textProperty(),
+                                            serverFilterModel.selectedServerTagsProperty(),
+                                            serverFilterModel.selectedCountriesProperty(),
+                                            serverFilterModel.selectedMapsProperty(),
+                                            serverFilterModel.selectedOsProperty(),
+                                            serverFilterModel.selectedStatusProperty(),
+                                            serverFilterModel.selectedMiscFiltersProperty(),
+                                            tfSearchPlayer.textProperty()
+        );
     }
 
     private void setupButtons() {
         //Buttons
         btnRefreshServerList.setOnAction(this::refreshServerList);
         btnAddServer.setOnAction(this::addServer);
-        btnAddGame.setOnAction(this::addGame);
         btnSetDefaultGame.setOnAction(this::setDefaultGame);
     }
 
     private void refreshServerList(ActionEvent actionEvent) {
-        updateServerEntriesByApp(steamGamesModel.getSelectedGame());
+        refreshServerListByApp(steamGamesModel.getSelectedGame());
     }
 
     private void addServer(ActionEvent actionEvent) {
         createServerBrowserDialog("Add new server", Views.DIALOG_ADD_SERVER).show();
-    }
-
-    private void addGame(ActionEvent actionEvent) {
-        JFXDialog dialog = createServerBrowserDialog("Add new game", Views.DIALOG_ADD_GAME, new Button("Add"));
-        dialog.setPrefSize(800, 400);
-        dialog.setMinWidth(800);
-        dialog.setMinHeight(400);
-        dialog.show();
     }
 
     private JFXDialog createServerBrowserDialog(String heading, String viewName, Node... actions) {
@@ -174,9 +423,8 @@ public class ServerBrowserController extends BaseController {
     }
 
     private void setDefaultGame(ActionEvent actionEvent) {
-        SteamApp app = cbBookmarkedGames.getValue();
         ConfigProfile profile = serverDetailsModel.getActiveProfile();
-        profile.setDefaultGame(app);
+        profile.setDefaultGame(steamGamesModel.getSelectedGame());
         getConfigService().saveProfile(profile);
     }
 
@@ -204,14 +452,20 @@ public class ServerBrowserController extends BaseController {
         }
     }
 
-    private void updateServerEntriesByApp(SteamApp app) {
+    private void refreshServerListByApp(SteamApp app) {
+        if (!Platform.isFxApplicationThread())
+            throw new IllegalStateException("Method should only be ran from the fx application thread");
+
         if (app == null)
             return;
-        if (taskManager.isRunning(FetchServersByApp.class) ||
+
+        if (taskManager.contains(FetchServersByApp.class) ||
                 serverDetailsModel.isServerDetailsUpdating() ||
                 serverDetailsModel.isServerListUpdating()) {
             return;
         }
+
+        clearFilters(null);
 
         serverDetailsModel.setSelectedServer(null);
         serverDetailsModel.setServerListUpdating(true);
@@ -227,58 +481,38 @@ public class ServerBrowserController extends BaseController {
         CompletableFuture<List<ServerDetails>> fut = taskManager.run(task);
         fut.thenAccept(servers -> {
             serverDetailsModel.setServerDetails(FXCollections.observableArrayList(servers));
-            tvServerBrowser.itemsProperty().bind(serverDetailsModel.serverDetailsProperty());
+            updateServerListContent();
             serverDetailsModel.setServerListUpdating(false);
         }).thenCompose(aVoid -> {
             serverDetailsModel.setServerDetailsUpdating(true);
             return taskManager.run(UpdateAllServerDetailsTask.class, serverDetailsModel.getServerDetails());
-        }).whenComplete((aVoid, throwable) -> {
-            try {
-                if (throwable != null) {
-                    notificationManager.showError("Error occured during update %s", throwable.getMessage());
-                    return;
-                }
-                notificationManager.showInfo("Completed updating server details");
-            } finally {
-                serverDetailsModel.setServerDetailsUpdating(false);
-                serverDetailsModel.setServerListUpdating(false);
+        }).whenComplete((aVoid, ex) -> {
+            if (ex != null) {
+                //notificationManager.showError("Error occured during update %s", throwable.getMessage());
+                log.debug("Error during update", ex);
             }
+            serverDetailsModel.setServerDetailsUpdating(false);
+            serverDetailsModel.setServerListUpdating(false);
+            refreshMapFilterEntries();
         });
+    }
+
+    private void refreshMapFilterEntries() {
+        for (ServerDetails details : serverDetailsModel.getServerDetails()) {
+            if (!StringUtils.isBlank(details.getMapName()))
+                serverFilterModel.getMaps().add(details.getMapName());
+        }
+    }
+
+    private void updateServerListContent() {
+        ObjectBinding<ObservableList<ServerDetails>> filteredListBinding = createFilteredListBinding(serverDetailsModel.serverDetailsProperty(), serverDetailsPredicate);
+        filteredServerList.set(filteredListBinding.getValue());
+        tvServerBrowser.itemsProperty().bind(filteredListBinding);
     }
 
     private void updateSteamAppServerEntries(ObservableValue<? extends SteamApp> observableValue, SteamApp oldApp, SteamApp newApp) {
         if (newApp != null)
-            updateServerEntriesByApp(newApp);
-    }
-
-    private ObjectProperty<Predicate<SteamApp>> predicate = new SimpleObjectProperty<>(SteamApp::isBookmarked);
-
-    private void setupGameSelectionBox() {
-        /*cbBookmarkedGames.getSelectionModel().selectedItemProperty().addListener(new VetoChangeListener<>(cbBookmarkedGames.getSelectionModel()) {
-            @Override
-            protected boolean isInvalidChange(SteamApp oldValue, SteamApp newValue) {
-                boolean invalid = taskManager.isRunning(UpdateAllServerDetailsTask.class);
-                if (invalid) {
-                    getNotificationManager().showWarning("Task is already running or Server list is currently getting populated");
-                }
-                return invalid;
-            }
-        });*/
-        cbBookmarkedGames.valueProperty().bindBidirectional(steamGamesModel.selectedGameProperty());
-        cbBookmarkedGames.itemsProperty().bind(createFilteredListBinding(steamGamesModel.steamAppListProperty(), predicate));
-        cbBookmarkedGames.setConverter(new BasicObjectStringConverter<>());
-        cbBookmarkedGames.showProgressProperty().bind(serverDetailsModel.serverListUpdatingProperty().or(serverDetailsModel.serverDetailsUpdatingProperty()));
-    }
-
-    private <T> ObjectBinding<ObservableList<T>> createFilteredListBinding(ListProperty<T> listProperty, ObjectProperty<Predicate<T>> predicate) {
-        return Bindings.createObjectBinding(() -> {
-            if (listProperty.get() != null) {
-                FilteredList<T> filteredList = listProperty.filtered(p -> true);
-                filteredList.predicateProperty().bind(predicate);
-                return filteredList;
-            }
-            return FXCollections.emptyObservableList();
-        }, listProperty);
+            refreshServerListByApp(newApp);
     }
 
     private void refreshBookmarksTable() {
@@ -347,7 +581,6 @@ public class ServerBrowserController extends BaseController {
     private void setupServerBrowserTable() {
         tvServerBrowser.getColumns().clear();
         tvServerBrowser.setRowFactory(param -> new HighlightRow<>(p -> ServerStatus.TIMED_OUT.equals(p.getStatus()), "timeout"));
-        tvServerBrowser.setItems(serverDetailsModel.getServerDetails().filtered(p -> true));
         tvServerBrowser.setPlaceholder(new Label(""));
 
         Bindings.bindContent(serverDetailsModel.getSelectedServers(), tvServerBrowser.getSelectionModel().getSelectedItems());
@@ -366,6 +599,14 @@ public class ServerBrowserController extends BaseController {
         createBasicColumn(tvServerBrowser, "Update Date", "updateDate");
         createBasicColumn(tvServerBrowser, "Tags", "serverTags", serverBrowserTableCellFactory::tags).setPrefWidth(200);
 
+        tvServerBrowser.setContextMenu(buildServerBrowserContextMenu());
+
+        //Raise the following events on item selection
+        tvServerBrowser.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        tvServerBrowser.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> serverDetailsModel.setSelectedServer(newValue));
+    }
+
+    private ContextMenu buildServerBrowserContextMenu() {
         ContextMenu cMenu = new ContextMenu();
 
         MenuItem miManagedServer = new MenuItem();
@@ -396,17 +637,13 @@ public class ServerBrowserController extends BaseController {
         });
 
         cMenu.getItems().add(miManagedServer);
-        tvServerBrowser.setContextMenu(cMenu);
-
-        //Raise the following events on item selection
-        tvServerBrowser.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        tvServerBrowser.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> serverDetailsModel.setSelectedServer(newValue));
+        return cMenu;
     }
 
     private void setupBookmarksTable() {
         ttvBookmarkedServers.getColumns().clear();
         ttvBookmarkedServers.setShowRoot(false);
-
+        //ttvBookmarkedServers.setRowFactory(param -> new HighlightRow<>(p -> ServerStatus.TIMED_OUT.equals(p.getStatus()), "timeout"));
         TreeTableColumn<ServerDetails, String> nameCol = createBasicTreeColumn(ttvBookmarkedServers, "Server Name", "name", bookmarksTreeTableViewFactory::serverName);
         createBasicTreeColumn(ttvBookmarkedServers, "IP Address", "ipAddress", bookmarksTreeTableViewFactory);
         createBasicTreeColumn(ttvBookmarkedServers, "Port", "port", bookmarksTreeTableViewFactory);
@@ -487,5 +724,10 @@ public class ServerBrowserController extends BaseController {
     @Autowired
     public void setServerManager(ServerManager serverManager) {
         this.serverManager = serverManager;
+    }
+
+    @Autowired
+    public void setServerFilterModel(ServerFilterModel serverFilterModel) {
+        this.serverFilterModel = serverFilterModel;
     }
 }

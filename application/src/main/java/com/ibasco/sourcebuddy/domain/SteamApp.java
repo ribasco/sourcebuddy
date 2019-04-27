@@ -112,7 +112,7 @@ public class SteamApp extends AuditableEntity<String> implements Comparable<Stea
 
     @Override
     public String toString() {
-        return getName() + " (" + getId() + ")";
+        return getName();
     }
 
     @Override

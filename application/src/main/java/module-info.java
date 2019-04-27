@@ -82,5 +82,6 @@ module sourcebuddy.app {
     requires richtextfx;
     requires fx.gson;
     requires org.apache.commons.codec;
+    requires annotations;
     //requires dockfx;
 }

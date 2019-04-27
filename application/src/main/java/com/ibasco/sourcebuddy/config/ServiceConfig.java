@@ -1,7 +1,13 @@
 package com.ibasco.sourcebuddy.config;
 
-import com.ibasco.sourcebuddy.service.*;
-import com.ibasco.sourcebuddy.service.impl.*;
+import com.ibasco.sourcebuddy.service.GeoIpService;
+import com.ibasco.sourcebuddy.service.MapLookupService;
+import com.ibasco.sourcebuddy.service.ServerPurgeService;
+import com.ibasco.sourcebuddy.service.SteamService;
+import com.ibasco.sourcebuddy.service.impl.GeoIpServiceImpl;
+import com.ibasco.sourcebuddy.service.impl.ServerPurgeServiceImpl;
+import com.ibasco.sourcebuddy.service.impl.SourceMapLookupServiceImpl;
+import com.ibasco.sourcebuddy.service.impl.SteamServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -26,11 +32,6 @@ public class ServiceConfig {
     @Bean
     public ServerPurgeService serverPurgeService() {
         return new ServerPurgeServiceImpl();
-    }
-
-    @Bean
-    public NetworkDiagnosticService networkDiagnosticService() {
-        return new NetworkDiagnosticServiceImpl();
     }
 
     @Bean

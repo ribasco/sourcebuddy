@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -74,7 +76,7 @@ public class TaskManager {
         return taskMap.entrySet().stream().anyMatch(p -> p.getKey().getClass().equals(taskClass) && !p.getKey().isRunning());
     }
 
-    public <T extends Task<?>> boolean contains(Class<T> taskClass) {
+    public boolean contains(Class<? extends Task<?>> taskClass) {
         return taskMap.entrySet().stream().anyMatch(p -> p.getKey().getClass().equals(taskClass));
     }
 
@@ -84,6 +86,14 @@ public class TaskManager {
 
     public ObservableMap<Task<?>, CompletableFuture<?>> getTaskMap() {
         return taskMap;
+    }
+
+    public Optional<CompletableFuture<?>> getFuture(Class<?> taskClass) {
+        return taskMap.entrySet().stream().filter(p -> p.getKey().getClass().equals(taskClass)).findFirst().map(Map.Entry::getValue);
+    }
+
+    public Optional<Task<?>> getTask(CompletableFuture<?> future) {
+        return taskMap.entrySet().stream().filter(p -> p.getValue().equals(future)).findFirst().map(Map.Entry::getKey);
     }
 
     private void attachTaskMonitor(Task<?> task) {

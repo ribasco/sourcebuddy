@@ -437,6 +437,34 @@ public class ServerDetails extends AuditableEntity<String> {
         this.secure.setValue(secure);
     }
 
+    @Transient
+    public Boolean isNotSecure() {
+        if (secure.getValue() == null)
+            return null;
+        return !secure.getValue();
+    }
+
+    @Transient
+    public Boolean isEmpty() {
+        if (getPlayers() == null)
+            return null;
+        return getPlayers().isEmpty();
+    }
+
+    @Transient
+    public Boolean isNotEmpty() {
+        if (getPlayers() == null)
+            return null;
+        return !getPlayers().isEmpty();
+    }
+
+    @Transient
+    public Boolean isNonDedicated() {
+        if (dedicated.getValue() == null)
+            return null;
+        return !dedicated.get();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -455,5 +483,19 @@ public class ServerDetails extends AuditableEntity<String> {
     @Override
     public String toString() {
         return String.format("%s:%d = %s", getIpAddress(), getPort(), getName());
+    }
+
+    public static void copy(ServerDetails source, ServerDetails target) {
+        target.setName(source.getName());
+        target.setGameDirectory(source.getGameDirectory());
+        target.setVersion(source.getVersion());
+        target.setPlayerCount(source.getPlayerCount());
+        target.setMaxPlayerCount(source.getMaxPlayerCount());
+        target.setMapName(source.getMapName());
+        target.setSecure(source.isSecure());
+        target.setDedicated(source.isDedicated());
+        target.setOperatingSystem(source.getOperatingSystem());
+        target.setSteamId(source.getSteamId());
+        target.setServerTags(source.getServerTags());
     }
 }

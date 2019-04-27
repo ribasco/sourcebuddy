@@ -144,6 +144,7 @@ public class Bootstrap extends Application implements ApplicationContextAware {
         stage.toFront();
         stage.setWidth(1280);
         stage.setHeight(720);
+        stage.setMaximized(true);
         stage.show();
 
         log.debug("Bootstrap :: Primary stage and scene initialized");
