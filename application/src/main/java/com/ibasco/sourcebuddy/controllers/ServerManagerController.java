@@ -4,7 +4,7 @@ import com.ibasco.agql.protocols.valve.source.query.logger.SourceLogEntry;
 import com.ibasco.agql.protocols.valve.source.query.logger.SourceLogListenService;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.exceptions.NotAuthenticatedException;
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.model.AppModel;
 import com.ibasco.sourcebuddy.service.RconService;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -25,7 +25,7 @@ public class ServerManagerController extends BaseController {
 
     private static final Logger log = LoggerFactory.getLogger(ServerManagerController.class);
 
-    private ServerDetailsModel serverDetailsModel;
+    private AppModel appModel;
 
     private SourceLogListenService sourceLogListenService;
 
@@ -100,10 +100,10 @@ public class ServerManagerController extends BaseController {
     }
 
     private CompletableFuture<String> executeRconCommand(String command) {
-        if (serverDetailsModel.getSelectedServers().isEmpty())
+        if (appModel.getSelectedServers().isEmpty())
             return CompletableFuture.completedFuture(null);
 
-        ServerDetails selectedServer = serverDetailsModel.getSelectedServers().get(0);
+        ServerDetails selectedServer = appModel.getSelectedServers().get(0);
         if (selectedServer == null)
             return CompletableFuture.failedFuture(new IllegalStateException("No server selected"));
 
@@ -126,8 +126,8 @@ public class ServerManagerController extends BaseController {
     }
 
     @Autowired
-    public void setServerDetailsModel(ServerDetailsModel serverDetailsModel) {
-        this.serverDetailsModel = serverDetailsModel;
+    public void setAppModel(AppModel appModel) {
+        this.appModel = appModel;
     }
 
     @Autowired

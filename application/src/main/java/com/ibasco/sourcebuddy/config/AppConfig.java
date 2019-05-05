@@ -10,7 +10,7 @@ import com.ibasco.sourcebuddy.components.HttpDownloader;
 import com.ibasco.sourcebuddy.components.NotificationManager;
 import com.ibasco.sourcebuddy.components.SpringHelper;
 import com.ibasco.sourcebuddy.components.gson.JsonTypeAdapter;
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.model.AppModel;
 import com.ibasco.sourcebuddy.repository.ServerDetailsRepository;
 import com.ibasco.sourcebuddy.repository.impl.CustomRepositoryImpl;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
@@ -42,7 +42,7 @@ import java.util.concurrent.*;
 
 @Configuration
 @ComponentScan(
-        basePackageClasses = {Bootstrap.class, NotificationManager.class, ServerDetailsModel.class, SteamAppsPreload.class, SpringHelper.class},
+        basePackageClasses = {Bootstrap.class, NotificationManager.class, AppModel.class, SteamAppsPreload.class, SpringHelper.class},
         includeFilters = {@ComponentScan.Filter({AbstractComponent.class, AbstractController.class, AbstractService.class})}
 )
 @EnableTransactionManagement
@@ -122,15 +122,30 @@ public class AppConfig implements AsyncConfigurer {
 
     @Bean(destroyMethod = "shutdownNow")
     public ExecutorService sourceQueryExecutorService() {
-        return new ThreadPoolExecutor(getPoolSize(), Integer.MAX_VALUE,
+        return new ThreadPoolExecutor(getPoolSize() * 2, Integer.MAX_VALUE,
                                       60L, TimeUnit.SECONDS,
                                       new LinkedBlockingDeque<>(),
                                       sourceQueryThreadFactory());
     }
 
     @Bean(destroyMethod = "shutdownNow")
+    public ExecutorService singleThreadExecutorService() {
+        return Executors.newSingleThreadExecutor(singleServerDetailsThreadFactory());
+    }
+
+    @Bean(destroyMethod = "shutdownNow")
     public ScheduledExecutorService scheduledTaskService() {
         return new ScheduledThreadPoolExecutor(DEFAULT_THREADS, scheduledTasksThreadFactory());
+    }
+
+    @Bean
+    public ThreadFactory singleServerDetailsThreadFactory() {
+        return r -> {
+            Thread thread = new Thread(sourceQueryThreadGroup(), r);
+            thread.setDaemon(true);
+            thread.setName(String.format("sb-source-details-%d", thread.getId()));
+            return thread;
+        };
     }
 
     @Bean

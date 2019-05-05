@@ -141,7 +141,7 @@ public class GameBrowserController extends BaseController {
 
     private void refreshApps(ActionEvent actionEvent) {
         steamGameModel.setSteamAppList(null);
-        Parent placeholderView = guiHelper.getLoadingPlaceholder("Loading steam apps...");
+        Parent placeholderView = getViewManager().getPlaceholderView("Loading steam apps...");
         tvGameBrowser.setPlaceholder(placeholderView);
         steamService.findSteamAppsFromRepo().thenApply(FXCollections::observableArrayList).whenComplete((steamApps, ex) -> {
             if (ex != null) {

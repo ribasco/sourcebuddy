@@ -1,11 +1,8 @@
 package com.ibasco.sourcebuddy.service;
 
-import com.ibasco.sourcebuddy.constants.Qualifiers;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
 import com.ibasco.sourcebuddy.util.WorkProgressCallback;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.net.InetSocketAddress;
 import java.util.Collection;
@@ -20,22 +17,30 @@ import java.util.concurrent.CompletableFuture;
 public interface SourceServerService {
 
     /**
-     * Update all server details (info, players and rules)
+     * Updates server info, rules and player details
      *
-     * @param servers
-     *         The list of servers to update. If empty, the method will return immediately.
-     * @param callback
-     *         The callback for progress updates
+     * @param server
+     *         The server instance to be updated
      *
-     * @return The future isntance of the task
+     * @return A completable future of the updated server details
      */
-    CompletableFuture<Void> updateAllServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
+    CompletableFuture<ServerDetails> updateAllDetails(ServerDetails server);
 
-    CompletableFuture<Void> updateServerDetails(ServerDetails servers);
+    void updateAllDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
-    CompletableFuture<Void> updatePlayerDetails(ServerDetails servers);
+    /**
+     * Update details of a single server instance
+     *
+     * @param server
+     *         The server to be updated
+     *
+     * @return A completable future of the updated server details
+     */
+    CompletableFuture<ServerDetails> updateServerDetails(ServerDetails server);
 
-    CompletableFuture<Void> updateServerRules(ServerDetails servers);
+    CompletableFuture<ServerDetails> updatePlayerDetails(ServerDetails server);
+
+    CompletableFuture<ServerDetails> updateServerRules(ServerDetails server);
 
     /**
      * Performs an asynchronous server info query on the list of provided servers. Note: This method will block until all queries have finished processing.
@@ -45,7 +50,7 @@ public interface SourceServerService {
      * @param callback
      *         The callback for progress updates
      */
-    CompletableFuture<Void> updateServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
+    void updateServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
     /**
      * Performs an asynchronous player query on the list of provided servers. Note: This method will block until all queries have finished processing
@@ -55,7 +60,7 @@ public interface SourceServerService {
      * @param callback
      *         The callback for progress updates
      */
-    CompletableFuture<Void> updatePlayerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
+    void updatePlayerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
     /**
      * Performs an asynchronous server rules query on the list of provided servers. Note: This method will block until all queries have finished processing
@@ -65,7 +70,7 @@ public interface SourceServerService {
      * @param callback
      *         The callback for progress updates
      */
-    CompletableFuture<Void> updateServerRules(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
+    void updateServerRules(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback);
 
     /**
      * Retrieves the server details of the address specified (if applicable)
@@ -122,14 +127,12 @@ public interface SourceServerService {
      *
      * @return The number of servers fetch from the repository
      */
-    @Async(Qualifiers.STEAM_EXECUTOR_SERVICE)
-    @Transactional(readOnly = true)
-    default CompletableFuture<Integer> findServerListByApp(List<ServerDetails> servers, SteamApp app) {
+    default int findServerListByApp(Collection<ServerDetails> servers, SteamApp app) {
         return findServerListByApp(servers, app, null);
     }
 
     /**
-     * Retrieves a list of servers from the repository
+     * Retrieves a list of servers from the repository. If the provided server list argument is not empty, new entries will be merged into it. Existing entries will be replaced .
      *
      * @param servers
      *         The server list
@@ -140,7 +143,7 @@ public interface SourceServerService {
      *
      * @return The number of new servers added to the list
      */
-    CompletableFuture<Integer> findServerListByApp(List<ServerDetails> servers, SteamApp app, WorkProgressCallback<ServerDetails> callback);
+    int findServerListByApp(Collection<ServerDetails> servers, SteamApp app, WorkProgressCallback<ServerDetails> callback);
 
     /**
      * Fetch new server entries from the master server
@@ -164,7 +167,7 @@ public interface SourceServerService {
      *
      * @return The total number of new server entries added to the repository
      */
-    long fetchNewServerEntries(SteamApp app, WorkProgressCallback<ServerDetails> callback);
+    int fetchNewServerEntries(SteamApp app, WorkProgressCallback<ServerDetails> callback);
 
     boolean isBookmarked(ServerDetails server);
 

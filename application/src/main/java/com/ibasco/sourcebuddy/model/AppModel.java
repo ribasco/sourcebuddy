@@ -1,6 +1,7 @@
 package com.ibasco.sourcebuddy.model;
 
 import com.ibasco.sourcebuddy.domain.ConfigProfile;
+import com.ibasco.sourcebuddy.domain.DockLayout;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.service.ConfigService;
 import javafx.beans.property.*;
@@ -12,22 +13,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 @Component
-public class ServerDetailsModel {
+public class AppModel {
 
-    private static final Logger log = LoggerFactory.getLogger(ServerDetailsModel.class);
-
-    private static final ReadWriteLock serverListLock = new ReentrantReadWriteLock();
-
-    public static final Lock WRITE_LOCK = serverListLock.writeLock();
-
-    public static final Lock READ_LOCK = serverListLock.readLock();
+    private static final Logger log = LoggerFactory.getLogger(AppModel.class);
 
     private ConfigService configService;
+
+    private ObjectProperty<DockLayout> activeLayout = new SimpleObjectProperty<>();
 
     private ObjectProperty<ConfigProfile> activeProfile = new SimpleObjectProperty<>();
 
@@ -36,6 +30,10 @@ public class ServerDetailsModel {
     private BooleanProperty serverDetailsUpdating = new SimpleBooleanProperty();
 
     private ListProperty<ServerDetails> selectedServers = new SimpleListProperty<>(FXCollections.observableArrayList());
+
+    private ListProperty<ServerDetails> selectedManagedServers = new SimpleListProperty<>(FXCollections.observableArrayList());
+
+    private ObjectProperty<ServerDetails> selectedManagedServer = new SimpleObjectProperty<>();
 
     private ObjectProperty<ServerDetails> selectedServer = new SimpleObjectProperty<>();
 
@@ -48,32 +46,42 @@ public class ServerDetailsModel {
     @PostConstruct
     void init() {
         ConfigProfile defaultProfile = configService.getDefaultProfile();
-        if (defaultProfile == null) {
-            log.debug("No default profile assigned. Creating new default profile");
-            defaultProfile = configService.saveProfile(configService.createProfile());
-            configService.setDefaultProfile(defaultProfile);
-            log.debug("Saved default profile: {}", defaultProfile);
-        }
+        if (defaultProfile == null)
+            throw new IllegalStateException("Default profile not set");
         log.debug("Setting active profile: {}", defaultProfile);
         setActiveProfile(defaultProfile);
     }
 
+    public ServerDetails getSelectedManagedServer() {
+        return selectedManagedServer.get();
+    }
+
+    public ObjectProperty<ServerDetails> selectedManagedServerProperty() {
+        return selectedManagedServer;
+    }
+
+    public void setSelectedManagedServer(ServerDetails selectedManagedServer) {
+        this.selectedManagedServer.set(selectedManagedServer);
+    }
+
+    public ObservableList<ServerDetails> getSelectedManagedServers() {
+        return selectedManagedServers.get();
+    }
+
+    public ListProperty<ServerDetails> selectedManagedServersProperty() {
+        return selectedManagedServers;
+    }
+
+    public void setSelectedManagedServers(ObservableList<ServerDetails> selectedManagedServers) {
+        this.selectedManagedServers.set(selectedManagedServers);
+    }
+
     public ObservableList<ServerDetails> getServerDetails() {
-        try {
-            READ_LOCK.lock();
-            return serverDetails.get();
-        } finally {
-            READ_LOCK.unlock();
-        }
+        return serverDetails.get();
     }
 
     public void setServerDetails(ObservableList<ServerDetails> serverDetails) {
-        try {
-            WRITE_LOCK.lock();
-            this.serverDetails.set(serverDetails);
-        } finally {
-            WRITE_LOCK.unlock();
-        }
+        this.serverDetails.set(serverDetails);
     }
 
     public ListProperty<ServerDetails> serverDetailsProperty() {
@@ -162,6 +170,18 @@ public class ServerDetailsModel {
 
     public void setActiveProfile(ConfigProfile activeProfile) {
         this.activeProfile.set(activeProfile);
+    }
+
+    public DockLayout getActiveLayout() {
+        return activeLayout.get();
+    }
+
+    public ObjectProperty<DockLayout> activeLayoutProperty() {
+        return activeLayout;
+    }
+
+    public void setActiveLayout(DockLayout activeLayout) {
+        this.activeLayout.set(activeLayout);
     }
 
     @Autowired

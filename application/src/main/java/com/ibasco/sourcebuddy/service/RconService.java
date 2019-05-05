@@ -1,8 +1,8 @@
 package com.ibasco.sourcebuddy.service;
 
+import com.ibasco.sourcebuddy.domain.RconStatus;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.exceptions.NotAuthenticatedException;
-import com.ibasco.sourcebuddy.model.RconStatus;
 import com.ibasco.sourcebuddy.util.Check;
 
 import java.net.InetSocketAddress;

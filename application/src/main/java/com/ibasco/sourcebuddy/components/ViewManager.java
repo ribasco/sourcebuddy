@@ -1,5 +1,7 @@
 package com.ibasco.sourcebuddy.components;
 
+import static com.ibasco.sourcebuddy.components.GuiHelper.findNode;
+import com.ibasco.sourcebuddy.constants.Views;
 import com.ibasco.sourcebuddy.controllers.BaseController;
 import com.ibasco.sourcebuddy.controllers.FragmentController;
 import com.ibasco.sourcebuddy.exceptions.NoMappedControllerException;
@@ -7,12 +9,18 @@ import com.ibasco.sourcebuddy.exceptions.ResourceLoadException;
 import com.ibasco.sourcebuddy.exceptions.ViewLoadException;
 import com.ibasco.sourcebuddy.gui.tableview.cells.ViewFragmentCell;
 import static com.ibasco.sourcebuddy.util.ResourceUtil.loadResource;
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import org.slf4j.Logger;
@@ -87,6 +95,44 @@ public class ViewManager {
             e.printStackTrace();
         }
         return applicationContext.getBean(cls, viewFragmentName, controllerClass);
+    }
+
+    public Parent getPlaceholderView(String message) {
+        return getPlaceholderView(Bindings.format(message), null);
+    }
+
+    public Parent getPlaceholderView(ObservableValue<String> progressMsg, EventHandler<ActionEvent> cancelAction) {
+        return getPlaceholderView(null, progressMsg, cancelAction);
+    }
+
+    public Parent getPlaceholderView(ObservableValue<String> titleMsg, ObservableValue<String> progressMsg, EventHandler<ActionEvent> cancelAction) {
+        VBox placeholderView = loadDetachedView(Views.FRAGMENT_PLACEHOLDER);
+        Label title = findNode(placeholderView, Label.class, "lblTitle");
+        if (titleMsg != null) {
+            title.setVisible(true);
+            title.textProperty().bind(titleMsg);
+        } else {
+            title.setVisible(false);
+            title.textProperty().unbind();
+        }
+        Label progress = findNode(placeholderView, Label.class, "lblProgress");
+        if (progressMsg != null) {
+            progress.setVisible(true);
+            progress.textProperty().bind(progressMsg);
+        } else {
+            progress.setVisible(false);
+            progress.textProperty().unbind();
+        }
+        Button cancelButton = findNode(placeholderView, Button.class, "btnCancel");
+        if (cancelAction != null) {
+            cancelButton.setManaged(true);
+            cancelButton.setVisible(true);
+            cancelButton.setOnAction(cancelAction);
+        } else {
+            cancelButton.setManaged(false);
+            cancelButton.setVisible(false);
+        }
+        return placeholderView;
     }
 
     public <T extends Node> T loadDetachedView(String viewName) {

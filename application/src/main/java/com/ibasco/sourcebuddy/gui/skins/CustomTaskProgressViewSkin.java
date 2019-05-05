@@ -12,8 +12,12 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.util.Callback;
 import org.controlsfx.control.TaskProgressView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CustomTaskProgressViewSkin<T extends Task<?>> extends SkinBase<TaskProgressView<T>> {
+
+    private static final Logger log = LoggerFactory.getLogger(CustomTaskProgressViewSkin.class);
 
     public CustomTaskProgressViewSkin(TaskProgressView<T> monitor) {
         super(monitor);
@@ -66,7 +70,8 @@ public class CustomTaskProgressViewSkin<T extends Task<?>> extends SkinBase<Task
             cancelButton.setTooltip(new Tooltip("Cancel Task"));
             cancelButton.setOnAction(evt -> {
                 if (task != null) {
-                    task.cancel();
+                    log.info("INTERRUPTING TASK");
+                    task.cancel(true);
                 }
             });
 

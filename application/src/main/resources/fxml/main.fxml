@@ -24,9 +24,15 @@
                         <MenuItem fx:id="miPreferences" mnemonicParsing="false" text="Preferences"/>
                     </items>
                 </Menu>
-                <Menu mnemonicParsing="false" text="View">
+                <Menu fx:id="menuView" mnemonicParsing="false" text="Docks">
                     <items>
-                        <MenuItem mnemonicParsing="false" text="Action 1"/>
+                        <Menu fx:id="menuViewLayouts" mnemonicParsing="false" text="Layouts"/>
+                        <SeparatorMenuItem mnemonicParsing="false"/>
+                        <MenuItem fx:id="miViewSetDefault" mnemonicParsing="false" text="Set Default"/>
+                        <MenuItem fx:id="miViewSaveLayout" mnemonicParsing="false" text="Save Layout"/>
+                        <MenuItem fx:id="miViewSaveLayoutAs" mnemonicParsing="false" text="Save Layout As"/>
+                        <MenuItem fx:id="miViewResetLayout" mnemonicParsing="false" text="Reset Layout"/>
+                        <MenuItem fx:id="miClearLayout" mnemonicParsing="false" text="Clear Layout"/>
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">

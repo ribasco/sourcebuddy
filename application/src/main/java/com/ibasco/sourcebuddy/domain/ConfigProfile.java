@@ -29,6 +29,10 @@ public class ConfigProfile extends AuditableEntity<String> {
 
     private List<ManagedServer> managedServers = new ArrayList<>();
 
+    private ObjectProperty<DockLayout> defaultLayout = new SimpleObjectProperty<>();
+
+    private List<DockLayout> dockLayouts = new ArrayList<>();
+
     @Id
     @Column(name = ID)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -91,5 +95,33 @@ public class ConfigProfile extends AuditableEntity<String> {
 
     public void setManagedServers(List<ManagedServer> managedServers) {
         this.managedServers = managedServers;
+    }
+
+    @OneToOne
+    @JoinColumn(name = DockLayout.ID)
+    public DockLayout getDefaultLayout() {
+        return defaultLayout.get();
+    }
+
+    public ObjectProperty<DockLayout> defaultLayoutProperty() {
+        return defaultLayout;
+    }
+
+    public void setDefaultLayout(DockLayout defaultLayout) {
+        this.defaultLayout.set(defaultLayout);
+    }
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "profile", fetch = FetchType.EAGER, orphanRemoval = true)
+    public List<DockLayout> getDockLayouts() {
+        return dockLayouts;
+    }
+
+    public void setDockLayouts(List<DockLayout> dockLayouts) {
+        this.dockLayouts = dockLayouts;
+    }
+
+    @Override
+    public String toString() {
+        return getName();
     }
 }

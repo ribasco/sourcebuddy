@@ -19,10 +19,7 @@ import com.ibasco.sourcebuddy.repository.ServerDetailsRepository;
 import com.ibasco.sourcebuddy.service.GeoIpService;
 import com.ibasco.sourcebuddy.service.SourceServerService;
 import com.ibasco.sourcebuddy.service.SteamService;
-import com.ibasco.sourcebuddy.util.ServerDetailsFilter;
-import com.ibasco.sourcebuddy.util.ThreadUtil;
 import com.ibasco.sourcebuddy.util.WorkProgressCallback;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +31,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -62,135 +62,114 @@ public class SourceServerServiceImpl implements SourceServerService {
     private EntityMapper entityMapper;
 
     @Override
-    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
-    public CompletableFuture<Void> updateAllServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
-        if (servers.isEmpty()) {
-            log.warn("No available servers to update. Server list is empty");
-            return CompletableFuture.completedFuture(null);
-        }
-
-        List<CompletableFuture<?>> futureList = new ArrayList<>();
-
-        log.info("updateAllServerDetails()  :: Starting batch server details update (Size: {})", servers.size());
-        CompletableFuture<?> future = updateServerDetails(servers, callback);
-        futureList.add(future);
-        future.join();
-
-        //Update player details (active and non-empty servers only)
-        List<ServerDetails> filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).filter(ServerDetailsFilter::byNonEmptyServers).collect(Collectors.toList());
-        log.info("updateAllServerDetails() :: Starting batch player details update (Size: {})", filteredList.size());
-        future = updatePlayerDetails(filteredList, callback);
-        futureList.add(future);
-        future.join();
-
-        //Update server rules (active servers only)
-        filteredList = servers.stream().filter(ServerDetailsFilter::byActiveServers).collect(Collectors.toList());
-        log.info("updateAllServerDetails() :: Starting batch server rules update (Size: {})", filteredList.size());
-        future = updateServerRules(filteredList, callback);
-        futureList.add(future);
-        future.join();
-
-        //Save to database
-        if (!servers.isEmpty()) {
-            log.info("updateAllServerDetails() :: Saving {} entries to database", servers.size());
-            save(servers);
-            log.info("updateAllServerDetails() :: Successfully saved {} entries to database", servers.size());
-        }
-
-        return CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0]));
+    public CompletableFuture<ServerDetails> updateAllDetails(ServerDetails server) {
+        if (server == null)
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Server details cannot be null"));
+        return updateServerDetails(server)
+                .thenCompose(details -> {
+                    if (ServerStatus.ACTIVE.equals(server.getStatus()) && server.getPlayerCount() > 0)
+                        return updatePlayerDetails(server).exceptionally(t -> server);
+                    return CompletableFuture.completedStage(server);
+                }).thenCompose(details -> {
+                    if (ServerStatus.ACTIVE.equals(server.getStatus()))
+                        return updateServerRules(server).exceptionally(t -> server);
+                    return CompletableFuture.completedStage(server);
+                });
     }
 
     @Override
-    public CompletableFuture<Void> updateServerDetails(ServerDetails target) {
+    public void updateAllDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
+        runBatchAsync(servers, this::updateAllDetails, callback);
+    }
+
+    @Override
+    public CompletableFuture<ServerDetails> updateServerDetails(ServerDetails target) {
+        if (target == null)
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Server details is null"));
         return sourceServerQueryClient.getServerInfo(target.getAddress())
-                .whenComplete((server, ex) -> {
-                    if (ex != null) {
-                        if (ex.getCause() instanceof ReadTimeoutException) {
-                            target.setStatus(ServerStatus.TIMED_OUT);
-                        } else {
-                            target.setStatus(ServerStatus.onError(ex));
-                        }
-                        log.debug("Error on server request", ex);
-                    } else {
-                        copyAndUpdateDetails(target, server);
+                .thenApply(server -> {
+                    synchronized (target) {
+                        SourceServerServiceImpl.this.copyAndUpdateDetails(target, server);
                         target.setStatus(ServerStatus.ACTIVE);
                     }
-                }).thenAccept(s -> {
+                    return target;
+                })
+                .exceptionally(ex -> {
+                    synchronized (target) {
+                        if (ex instanceof CompletionException) {
+                            if (ex.getCause() instanceof ReadTimeoutException) {
+                                target.setStatus(ServerStatus.TIMED_OUT);
+                            } else {
+                                target.setStatus(ServerStatus.onError(ex));
+                                throw (CompletionException) ex;
+                            }
+                        } else {
+                            target.setStatus(ServerStatus.onError(ex));
+                            throw new CompletionException(ex);
+                        }
+                    }
+                    return target;
                 });
     }
 
     @Override
-    public CompletableFuture<Void> updatePlayerDetails(ServerDetails target) {
-        return sourceServerQueryClient.getPlayers(target.getAddress())
+    public CompletableFuture<ServerDetails> updatePlayerDetails(ServerDetails server) {
+        if (server == null)
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Server details is null"));
+        return sourceServerQueryClient.getPlayers(server.getAddress())
                 .thenApply(entityMapper::map)
                 .thenApply(FXCollections::observableList)
-                .thenAccept(playerList -> {
-                    if (!Platform.isFxApplicationThread())
-                        Platform.runLater(() -> target.setPlayers(playerList));
-                    else
-                        target.setPlayers(playerList);
-                });
+                .thenApply(playerList -> {
+                    synchronized (server) {
+                        server.setPlayers(playerList);
+                    }
+                    return server;
+                })
+                .handle(this::handleExceptionEx);
     }
 
     @Override
-    public CompletableFuture<Void> updateServerRules(ServerDetails target) {
-        return sourceServerQueryClient.getServerRules(target.getAddress())
+    public CompletableFuture<ServerDetails> updateServerRules(ServerDetails server) {
+        if (server == null)
+            return CompletableFuture.failedFuture(new IllegalArgumentException("Server details is null"));
+        return sourceServerQueryClient.getServerRules(server.getAddress())
                 .thenApply(FXCollections::observableMap)
-                .thenAccept(rulesMap -> {
-                    if (!Platform.isFxApplicationThread())
-                        Platform.runLater(() -> target.setRules(rulesMap));
-                    else
-                        target.setRules(rulesMap);
-                });
+                .thenApply(rulesMap -> {
+                    synchronized (server) {
+                        server.setRules(rulesMap);
+                    }
+                    return server;
+                })
+                .handle(this::handleExceptionEx);
+    }
+
+    private <U> U handleExceptionEx(U item, Throwable ex) {
+        if (ex != null) {
+            if (ex instanceof CompletionException) {
+                if (!(ex.getCause() instanceof ReadTimeoutException)) {
+                    throw (CompletionException) ex;
+                }
+            } else {
+                log.info("Unknown", ex);
+                throw new CompletionException(ex);
+            }
+        }
+        return item;
     }
 
     @Override
-    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
-    public CompletableFuture<Void> updateServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
-        log.info("updateServerDetails() :: Running server details update for {} servers", servers.size());
-        List<CompletableFuture<?>> cfList = Collections.synchronizedList(new ArrayList<>());
-        servers.parallelStream().forEach(target -> {
-            CompletableFuture<?> future = updateServerDetails(target)
-                    .handle((BiFunction<Void, Throwable, Void>) (aVoid, ex) -> {
-                        GuiHelper.invokeIfPresent(callback, target, ex);
-                        return null;
-                    });
-            cfList.add(future);
-            ThreadUtil.sleepUninterrupted(10);
-        });
-        return CompletableFuture.allOf(cfList.toArray(new CompletableFuture[0]));
+    public void updateServerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
+        runBatchAsync(servers, this::updateServerDetails, callback);
     }
 
     @Override
-    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
-    public CompletableFuture<Void> updatePlayerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
-        List<CompletableFuture<?>> cfList = Collections.synchronizedList(new ArrayList<>());
-        log.info("updatePlayerDetails() :: Running player details update for {} active and non-empty servers", servers.size());
-        servers.parallelStream().forEach(target -> {
-            CompletableFuture<?> cf = updatePlayerDetails(target).handle((playerList, ex) -> {
-                GuiHelper.invokeIfPresent(callback, target, ex);
-                return target;
-            });
-            cfList.add(cf);
-            ThreadUtil.sleepUninterrupted(10);
-        });
-        return CompletableFuture.allOf(cfList.toArray(new CompletableFuture[0]));
+    public void updatePlayerDetails(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
+        runBatchAsync(servers, this::updatePlayerDetails, callback);
     }
 
     @Override
-    @Async(Qualifiers.TASK_EXECUTOR_SERVICE)
-    public CompletableFuture<Void> updateServerRules(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
-        List<CompletableFuture<?>> cfList = Collections.synchronizedList(new ArrayList<>());
-        log.info("updateServerRules() :: Running server rules update for {} active servers", servers.size());
-        servers.parallelStream().forEach(target -> {
-            CompletableFuture<?> cf = updateServerRules(target).handle((rulesMap, ex) -> {
-                GuiHelper.invokeIfPresent(callback, target, ex);
-                return target;
-            });
-            cfList.add(cf);
-            ThreadUtil.sleepUninterrupted(10);
-        });
-        return CompletableFuture.allOf(cfList.toArray(new CompletableFuture[0]));
+    public void updateServerRules(List<ServerDetails> servers, WorkProgressCallback<ServerDetails> callback) {
+        runBatchAsync(servers, this::updateServerRules, callback);
     }
 
     @Override
@@ -252,8 +231,7 @@ public class SourceServerServiceImpl implements SourceServerService {
     }
 
     @Override
-    @Async(Qualifiers.STEAM_EXECUTOR_SERVICE)
-    public CompletableFuture<Integer> findServerListByApp(List<ServerDetails> servers, SteamApp app, WorkProgressCallback<ServerDetails> callback) {
+    public int findServerListByApp(Collection<ServerDetails> servers, SteamApp app, WorkProgressCallback<ServerDetails> callback) {
         try {
             if (servers == null)
                 throw new IllegalArgumentException("Server list cannot be null");
@@ -275,15 +253,15 @@ public class SourceServerServiceImpl implements SourceServerService {
                 log.info("findServerListByApp() :: Added {} entities from the repository to the existing cache (New list size: {})", added, servers.size());
             }
 
-            return CompletableFuture.completedFuture(added);
+            return added;
         } catch (Throwable e) {
             log.error("fetchServerList() :: Error thrown while retriving server info list", e);
-            return CompletableFuture.failedFuture(e);
+            throw e;
         }
     }
 
     @Override
-    public long fetchNewServerEntries(SteamApp app, WorkProgressCallback<ServerDetails> callback) {
+    public int fetchNewServerEntries(SteamApp app, WorkProgressCallback<ServerDetails> callback) {
 
         if (app == null || app.getId() <= 0)
             throw new IllegalArgumentException("Invalid steam app specified");
@@ -397,6 +375,59 @@ public class SourceServerServiceImpl implements SourceServerService {
     @Override
     public long getTotalServerEntries(SteamApp app) {
         return serverDetailsRepository.countByApp(app);
+    }
+
+    private <T> void runBatchAsync(List<T> items, Function<T, CompletableFuture<T>> func, WorkProgressCallback<T> callback) {
+        List<CompletableFuture<Void>> futureList = new ArrayList<>();
+        final AtomicReference<Throwable> cancel = new AtomicReference<>();
+        try {
+            log.info("runBatchAsync() :: Starting batch processing for {} items", items.size());
+            for (T item : items) {
+                if (cancel.get() != null) {
+                    log.info("runBatchAsync() :: Batch process has been interrupted");
+                    throw new CancellationException(cancel.get().getMessage());
+                }
+                CompletableFuture<Void> future = func.apply(item).handle((a, b) -> handleBatchEx(a, b, callback, cancel));
+                futureList.add(future);
+            }
+        } finally {
+            List<CompletableFuture<?>> notDone = futureList.stream().filter(f -> !f.isDone()).peek(f -> {
+                if (cancel.get() != null) {
+                    f.cancel(true);
+                }
+            }).collect(Collectors.toList());
+            log.info("runBatchAsync() :: Waiting for {} remaining future tasks to complete", notDone.size());
+            CompletableFuture.allOf(futureList.toArray(new CompletableFuture[0])).join();
+            log.info("runBatchAsync() :: Done");
+        }
+    }
+
+    private <U, T> U handleBatchEx(T item, Throwable ex, WorkProgressCallback<T> callback, AtomicReference<Throwable> cancel) {
+        if (ex != null) {
+            //Propagate interrupted exceptions, handle timeout exceptions
+            if (ex instanceof CompletionException) {
+                Throwable cause = ex.getCause();
+                //set cancel flag on interruption
+                if (cause instanceof InterruptedException) {
+                    cancel.set(ex);
+                    return null;
+                }
+                //do not propagate read timeout exceptions, pass it to callback instead
+                else if (cause instanceof ReadTimeoutException) {
+                    GuiHelper.invokeIfPresent(callback, item, ex);
+                } else {
+                    GuiHelper.invokeIfPresent(callback, item, ex);
+                    throw (CompletionException) ex;
+                }
+            } else {
+                log.debug("Not a completion exception", ex);
+                GuiHelper.invokeIfPresent(callback, item, ex);
+                throw new CompletionException(ex);
+            }
+        } else {
+            GuiHelper.invokeIfPresent(callback, item, ex);
+        }
+        return null;
     }
 
     /**

@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.repository.support.JpaEntityInformation;
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
-import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 import java.io.Serializable;
@@ -23,13 +22,29 @@ public class CustomRepositoryImpl<T, ID extends Serializable> extends SimpleJpaR
     }
 
     @Override
-    @Transactional
     public T refresh(T t) {
-        if (!entityManager.contains(t)) {
-            t = entityManager.merge(t);
-            log.debug("refresh() :: merging entity to current persistence context ({})", t);
-        }
+        t = merge(t);
         entityManager.refresh(t);
         return t;
     }
+
+    @Override
+    public T merge(T t) {
+        if (!entityManager.contains(t)) {
+            t = entityManager.merge(t);
+            log.debug("refresh() :: merged entity to current persistence context ({})", t);
+        }
+        return t;
+    }
+
+    @Override
+    public void detach(T t) {
+        entityManager.detach(t);
+    }
+
+    @Override
+    public boolean isAttached(T t) {
+        return entityManager.contains(t);
+    }
+
 }

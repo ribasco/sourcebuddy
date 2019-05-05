@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -55,9 +56,13 @@ public class TaskManager {
         try {
             cf.whenComplete((u, ex) -> {
                 if (ex instanceof CancellationException) {
-                    if (!task.isCancelled())
+                    log.debug("Future task detected cancellation event");
+                    if (!task.isCancelled()) {
+                        log.debug("Cancelling underlying task");
                         task.cancel(true);
+                    }
                 }
+                taskMap.remove(task);
             });
             taskMap.put(task, cf);
             attachTaskMonitor(task);
@@ -96,6 +101,14 @@ public class TaskManager {
         return taskMap.entrySet().stream().filter(p -> p.getValue().equals(future)).findFirst().map(Map.Entry::getKey);
     }
 
+    public Optional<Task<?>> getTask(Class<? extends Task<?>> taskClass) {
+        return taskMap.keySet().stream().filter(p -> p.getClass().equals(taskClass)).findFirst();
+    }
+
+    public Set<Task<?>> getAllTasks() {
+        return taskMap.keySet();
+    }
+
     private void attachTaskMonitor(Task<?> task) {
         task.stateProperty().addListener(this::taskListener);
     }
@@ -114,21 +127,24 @@ public class TaskManager {
 
         switch (newState) {
             case READY:
-                //log.debug("TASK_READY :: {}", taskName);
+                log.debug("TASK_READY :: {}", taskName);
                 break;
             case SCHEDULED:
-                //log.debug("TASK_SCHEDULED :: {}", taskName);
+                log.debug("TASK_SCHEDULED :: {}", taskName);
                 break;
             case RUNNING:
-                //log.debug("TASK_RUNNING :: {}", taskName);
+                log.debug("TASK_RUNNING :: {}", taskName);
                 break;
             case CANCELLED:
                 try {
                     log.warn("TASK_CANCELLED :: {}", taskName);
                     if (taskMap.containsKey(task)) {
+                        log.debug("Cancelling completable future of task");
                         CompletableFuture<?> cf = taskMap.get(task);
                         cf.cancel(true);
-                        taskMap.remove(task);
+                        //taskMap.remove(task);
+                    } else {
+                        log.warn("Unable to find task in map");
                     }
                 } finally {
                     detachTaskMonitor(task);
@@ -136,7 +152,7 @@ public class TaskManager {
                 break;
             case FAILED:
                 try {
-                    //log.debug("TASK_FAILED :: {}", taskName);
+                    log.debug("TASK_FAILED :: {}", taskName);
                     Throwable err = task.getException();
                     log.error("Exception occured during task run", err);
                     if (taskMap.containsKey(task)) {
@@ -151,7 +167,7 @@ public class TaskManager {
             case SUCCEEDED:
                 try {
                     if (taskMap.containsKey(task)) {
-                        //log.debug("TASK_SUCCESS :: {}", taskName);
+                        log.debug("TASK_SUCCESS :: {}", taskName);
                         //noinspection unchecked
                         CompletableFuture<Object> cf = (CompletableFuture<Object>) taskMap.get(task);
                         cf.complete(task.getValue());

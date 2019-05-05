@@ -1,6 +1,5 @@
-package com.ibasco.sourcebuddy.components;
+package com.ibasco.sourcebuddy.util;
 
-import com.ibasco.sourcebuddy.util.ProgressCallback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

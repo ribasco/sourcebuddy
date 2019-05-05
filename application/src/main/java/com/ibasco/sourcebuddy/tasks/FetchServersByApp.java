@@ -9,12 +9,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 @Scope("prototype")
-public class FetchServersByApp extends BaseTask<List<ServerDetails>> {
+public class FetchServersByApp extends BaseTask<Set<ServerDetails>> {
 
     private static final Logger log = LoggerFactory.getLogger(FetchServersByApp.class);
 
@@ -27,19 +27,21 @@ public class FetchServersByApp extends BaseTask<List<ServerDetails>> {
     }
 
     @Override
-    protected List<ServerDetails> process() throws Exception {
-        List<ServerDetails> serverDetails = new ArrayList<>();
+    protected Set<ServerDetails> process() throws Exception {
+        updateTitle("Retrieving server entries for %s (%d)", app.getName(), app.getId());
+        Set<ServerDetails> serverDetails = new HashSet<>();
         log.debug("FetchServersByApp :: Check if the game already contains server entries in the repository");
-        sourceServerService.findServerListByApp(serverDetails, app, createWorkProgressCallback("Checking for existing server entries", -1)).join();
+        sourceServerService.findServerListByApp(serverDetails, app, createWorkProgressCallback("Checking for existing server entries", -1));
         if (serverDetails.isEmpty()) {
             log.debug("FetchServersByApp :: we do not yet have any entries in the repository, fetch a new one from steam/master server");
             //we do not yet have any entries in the repository, fetch a new one from steam/master server
-            long total = sourceServerService.fetchNewServerEntries(app, createWorkProgressCallback("Fetching new server entries from steam/master", serverDetails.size()));
-
+            int total = sourceServerService.fetchNewServerEntries(app, createWorkProgressCallback("Downloading server entries", -1));
             if (total > 0) {
                 log.debug("FetchServersByApp :: Fetching new server list from repository");
                 //Fetch the new entries
-                sourceServerService.findServerListByApp(serverDetails, app, null).join();
+                total = sourceServerService.findServerListByApp(serverDetails, app, null);
+                if (total == 0)
+                    throw new IllegalStateException(String.format("No server entries available for app '%s (%d)'", app.getName(), app.getId()));
             } else {
                 log.warn("FetchServersByApp :: Nothing was fetched");
             }

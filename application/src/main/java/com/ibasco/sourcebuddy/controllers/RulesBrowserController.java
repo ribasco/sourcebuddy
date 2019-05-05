@@ -3,7 +3,7 @@ package com.ibasco.sourcebuddy.controllers;
 import com.ibasco.sourcebuddy.components.GuiHelper;
 import com.ibasco.sourcebuddy.domain.KeyValueInfo;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.model.AppModel;
 import javafx.beans.binding.Bindings;
 import javafx.beans.binding.ObjectBinding;
 import javafx.beans.value.ObservableValue;
@@ -11,6 +11,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -27,12 +28,13 @@ public class RulesBrowserController extends BaseController {
     @FXML
     private TableView<KeyValueInfo> tvRulesTable;
 
-    private ServerDetailsModel serverDetailsModel;
+    private AppModel appModel;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
         GuiHelper.setupKeyValueTable(tvRulesTable);
-        serverDetailsModel.selectedServerProperty().addListener(this::updateOnSelection);
+        appModel.selectedServerProperty().addListener(this::updateOnSelection);
+        tvRulesTable.setPlaceholder(new Label("N/A"));
     }
 
     private void updateOnSelection(ObservableValue<? extends ServerDetails> observableValue, ServerDetails oldValue, ServerDetails newValue) {
@@ -55,27 +57,19 @@ public class RulesBrowserController extends BaseController {
     }
 
     private void updateRulesSelection(ObservableValue observableValue, ServerDetails oldValue, ServerDetails newValue) {
-        if (!ServerDetailsModel.READ_LOCK.tryLock()) {
-            log.debug("Unable to acquire read lock for rules");
-            return;
-        }
-        try {
-            if (newValue != null && newValue.getRules() != null) {
-                ObservableList<KeyValueInfo> rulesList = FXCollections.observableArrayList();
-                for (Map.Entry<String, String> e : newValue.getRules().entrySet()) {
-                    rulesList.add(new KeyValueInfo(e.getKey(), e.getValue()));
-                }
-                tvRulesTable.setItems(rulesList);
-            } else {
-                tvRulesTable.setItems(null);
+        if (newValue != null && newValue.getRules() != null) {
+            ObservableList<KeyValueInfo> rulesList = FXCollections.observableArrayList();
+            for (Map.Entry<String, String> e : newValue.getRules().entrySet()) {
+                rulesList.add(new KeyValueInfo(e.getKey(), e.getValue()));
             }
-        } finally {
-            ServerDetailsModel.READ_LOCK.unlock();
+            tvRulesTable.setItems(rulesList);
+        } else {
+            tvRulesTable.setItems(null);
         }
     }
 
     @Autowired
-    public void setServerDetailsModel(ServerDetailsModel serverDetailsModel) {
-        this.serverDetailsModel = serverDetailsModel;
+    public void setAppModel(AppModel appModel) {
+        this.appModel = appModel;
     }
 }

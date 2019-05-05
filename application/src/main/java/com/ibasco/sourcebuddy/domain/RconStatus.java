@@ -1,4 +1,4 @@
-package com.ibasco.sourcebuddy.model;
+package com.ibasco.sourcebuddy.domain;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;

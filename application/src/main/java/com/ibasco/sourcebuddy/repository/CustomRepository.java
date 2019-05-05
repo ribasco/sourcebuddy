@@ -9,4 +9,10 @@ import java.io.Serializable;
 public interface CustomRepository<T, ID extends Serializable> extends JpaRepository<T, ID> {
 
     T refresh(T t);
+
+    T merge(T t);
+
+    void detach(T t);
+
+    boolean isAttached(T t);
 }

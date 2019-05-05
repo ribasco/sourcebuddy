@@ -52,52 +52,53 @@ public class UpdateServiceImpl implements UpdateService {
     private static final String UPDATE_MANIFEST_FILE = "update.json";
 
     @Override
-    public CompletableFuture<Void> invalidateEntries() {
-        return null;
+    public CompletableFuture<Boolean> updateSteamApps(ProgressCallback pc) {
+        return downloadManifest(UPDATE_GAMES_FILE, pc) //#1 - Download manifest file from site
+                .thenCompose(manifest -> checkAvailableSteamAppUpdates(manifest, pc)) //#2 - Read the manifest and check if we have updates
+                .thenApply(lst -> updateAndSaveAppDetailsList(lst, pc)); //#3 - Process and save the update entries to the repository
     }
 
-    @Override
-    public CompletableFuture<Boolean> updateSteamApps(ProgressCallback pc) {
-        return downloadManifest(UPDATE_GAMES_FILE, pc)
-                .thenCompose(manifest -> {
-                    updateProgress(pc, "Checking for steam app updates");
-                    if (needsUpdate(manifest)) {
-                        updateProgress(pc, "Downloading steam app list from site");
-                        return downloadSteamApps(manifest, pc)
-                                .<List<SteamAppDetails>>thenApply(appDetailsList -> {
-                                    //Save manifest to database
-                                    updateProgress(pc, "Updating manifest on database");
-                                    updateManifestRepository.save(manifest);
-                                    log.info("Saved manifest file to database");
-                                    return appDetailsList;
-                                });
-                    }
-                    return CompletableFuture.completedFuture(Collections.emptyList());
-                }).thenApply(appDetailsList -> {
-                    if (!appDetailsList.isEmpty()) {
-                        int size = appDetailsList.size();
-                        log.info("Updates available: {}", size);
-                        for (int i = 0; i < size; i++) {
-                            SteamAppDetails appDetails = appDetailsList.get(i);
-                            Optional<SteamApp> res = steamAppsRepository.findById(appDetails.getSteamApp().getId());
-                            SteamApp app;
-                            if (res.isPresent()) {
-                                app = res.get();
-                            } else {
-                                assert appDetails.getSteamApp() != null;
-                                app = appDetails.getSteamApp();
-                                app.setName(appDetails.getName());
-                                app = steamAppsRepository.save(app);
-                            }
-                            appDetails.setSteamApp(app);
-                            updateProgress(pc, i, size, "Saving app: " + appDetails.toString());
-                            steamAppDetailsRepository.save(appDetails);
-                        }
-                        updateProgress(pc, 0, 0, null);
-                        return true;
-                    }
-                    return false;
-                });
+    private CompletableFuture<List<SteamAppDetails>> checkAvailableSteamAppUpdates(UpdateManifest manifest, ProgressCallback pc) {
+        updateProgress(pc, "Checking for steam app updates");
+        if (needsUpdate(manifest)) {
+            updateProgress(pc, "Downloading steam app list from site");
+            return downloadSteamApps(manifest, pc).thenApply(appDetailsList -> updateManifestEntry(appDetailsList, manifest, pc));
+        }
+        return CompletableFuture.completedFuture(Collections.emptyList());
+    }
+
+    private List<SteamAppDetails> updateManifestEntry(List<SteamAppDetails> appDetailsList, UpdateManifest manifest, ProgressCallback pc) {
+        //Save manifest to database
+        updateProgress(pc, "Updating manifest on database");
+        updateManifestRepository.save(manifest);
+        log.info("Saved manifest file to database");
+        return appDetailsList;
+    }
+
+    private boolean updateAndSaveAppDetailsList(List<SteamAppDetails> appDetailsList, ProgressCallback pc) {
+        if (!appDetailsList.isEmpty()) {
+            int size = appDetailsList.size();
+            log.info("Updates available: {}", size);
+            for (int i = 0; i < size; i++) {
+                SteamAppDetails appDetails = appDetailsList.get(i);
+                Optional<SteamApp> res = steamAppsRepository.findById(appDetails.getSteamApp().getId());
+                SteamApp app;
+                if (res.isPresent()) {
+                    app = res.get();
+                } else {
+                    assert appDetails.getSteamApp() != null;
+                    app = appDetails.getSteamApp();
+                    app.setName(appDetails.getName());
+                    app = steamAppsRepository.save(app);
+                }
+                appDetails.setSteamApp(app);
+                updateProgress(pc, i, size, "Saving app: " + appDetails.toString());
+                steamAppDetailsRepository.save(appDetails);
+            }
+            updateProgress(pc, 0, 0, null);
+            return true;
+        }
+        return false;
     }
 
     private boolean needsUpdate(UpdateManifest siteManifest) {

@@ -10,6 +10,7 @@ import javafx.collections.ObservableMap;
 
 import javax.persistence.*;
 import java.net.InetSocketAddress;
+import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
@@ -49,6 +50,8 @@ public class ServerDetails extends AuditableEntity<String> {
     static final String DEDICATED = "dedicated";
 
     static final String SECURE = "secure";
+
+    static final String DATE_LAST_ACTIVE = "last_active_date";
 
     private IntegerProperty id = new SimpleIntegerProperty();
 
@@ -95,6 +98,10 @@ public class ServerDetails extends AuditableEntity<String> {
     private BooleanProperty dedicated = new SimpleBooleanProperty();
 
     private BooleanProperty secure = new SimpleBooleanProperty();
+
+    private ObjectProperty<LocalDateTime> dateLastActive = new SimpleObjectProperty<>();
+
+    private IntegerProperty latency = new SimpleIntegerProperty();
 
     public ServerDetails() {
     }
@@ -437,6 +444,19 @@ public class ServerDetails extends AuditableEntity<String> {
         this.secure.setValue(secure);
     }
 
+    @Column(name = DATE_LAST_ACTIVE)
+    public LocalDateTime getDateLastActive() {
+        return dateLastActive.get();
+    }
+
+    public ObjectProperty<LocalDateTime> dateLastActiveProperty() {
+        return dateLastActive;
+    }
+
+    public void setDateLastActive(LocalDateTime dateLastActive) {
+        this.dateLastActive.set(dateLastActive);
+    }
+
     @Transient
     public Boolean isNotSecure() {
         if (secure.getValue() == null)
@@ -446,16 +466,12 @@ public class ServerDetails extends AuditableEntity<String> {
 
     @Transient
     public Boolean isEmpty() {
-        if (getPlayers() == null)
-            return null;
-        return getPlayers().isEmpty();
+        return (getPlayerCount() != null && getPlayerCount() <= 0) || (getPlayers() == null || getPlayers().isEmpty());
     }
 
     @Transient
     public Boolean isNotEmpty() {
-        if (getPlayers() == null)
-            return null;
-        return !getPlayers().isEmpty();
+        return (getPlayerCount() != null && getPlayerCount() > 0) || (getPlayers() != null && !getPlayers().isEmpty());
     }
 
     @Transient
@@ -463,6 +479,19 @@ public class ServerDetails extends AuditableEntity<String> {
         if (dedicated.getValue() == null)
             return null;
         return !dedicated.get();
+    }
+
+    @Transient
+    public Integer getLatency() {
+        return latency.getValue();
+    }
+
+    public IntegerProperty latencyProperty() {
+        return latency;
+    }
+
+    public void setLatency(Integer latency) {
+        this.latency.setValue(latency);
     }
 
     @Override

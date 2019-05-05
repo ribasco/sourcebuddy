@@ -1,46 +1,44 @@
 package com.ibasco.sourcebuddy.controllers;
 
+import com.ibasco.sourcebuddy.components.DockManager;
 import com.ibasco.sourcebuddy.components.TaskManager;
 import com.ibasco.sourcebuddy.constants.Icons;
 import com.ibasco.sourcebuddy.constants.Views;
+import com.ibasco.sourcebuddy.domain.ConfigProfile;
+import com.ibasco.sourcebuddy.domain.DockLayout;
 import com.ibasco.sourcebuddy.events.ApplicationInitEvent;
 import com.ibasco.sourcebuddy.gui.skins.CustomTaskProgressViewSkin;
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
-import com.ibasco.sourcebuddy.service.ConfigService;
-import com.ibasco.sourcebuddy.service.UpdateService;
+import com.ibasco.sourcebuddy.model.AppModel;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SplitPane;
+import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.controlsfx.control.*;
-import org.dockfx.DockEvent;
 import org.dockfx.DockNode;
 import org.dockfx.DockPane;
-import org.dockfx.DockPos;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.net.URL;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+@SuppressWarnings("SpringJavaAutowiredFieldsWarningInspection")
 public class MainController extends BaseController {
 
     private static final Logger log = LoggerFactory.getLogger(MainController.class);
@@ -62,7 +60,7 @@ public class MainController extends BaseController {
     private CheckComboBox cbDocks;
     //</editor-fold>
 
-    private ServerDetailsModel serverDetailsModel;
+    private AppModel appModel;
 
     private PopOver serviceStatusPopOver;
 
@@ -72,45 +70,200 @@ public class MainController extends BaseController {
 
     private Button btnServiceStatus;
 
-    private UpdateService updateService;
+    private DockManager dockManager;
 
-    private ConfigService configService;
+    @FXML
+    private Menu menuView;
 
     @FXML
     private MenuItem miPreferences;
 
+    @FXML
+    private MenuItem miClearLayout;
+
+    @FXML
+    private Menu menuViewLayouts;
+
+    @FXML
+    private MenuItem miViewSaveLayout;
+
+    @FXML
+    private MenuItem miViewSaveLayoutAs;
+
+    @FXML
+    private MenuItem miViewResetLayout;
+
+    private ToggleGroup menuLayoutToggleGroup;
+
+    @FXML
+    private MenuItem miViewSetDefault;
+
     @Override
     public void initialize(Stage stage, Node rootNode) {
         setupDocks(stage);
-        setupMenuBar();
+        setupMenu();
         setupTaskProgressView();
         updateSplitPaneResizable(dpMainDock.getChildren(), 0);
         setupMainToolbar();
         setupServiceStatusPopOver();
         setupStatusBar();
-
         publishEvent(new ApplicationInitEvent(this, stage));
+
+        ConfigProfile profile = appModel.getActiveProfile();
+
+        //Set active layout
+        appModel.activeLayoutProperty().addListener(this::applyNewLayoutOnSelectionChange);
+        log.info("Setting active layout from default: {} (Entries: {})", profile.getDefaultLayout(), profile.getDefaultLayout().getLayoutEntries().size());
+        appModel.setActiveLayout(profile.getDefaultLayout());
     }
 
-    private void setupMenuBar() {
-        miPreferences.setOnAction(new EventHandler<ActionEvent>() {
-            @Override
-            public void handle(ActionEvent event) {
-                Parent preferencesView = getViewManager().loadView(Views.PREFERENCES);
-                Scene scene;
-                if (preferencesView.getScene() == null) {
-                    scene = new Scene(preferencesView);
-                } else {
-                    scene = preferencesView.getScene();
-                }
-                URL res = ResourceUtil.loadResource("/styles/default.css");
-                scene.getStylesheets().setAll(res.toExternalForm());
-                Stage stage = new Stage();
-                stage.setScene(scene);
-                stage.initModality(Modality.APPLICATION_MODAL);
-                stage.showAndWait();
-            }
+    private void onDockMenuSelection(ActionEvent actionEvent) {
+        CheckMenuItem menuItem = (CheckMenuItem) actionEvent.getSource();
+        DockNode dockNode = (DockNode) menuItem.getUserData();
+        if (menuItem.isSelected()) {
+            log.info("Docking node: {}", dockNode);
+            dockManager.dockNode(dpMainDock, dockNode);
+        } else {
+            log.info("Un-docking node: {}", dockNode);
+            dockManager.undockNode(dockNode);
+        }
+        log.info("Dock menu selection: {} (Source: {})", actionEvent, actionEvent.getSource());
+
+    }
+
+    private void setupMenu() {
+        miPreferences.setOnAction(this::openPreferencesWindow);
+        miClearLayout.setOnAction(event -> dockManager.clearDocks());
+        menuLayoutToggleGroup = new ToggleGroup();
+        menuLayoutToggleGroup.selectedToggleProperty().addListener(this::updateActiveLayout);
+
+        miViewResetLayout.setOnAction(this::resetCurrentLayout);
+        miViewSaveLayout.setOnAction(this::saveCurrentLayout);
+        miViewSaveLayoutAs.setOnAction(this::saveCurrentLayoutAs);
+        miViewSetDefault.setOnAction(this::setCurrentLayoutAsDefault);
+
+        populateDockMenuItems();
+        refreshLayoutMenuItems();
+    }
+
+    private void resetCurrentLayout(ActionEvent actionEvent) {
+        if (appModel.getActiveLayout() == null) {
+            log.warn("No active layout assigned");
+            return;
+        }
+        Optional<DockLayout> res = dockManager.findLayoutById(appModel.getActiveLayout().getId());
+        res.ifPresent(layout -> {
+            log.info("Resetting active layout: {}", layout);
+            appModel.setActiveLayout(layout);
         });
+    }
+
+    private void saveCurrentLayout(ActionEvent actionEvent) {
+        DockLayout activeLayout = appModel.getActiveLayout();
+        if (activeLayout == null)
+            throw new IllegalStateException("No active layout set");
+        log.info("Saving current layout: {}", activeLayout);
+        activeLayout = dockManager.update(dpMainDock, activeLayout);
+        appModel.setActiveLayout(activeLayout);
+        log.info("Saved active layout with {} entries", activeLayout.getLayoutEntries().size());
+    }
+
+    private void saveCurrentLayoutAs(ActionEvent actionEvent) {
+        TextInputDialog textInputDialog = new TextInputDialog();
+        textInputDialog.setHeaderText("Enter layout name");
+        textInputDialog.setContentText("Enter layout name");
+        Optional<String> res = textInputDialog.showAndWait();
+        if (res.isPresent()) {
+            DockLayout newLayout = dockManager.create(dpMainDock, res.get());
+            newLayout.setProfile(appModel.getActiveProfile());
+            appModel.getActiveProfile().getDockLayouts().add(newLayout);
+            log.info("Saved new layout: {}", newLayout);
+            saveActiveProfile();
+            refreshLayoutMenuItems();
+            appModel.setActiveLayout(newLayout);
+        }
+    }
+
+    private void saveActiveProfile() {
+        appModel.setActiveProfile(configService.saveProfile(appModel.getActiveProfile()));
+    }
+
+    private void updateActiveLayout(ObservableValue<? extends Toggle> observableValue, Toggle oldValue, Toggle newValue) {
+        if (newValue != null) {
+            int layoutId = (int) newValue.getUserData();
+            log.info("Selected layout: {}", layoutId);
+            Optional<DockLayout> res = dockManager.findLayoutById(layoutId);
+            res.ifPresent(layout -> appModel.setActiveLayout(layout));
+        }
+    }
+
+    private void applyNewLayoutOnSelectionChange(ObservableValue<? extends DockLayout> observableValue, DockLayout oldValue, DockLayout newValue) {
+        if (newValue != null) {
+            log.info("Applying layout: {}", newValue);
+            dockManager.applyLayout(dpMainDock, newValue);
+            log.info("Updating active layout menu selection");
+            //Update selection
+            for (MenuItem menuItem : menuViewLayouts.getItems()) {
+                RadioMenuItem radioMenuItem = (RadioMenuItem) menuItem;
+                int layoutId = (int) menuItem.getUserData();
+                radioMenuItem.setSelected(newValue.getId() == layoutId);
+            }
+        }
+    }
+
+    private void setCurrentLayoutAsDefault(ActionEvent actionEvent) {
+        ConfigProfile activeProfile = appModel.getActiveProfile();
+        activeProfile.setDefaultLayout(appModel.getActiveLayout());
+        saveActiveProfile();
+        log.info("Set default layout to '{}'", activeProfile.getDefaultLayout().getName());
+    }
+
+    private void refreshLayoutMenuItems() {
+        log.info("Refreshing layout menu items");
+        ConfigProfile profile = appModel.getActiveProfile();
+
+        menuViewLayouts.getItems().clear();
+        for (DockLayout layout : profile.getDockLayouts()) {
+            RadioMenuItem miLayout = new RadioMenuItem(layout.getName());
+            miLayout.setToggleGroup(menuLayoutToggleGroup);
+            miLayout.setUserData(layout.getId());
+            if (appModel.getActiveLayout() != null && appModel.getActiveLayout().equals(layout)) {
+                miLayout.setSelected(true);
+            }
+            menuViewLayouts.getItems().add(miLayout);
+        }
+    }
+
+    private void populateDockMenuItems() {
+        Map<String, DockNode> beanMap = getAppContext().getBeansOfType(DockNode.class);
+        if (beanMap != null) {
+            menuView.getItems().add(new SeparatorMenuItem());
+            //Populate view menu
+            for (Map.Entry<String, DockNode> entry : beanMap.entrySet()) {
+                DockNode dockNode = entry.getValue();
+                CheckMenuItem miDock = new CheckMenuItem(dockNode.getTitle());
+                miDock.selectedProperty().bindBidirectional(dockNode.dockedProperty());
+                miDock.setOnAction(this::onDockMenuSelection);
+                miDock.setUserData(entry.getValue());
+                menuView.getItems().add(miDock);
+            }
+        }
+    }
+
+    private void openPreferencesWindow(ActionEvent actionEvent) {
+        Parent preferencesView = getViewManager().loadView(Views.PREFERENCES);
+        Scene scene;
+        if (preferencesView.getScene() == null) {
+            scene = new Scene(preferencesView);
+        } else {
+            scene = preferencesView.getScene();
+        }
+        URL res = ResourceUtil.loadResource("/styles/default.css");
+        scene.getStylesheets().setAll(res.toExternalForm());
+        Stage stage = new Stage();
+        stage.setScene(scene);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.showAndWait();
     }
 
     private void setupTaskProgressView() {
@@ -124,7 +277,6 @@ public class MainController extends BaseController {
         borderGlow.setHeight(40);
 
         taskProgressView.setSkin(new CustomTaskProgressViewSkin<>(taskProgressView));
-
         taskProgressView.getTasks().addListener((ListChangeListener<Task<?>>) c -> {
             int size = taskProgressView.getTasks().size();
             if (size > 0) {
@@ -172,52 +324,8 @@ public class MainController extends BaseController {
     }
 
     private void setupDocks(Stage mainScene) {
-        ImageView serverBrowserImage = ResourceUtil.loadIconView(Icons.SERVER_BROWSER_ICON);
-        ImageView playerBrowserImage = ResourceUtil.loadIconView(Icons.PLAYER_BROWSER_ICON);
-        ImageView rulesBrowserImage = ResourceUtil.loadIconView(Icons.RULES_BROWSER_ICON);
-        ImageView serverManagerImage = ResourceUtil.loadIconView(Icons.SERVER_MANAGER_ICON);
-        ImageView logsImage = ResourceUtil.loadIconView(Icons.LOGS_ICON);
-        ImageView chatImage = ResourceUtil.loadIconView(Icons.CHAT_ICON);
-
-        Pane serverBrowserPane = viewManager.loadView(Views.DOCK_SERVER_BROWSER);
-        Pane playerBrowserPane = viewManager.loadView(Views.DOCK_PLAYER_BROWSER);
-        Pane rulesBrowserPane = viewManager.loadView(Views.DOCK_RULES_BROWSER);
-        Pane serverManagerPane = viewManager.loadView(Views.DOCK_SERVER_MANAGER);
-        Pane logsPane = viewManager.loadView(Views.DOCK_LOGS);
-        Pane serverChatPane = viewManager.loadView(Views.DOCK_SERVER_CHAT);
-        Pane gameBrowserPane = viewManager.loadView(Views.DOCK_GAME_BROWSER);
-
-        dpMainDock.addEventHandler(DockEvent.DOCK_RELEASED, event -> updateSplitPaneResizable(dpMainDock.getChildren(), 0));
-
-        DockNode serverBrowserDock = new DockNode(serverBrowserPane, "Servers", serverBrowserImage);
-        serverBrowserDock.setDockTitleBar(null); //prevent from being un-docked
-        serverBrowserDock.setPrefWidth(1300);
-        serverBrowserDock.dock(dpMainDock, DockPos.TOP);
-
-        DockNode playerBrowserDock = new DockNode(playerBrowserPane, "Players", playerBrowserImage);
-        playerBrowserDock.setMinWidth(350);
-        playerBrowserDock.setPrefWidth(350);
-        playerBrowserDock.dock(dpMainDock, DockPos.RIGHT);
-
-        DockNode rulesBrowserDock = new DockNode(rulesBrowserPane, "Server Rules", rulesBrowserImage);
-        rulesBrowserDock.setMinWidth(350);
-        rulesBrowserDock.setPrefWidth(350);
-        rulesBrowserDock.dock(dpMainDock, DockPos.BOTTOM, playerBrowserDock);
-
-        DockNode serverManagerDock = new DockNode(serverManagerPane, "Control Panel", serverManagerImage);
-        serverManagerDock.dock(dpMainDock, DockPos.BOTTOM, serverBrowserDock);
-
-        DockNode logsDock = new DockNode(logsPane, "Logs", logsImage);
-        logsDock.dock(dpMainDock, DockPos.CENTER, serverManagerDock);
-
-        DockNode serverChatDock = new DockNode(serverChatPane, "Server Chat", chatImage);
-        serverChatDock.dock(dpMainDock, DockPos.CENTER, serverManagerDock);
-
-        DockNode gameBrowserDock = new DockNode(gameBrowserPane, "Game Browser");
-        gameBrowserDock.setId("dockGameBrowsr");
-        gameBrowserDock.setPrefWidth(230);
-        gameBrowserDock.setMinWidth(250);
-        gameBrowserDock.dock(dpMainDock, DockPos.LEFT);
+        //dpMainDock.addEventHandler(DockEvent.DOCK_ENTER, event -> log.info("Dock entered"));
+        //dpMainDock.addEventHandler(DockEvent.DOCK_RELEASED, event -> log.info("Dock released"));
     }
 
     private void updateSplitPaneResizable(ObservableList<Node> items, int level) {
@@ -233,8 +341,8 @@ public class MainController extends BaseController {
     }
 
     @Autowired
-    public void setServerDetailsModel(ServerDetailsModel serverDetailsModel) {
-        this.serverDetailsModel = serverDetailsModel;
+    public void setAppModel(AppModel appModel) {
+        this.appModel = appModel;
     }
 
     @Autowired
@@ -243,12 +351,7 @@ public class MainController extends BaseController {
     }
 
     @Autowired
-    public void setConfigService(ConfigService configService) {
-        this.configService = configService;
-    }
-
-    @Autowired
-    public void setUpdateService(UpdateService updateService) {
-        this.updateService = updateService;
+    public void setDockManager(DockManager dockManager) {
+        this.dockManager = dockManager;
     }
 }

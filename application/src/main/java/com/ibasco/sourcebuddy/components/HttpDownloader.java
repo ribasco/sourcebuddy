@@ -1,6 +1,7 @@
 package com.ibasco.sourcebuddy.components;
 
 import com.google.gson.Gson;
+import com.ibasco.sourcebuddy.util.ProgressBodySubscriber;
 import com.ibasco.sourcebuddy.util.ProgressCallback;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;

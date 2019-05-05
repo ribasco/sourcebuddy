@@ -13,7 +13,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Scope("prototype")
-public class UpdateMasterServerListTask extends BaseTask<Void> {
+public class UpdateMasterServerListTask extends BaseTask<Integer> {
 
     private static final Logger log = LoggerFactory.getLogger(UpdateMasterServerListTask.class);
 
@@ -31,10 +31,9 @@ public class UpdateMasterServerListTask extends BaseTask<Void> {
     }
 
     @Override
-    protected Void process() throws Exception {
+    protected Integer process() throws Exception {
         updateTitle("New server list update for '%s'", steamApp);
-        sourceServerService.fetchNewServerEntries(steamApp, createIndeterminateProgressCallback());
-        return null;
+        return sourceServerService.fetchNewServerEntries(steamApp, createIndeterminateProgressCallback());
     }
 
     public SteamApp getSteamApp() {

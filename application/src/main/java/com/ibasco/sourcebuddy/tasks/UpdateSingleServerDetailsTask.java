@@ -25,18 +25,22 @@ public class UpdateSingleServerDetailsTask extends BaseTask<Void> {
 
     @Override
     protected Void process() throws Exception {
+
         if (details == null) {
             log.debug("[Skipped: {}] Skipping single server details update", this.hashCode());
             return null;
         }
-        log.debug("[Start: {}] Updating server details for '{}'", this.hashCode(), details);
-        try {
-            sourceServerService.updateServerDetails(details).get();
-            sourceServerService.updatePlayerDetails(details).get();
-            sourceServerService.updateServerRules(details).get();
-        } finally {
-            log.debug("[End: {}] Updating server details for '{}'", this.hashCode(), details);
-        }
+
+        /*sourceServerService.updateServerDetails(details).get();
+        if (ServerStatus.ACTIVE.equals(details.getStatus())) {
+            if (details.getPlayerCount() > 0)
+                sourceServerService.updatePlayerDetails(details).get();
+            if (details.getRules() == null || details.getRules().isEmpty())
+                sourceServerService.updateServerRules(details).get();
+        }*/
+
+        sourceServerService.updateAllDetails(details).join();
+        log.debug("[{}] Updating server details for '{}'", this.hashCode(), details);
         return null;
     }
 

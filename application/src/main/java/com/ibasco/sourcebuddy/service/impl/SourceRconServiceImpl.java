@@ -2,8 +2,8 @@ package com.ibasco.sourcebuddy.service.impl;
 
 import com.ibasco.agql.protocols.valve.source.query.client.SourceRconClient;
 import com.ibasco.agql.protocols.valve.source.query.exceptions.RconNotYetAuthException;
+import com.ibasco.sourcebuddy.domain.RconStatus;
 import com.ibasco.sourcebuddy.exceptions.NotAuthenticatedException;
-import com.ibasco.sourcebuddy.model.RconStatus;
 import com.ibasco.sourcebuddy.service.RconService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.CompletableFuture;
 
 @Service
-public class RconServiceImpl implements RconService {
+public class SourceRconServiceImpl implements RconService {
 
     private SourceRconClient sourceRconClient;
 

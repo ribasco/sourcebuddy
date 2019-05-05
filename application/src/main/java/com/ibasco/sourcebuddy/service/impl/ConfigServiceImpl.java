@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +29,19 @@ public class ConfigServiceImpl implements ConfigService {
     private ConfigGlobalRepository configGlobalRepository;
 
     private static final String DEFAULT_PROFILE = "DEFAULT_PROFILE";
+
+    @PostConstruct
+    private void init() {
+        ConfigProfile defaultProfile = getDefaultProfile();
+        if (defaultProfile == null) {
+            log.debug("No default profile assigned. Creating new default profile");
+            ConfigProfile profile = createProfile();
+            profile.setName("Default");
+            defaultProfile = saveProfile(profile);
+            setDefaultProfile(defaultProfile);
+            log.debug("Saved default profile: {}", defaultProfile);
+        }
+    }
 
     @Override
     public List<ConfigProfile> getProfiles() {
@@ -49,12 +63,21 @@ public class ConfigServiceImpl implements ConfigService {
 
     @Override
     public String getGlobalConfig(String key, String defaultValue) {
-        return configGlobalRepository.findById(key).map(ConfigGlobal::getValue).orElse(defaultValue);
+        Optional<ConfigGlobal> res = configGlobalRepository.findById(key);
+        if (res.isPresent()) {
+            return res.map(ConfigGlobal::getValue).orElse(defaultValue);
+        }
+        return null;
+    }
+
+    @Override
+    public List<ConfigGlobal> getConfigGlobal() {
+        return configGlobalRepository.findAll();
     }
 
     @Override
     public ConfigProfile saveProfile(ConfigProfile config) {
-        return configRepository.saveAndFlush(Check.requireNonNull(config, "profile cannot be null"));
+        return configRepository.save(Check.requireNonNull(config, "profile cannot be null"));
     }
 
     @Override
@@ -117,6 +140,7 @@ public class ConfigServiceImpl implements ConfigService {
 
     @Autowired
     public void setConfigGlobalRepository(ConfigGlobalRepository configGlobalRepository) {
+        log.info("Autowiring config global repo");
         this.configGlobalRepository = configGlobalRepository;
     }
 }

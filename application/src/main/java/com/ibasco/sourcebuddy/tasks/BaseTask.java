@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @AbstractComponent
@@ -35,13 +37,27 @@ public abstract class BaseTask<T> extends Task<T> {
 
     abstract protected T process() throws Exception;
 
+    protected void exit() {
+    }
+
     @Override
     protected final T call() throws Exception {
         long startTime = System.currentTimeMillis();
         try {
             return process();
+        } catch (Exception ex) {
+            if (ex instanceof CompletionException) {
+                if (ex.getCause() instanceof CancellationException) {
+                    log.warn("Task {} canelled", this);
+                    throw (CancellationException) ex.getCause();
+                }
+            } else {
+                log.debug("Exception occured on task: " + this, ex);
+            }
+            throw ex;
         } finally {
             duration.set(Duration.ofMillis(System.currentTimeMillis() - startTime));
+            exit();
         }
     }
 

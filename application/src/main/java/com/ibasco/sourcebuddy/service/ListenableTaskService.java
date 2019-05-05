@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
 import java.util.concurrent.ExecutorService;
 
 @AbstractComponent
@@ -23,6 +24,11 @@ abstract public class ListenableTaskService<T> extends ScheduledService<T> {
     private ExecutorService scheduledTaskService;
 
     private ConfigurableApplicationContext applicationContext;
+
+    @PreDestroy
+    private void preDestroy() {
+        cancel();
+    }
 
     @PostConstruct
     private void initializeBase() {

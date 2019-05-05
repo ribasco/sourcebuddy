@@ -1,5 +1,6 @@
 package com.ibasco.sourcebuddy.service;
 
+import com.ibasco.sourcebuddy.domain.ConfigGlobal;
 import com.ibasco.sourcebuddy.domain.ConfigProfile;
 import org.apache.commons.lang3.StringUtils;
 
@@ -30,6 +31,8 @@ public interface ConfigService {
     }
 
     String getGlobalConfig(String key, String defaultValue);
+
+    List<ConfigGlobal> getConfigGlobal();
 
     ConfigProfile saveProfile(ConfigProfile profile);
 

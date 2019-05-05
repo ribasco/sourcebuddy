@@ -1,6 +1,5 @@
 package com.ibasco.sourcebuddy.components;
 
-import com.ibasco.sourcebuddy.constants.Views;
 import com.ibasco.sourcebuddy.domain.KeyValueInfo;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.gui.cells.DecoratedTableCell;
@@ -32,7 +31,6 @@ import javafx.scene.control.cell.TreeItemPropertyValueFactory;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.apache.commons.lang3.StringUtils;
@@ -86,21 +84,17 @@ public class GuiHelper {
         Check.requireNonNull(set, "Observable set cannot be null");
         set.addListener((SetChangeListener<T>) change -> {
             if (change.wasAdded()) {
-                list.add(change.getElementAdded());
+                T element = change.getElementAdded();
+                if (element != null)
+                    list.add(element);
             } else if (change.wasRemoved()) {
-                list.remove(change.getElementRemoved());
+                T element = change.getElementRemoved();
+                if (element != null)
+                    list.remove(element);
             }
         });
         list.clear();
         list.addAll(set);
-    }
-
-    public Parent getLoadingPlaceholder(String message) {
-        VBox placeholderView = viewManager.loadDetachedView(Views.FRAGMENT_PLACEHOLDER);
-        Label lbl = findNode(placeholderView, Label.class);
-        if (lbl != null)
-            lbl.setText(message);
-        return placeholderView;
     }
 
     public static TreeItem<ServerDetails> convertToTreeItem(TreeDataModel<ServerDetails> data) {
@@ -328,26 +322,37 @@ public class GuiHelper {
     }
 
     public static <T> T findNode(Parent node, Class<T> find) {
-        return findNode(node, find, 0, null);
+        return findNode(node, find, 0, null, null);
+    }
+
+    public static <T> T findNode(Parent node, Class<T> find, String id) {
+        return findNode(node, find, 0, null, id);
     }
 
     public static <T> T findNode(Parent node, Class<T> find, Consumer<Node> callback) {
-        return findNode(node, find, 0, callback);
+        return findNode(node, find, 0, callback, null);
     }
 
-    public static <T> T findNode(Parent parent, Class<T> find, int level, Consumer<Node> callback) {
+    public static <T> T findNode(Parent node, Class<T> find, Consumer<Node> callback, String id) {
+        return findNode(node, find, 0, callback, id);
+    }
+
+    public static <T> T findNode(Parent parent, Class<T> find, int level, Consumer<Node> callback, String id) {
         for (Node child : parent.getChildrenUnmodifiable()) {
             if (callback != null) {
                 callback.accept(child);
             }
             if (find != null) {
                 if (child.getClass().equals(find)) {
+                    if (!StringUtils.isBlank(id) && !id.equalsIgnoreCase(child.getId())) {
+                        continue;
+                    }
                     //noinspection unchecked
                     return (T) child;
                 }
             }
             if (child instanceof Parent) {
-                Node found = (Node) findNode((Parent) child, find, level + 1, callback);
+                Node found = (Node) findNode((Parent) child, find, level + 1, callback, id);
                 if (found != null) {
                     //noinspection unchecked
                     return (T) found;

@@ -2,7 +2,7 @@ package com.ibasco.sourcebuddy.controllers;
 
 import com.ibasco.sourcebuddy.domain.PlayerInfo;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.model.AppModel;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
@@ -25,7 +25,7 @@ public class PlayerBrowserController extends BaseController {
     @FXML
     private TableView<PlayerInfo> tvPlayerTable;
 
-    private ServerDetailsModel serverDetailsModel;
+    private AppModel appModel;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
@@ -51,8 +51,8 @@ public class PlayerBrowserController extends BaseController {
         //noinspection unchecked
         tvPlayerTable.getColumns().addAll(indexCol, nameCol, scoreCol, durationCol);
         tvPlayerTable.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-
-        serverDetailsModel.selectedServerProperty().addListener(this::updatePlayerListOnSelection);
+        tvPlayerTable.setPlaceholder(new Label("N/A"));
+        appModel.selectedServerProperty().addListener(this::updatePlayerListOnSelection);
     }
 
     private void updatePlayerListOnSelection(ObservableValue<? extends ServerDetails> observableValue, ServerDetails oldValue, ServerDetails newValue) {
@@ -81,18 +81,10 @@ public class PlayerBrowserController extends BaseController {
     private void updatePlayerTableOnSelection(ObservableValue observableValue, ServerDetails o, ServerDetails newValue) {
         if (newValue == null)
             return;
-        if (!ServerDetailsModel.READ_LOCK.tryLock()) {
-            log.debug("Unable to acquire read lock for players");
-            return;
-        }
-        try {
-            if (newValue.getPlayers() != null && !newValue.getPlayers().isEmpty()) {
-                tvPlayerTable.setItems(newValue.getPlayers());
-            } else {
-                tvPlayerTable.setItems(null);
-            }
-        } finally {
-            ServerDetailsModel.READ_LOCK.unlock();
+        if (newValue.getPlayers() != null && !newValue.getPlayers().isEmpty()) {
+            tvPlayerTable.setItems(newValue.getPlayers());
+        } else {
+            tvPlayerTable.setItems(null);
         }
     }
 
@@ -116,7 +108,7 @@ public class PlayerBrowserController extends BaseController {
     }
 
     @Autowired
-    public void setServerDetailsModel(ServerDetailsModel serverDetailsModel) {
-        this.serverDetailsModel = serverDetailsModel;
+    public void setAppModel(AppModel appModel) {
+        this.appModel = appModel;
     }
 }

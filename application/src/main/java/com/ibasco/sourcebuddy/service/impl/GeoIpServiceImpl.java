@@ -27,7 +27,7 @@ public class GeoIpServiceImpl implements GeoIpService {
         try {
             return geoIpDatabaseReader.city(address.getAddress()).getCountry();
         } catch (IOException | GeoIp2Exception e) {
-            log.warn("Could not obtain geoip location of address {}", address);
+            log.debug("Could not obtain geoip location of address {}", address);
         }
         return null;
     }

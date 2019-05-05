@@ -8,9 +8,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public interface UpdateService {
-
-    CompletableFuture<Void> invalidateEntries();
-
     CompletableFuture<Boolean> updateSteamApps(ProgressCallback progressCallback);
 
     CompletableFuture<UpdateManifest> downloadManifest(String file, ProgressCallback progressCallback);

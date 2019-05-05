@@ -3,7 +3,7 @@ package com.ibasco.sourcebuddy.controllers;
 import com.ibasco.agql.core.exceptions.ReadTimeoutException;
 import static com.ibasco.sourcebuddy.constants.RegEx.IP_REGEX_VALIDATION;
 import com.ibasco.sourcebuddy.gui.listeners.CopyPasteIPChangeListener;
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.model.AppModel;
 import com.ibasco.sourcebuddy.service.ServerManager;
 import com.ibasco.sourcebuddy.service.SourceServerService;
 import com.ibasco.sourcebuddy.util.Predicates;
@@ -31,7 +31,7 @@ public class AddServerController extends BaseController {
 
     private ServerManager serverManager;
 
-    private ServerDetailsModel serverDetailsModel;
+    private AppModel appModel;
 
     private SourceServerService sourceServerService;
 
@@ -183,8 +183,8 @@ public class AddServerController extends BaseController {
     }
 
     @Autowired
-    public void setServerDetailsModel(ServerDetailsModel serverDetailsModel) {
-        this.serverDetailsModel = serverDetailsModel;
+    public void setAppModel(AppModel appModel) {
+        this.appModel = appModel;
     }
 
     @Autowired

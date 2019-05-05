@@ -1,6 +1,6 @@
 package com.ibasco.sourcebuddy.controllers;
 
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.model.AppModel;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.TabPane;
@@ -16,7 +16,7 @@ public class ServerChatController extends BaseController {
     @FXML
     private TabPane tpChat;
 
-    private ServerDetailsModel serverDetailsModel;
+    private AppModel appModel;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
@@ -24,7 +24,7 @@ public class ServerChatController extends BaseController {
     }
 
     @Autowired
-    public void setServerDetailsModel(ServerDetailsModel serverDetailsModel) {
-        this.serverDetailsModel = serverDetailsModel;
+    public void setAppModel(AppModel appModel) {
+        this.appModel = appModel;
     }
 }

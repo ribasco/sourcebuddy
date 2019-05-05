@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import com.jfoenix.controls.JFXProgressBar?>
-<?import javafx.geometry.Insets?>
+<?import com.ibasco.sourcebuddy.controls.*?>
+<?import com.jfoenix.controls.JFXTabPane?>
+<?import com.jfoenix.controls.JFXToggleButton?>
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
-<?import org.controlsfx.control.*?>
+<?import javafx.scene.text.*?>
 <VBox prefHeight="513.0" prefWidth="1216.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.ServerBrowserController">
     <children>
         <AnchorPane prefHeight="513.0" prefWidth="1094.0" VBox.vgrow="ALWAYS">
             <children>
-                <TabPane fx:id="tpServers" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                <JFXTabPane fx:id="tpServers" tabClosingPolicy="UNAVAILABLE" tabDragPolicy="REORDER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                     <tabs>
                         <Tab fx:id="tabServerBrowser" text="Server Browser">
                             <content>
@@ -27,6 +28,17 @@
                                                                 </font>
                                                             </Label>
                                                             <Pane HBox.hgrow="ALWAYS"/>
+                                                            <SplitMenuButton fx:id="smbExport" mnemonicParsing="false" prefHeight="32.0" prefWidth="107.0" text="Export">
+                                                                <items>
+                                                                    <RadioMenuItem mnemonicParsing="false" text="Excel">
+                                                                        <toggleGroup>
+                                                                            <ToggleGroup fx:id="exportType"/>
+                                                                        </toggleGroup>
+                                                                    </RadioMenuItem>
+                                                                    <RadioMenuItem mnemonicParsing="false" text="CSV" toggleGroup="$exportType"/>
+                                                                    <RadioMenuItem mnemonicParsing="false" text="Tab Delimited" toggleGroup="$exportType"/>
+                                                                </items>
+                                                            </SplitMenuButton>
                                                             <Button fx:id="btnSetDefaultGame" mnemonicParsing="false" prefHeight="32.0" prefWidth="128.0" text="Set Default Game"/>
                                                             <Button fx:id="btnUpdateServerList" mnemonicParsing="false" prefHeight="32.0" text="Update Server List"/>
                                                             <Button fx:id="btnRefreshServerList" mnemonicParsing="false" prefHeight="32.0" prefWidth="103.0" text="Refresh Details"/>
@@ -39,12 +51,12 @@
                                                     <ToolBar fx:id="tbServerPanel" prefHeight="40.0" prefWidth="1216.0">
                                                         <items>
                                                             <TextField fx:id="tfFilterText" prefWidth="153.0" promptText="Filter" styleClass="sb-text-field"/>
-                                                            <CheckComboBox fx:id="cbFilterTags" prefWidth="137.0" showCheckedCount="true" title="Tags"/>
-                                                            <CheckComboBox fx:id="cbFilterCountry" prefWidth="171.0" showCheckedCount="true" title="Country"/>
-                                                            <CheckComboBox fx:id="cbFilterMaps" prefWidth="156.0" showCheckedCount="true" title="Maps"/>
-                                                            <CheckComboBox fx:id="cbFilterStatus" prefWidth="120.0" showCheckedCount="true" title="Status"/>
-                                                            <CheckComboBox fx:id="cbFilterOs" prefWidth="106.0" showCheckedCount="true" title="OS"/>
-                                                            <CheckComboBox fx:id="cbFilterMisc" showCheckedCount="true" title="Misc"/>
+                                                            <SortedCheckComboBox fx:id="cbFilterTags" prefWidth="137.0" showCheckedCount="true" title="Tags"/>
+                                                            <SortedCheckComboBox fx:id="cbFilterCountry" prefWidth="171.0" showCheckedCount="true" title="Country"/>
+                                                            <SortedCheckComboBox fx:id="cbFilterMaps" prefWidth="156.0" showCheckedCount="true" title="Maps"/>
+                                                            <SortedCheckComboBox fx:id="cbFilterStatus" prefWidth="120.0" showCheckedCount="true" title="Status"/>
+                                                            <SortedCheckComboBox fx:id="cbFilterOs" prefWidth="106.0" showCheckedCount="true" title="OS"/>
+                                                            <SortedCheckComboBox fx:id="cbFilterMisc" showCheckedCount="true" title="Misc"/>
                                                             <Pane HBox.hgrow="ALWAYS"/>
                                                             <TextField fx:id="tfSearchPlayer" promptText="Search Player" styleClass="sb-text-field"/>
                                                             <Button fx:id="btnClearFilters" mnemonicParsing="false" prefWidth="55.0" text="Clear"/>
@@ -62,7 +74,6 @@
                                                     </TableView>
                                                 </children>
                                             </VBox>
-                                            <JFXProgressBar fx:id="pbServerLoad" prefHeight="8.0" prefWidth="452.0" secondaryProgress="2.0" visible="false"/>
                                         </children>
                                     </StackPane>
                                 </AnchorPane>
@@ -70,9 +81,20 @@
                         </Tab>
                         <Tab fx:id="tabBookmarks" text="Bookmarked Servers">
                             <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                <VBox>
                                     <children>
-                                        <TreeTableView fx:id="ttvBookmarkedServers" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                        <ToolBar prefHeight="40.0" prefWidth="200.0">
+                                            <items>
+                                                <Label fx:id="lblSelectedGame1" text="&lt;Server&gt;" textFill="#72eb2d">
+                                                    <font>
+                                                        <Font name="Consolas" size="16.0"/>
+                                                    </font>
+                                                </Label>
+                                                <Pane HBox.hgrow="ALWAYS"/>
+                                                <Button mnemonicParsing="false" text="Button"/>
+                                            </items>
+                                        </ToolBar>
+                                        <TreeTableView fx:id="ttvBookmarkedServers" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                                             <columns>
                                                 <TreeTableColumn prefWidth="186.0" text="Column X"/>
                                                 <TreeTableColumn minWidth="0.0" prefWidth="202.0" text="Column X"/>
@@ -80,20 +102,126 @@
                                             </columns>
                                         </TreeTableView>
                                     </children>
-                                </AnchorPane>
+                                </VBox>
                             </content>
                         </Tab>
                         <Tab fx:id="tabManagedServers" text="Managed Servers">
                             <content>
-                                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                <VBox>
                                     <children>
-                                        <TreeTableView fx:id="ttvManagedServers" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0"/>
+                                        <ToolBar prefHeight="40.0" prefWidth="200.0">
+                                            <items>
+                                                <Label fx:id="lblMsHeader" text="&lt;Server&gt;" textFill="#72eb2d">
+                                                    <font>
+                                                        <Font name="Consolas" size="16.0"/>
+                                                    </font>
+                                                </Label>
+                                                <Pane HBox.hgrow="ALWAYS"/>
+                                                <JFXToggleButton fx:id="tbShowDetailPane" prefHeight="8.0" prefWidth="200.0" text="Show settings pane"/>
+                                                <Button fx:id="btnRefreshManagedServers" mnemonicParsing="false" text="Refresh"/>
+                                            </items>
+                                        </ToolBar>
+                                        <SplitPane dividerPositions="0.5615212527964206" orientation="VERTICAL" styleClass="pane" VBox.vgrow="ALWAYS">
+                                            <items>
+                                                <TreeTableView fx:id="ttvManagedServers">
+                                                    <columns>
+                                                        <TreeTableColumn prefWidth="345.0" text="Column X"/>
+                                                        <TreeTableColumn minWidth="9.0" prefWidth="235.0" text="Column X"/>
+                                                        <TreeTableColumn minWidth="0.0" prefWidth="237.0" text="Column X"/>
+                                                    </columns>
+                                                </TreeTableView>
+                                                <AnchorPane fx:id="apServerSettings" prefWidth="1214.0" SplitPane.resizableWithParent="false">
+                                                    <children>
+                                                        <Separator layoutX="429.0" layoutY="90.0" orientation="VERTICAL" prefHeight="100.0" prefWidth="8.0" AnchorPane.topAnchor="50.0"/>
+                                                        <GridPane hgap="10.0" layoutX="449.0" layoutY="14.0" prefWidth="288.0" vgap="10.0" AnchorPane.topAnchor="50.0">
+                                                            <columnConstraints>
+                                                                <ColumnConstraints halignment="RIGHT" minWidth="10.0" prefWidth="100.0"/>
+                                                                <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" maxWidth="133.0" minWidth="10.0" prefWidth="130.0"/>
+                                                                <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" maxWidth="85.0" minWidth="10.0" prefWidth="49.0"/>
+                                                            </columnConstraints>
+                                                            <rowConstraints>
+                                                                <RowConstraints valignment="CENTER"/>
+                                                                <RowConstraints/>
+                                                                <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                                                                <RowConstraints vgrow="ALWAYS"/>
+                                                            </rowConstraints>
+                                                            <children>
+                                                                <Label text="Rcon Password"/>
+                                                                <Label text="Log listen port" GridPane.rowIndex="1"/>
+                                                                <TextField fx:id="tfMsLogPort" prefHeight="27.0" prefWidth="68.0" promptText="Port" styleClass="sb-text-field" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                                                <Button fx:id="btnMsTestRcon" mnemonicParsing="false" text="Test" GridPane.columnIndex="2"/>
+                                                                <PasswordField fx:id="tfMsRconPassword" promptText="Password" styleClass="sb-text-field" GridPane.columnIndex="1"/>
+                                                            </children>
+                                                        </GridPane>
+                                                        <Label fx:id="lblMsServerName" layoutX="20.0" layoutY="20.0" styleClass="managed-server-name" text="Server Name">
+                                                            <font>
+                                                                <Font name="System Bold" size="18.0"/>
+                                                            </font>
+                                                        </Label>
+                                                        <GridPane hgap="10.0" layoutX="14.0" layoutY="14.0" vgap="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="50.0">
+                                                            <columnConstraints>
+                                                                <ColumnConstraints halignment="RIGHT" hgrow="NEVER" maxWidth="215.0" minWidth="10.0"/>
+                                                                <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" maxWidth="132.0" minWidth="84.0" prefWidth="131.0"/>
+                                                                <ColumnConstraints fillWidth="false" halignment="RIGHT" hgrow="ALWAYS"/>
+                                                                <ColumnConstraints fillWidth="false" halignment="RIGHT" hgrow="ALWAYS" minWidth="10.0" prefWidth="100.0"/>
+                                                                <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS"/>
+                                                            </columnConstraints>
+                                                            <rowConstraints>
+                                                                <RowConstraints vgrow="SOMETIMES"/>
+                                                                <RowConstraints vgrow="SOMETIMES"/>
+                                                                <RowConstraints vgrow="SOMETIMES"/>
+                                                                <RowConstraints valignment="TOP" vgrow="ALWAYS"/>
+                                                            </rowConstraints>
+                                                            <children>
+                                                                <Label text="IP Address">
+                                                                    <font>
+                                                                        <Font name="System Bold" size="12.0"/>
+                                                                    </font>
+                                                                </Label>
+                                                                <Label text="Current Map" GridPane.rowIndex="2">
+                                                                    <font>
+                                                                        <Font name="System Bold" size="12.0"/>
+                                                                    </font>
+                                                                </Label>
+                                                                <Label text="Port" GridPane.rowIndex="1">
+                                                                    <font>
+                                                                        <Font name="System Bold" size="12.0"/>
+                                                                    </font>
+                                                                </Label>
+                                                                <Label text="Status:" GridPane.rowIndex="3"/>
+                                                                <Label text="Player(s)" GridPane.columnIndex="2"/>
+                                                                <Label text="Max Players" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                                                                <Label text="Latency" GridPane.columnIndex="2" GridPane.rowIndex="2"/>
+                                                                <TextField fx:id="tfMsIpAddress" editable="false" promptText="IP Address" styleClass="sb-text-field-view" GridPane.columnIndex="1"/>
+                                                                <TextField fx:id="tfMsPort" promptText="Port" styleClass="sb-text-field-view" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                                                <TextField fx:id="tfMsCurrentMap" editable="false" promptText="Current Map" styleClass="sb-text-field-view" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                                                <TextField fx:id="tfMsStatus" editable="false" promptText="Server Status" styleClass="sb-text-field-view" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                                                <TextField fx:id="tfMsPlayerCount" editable="false" promptText="Player Count" styleClass="sb-text-field-view" GridPane.columnIndex="3"/>
+                                                                <TextField fx:id="tfMsMaxPlayerCount" editable="false" promptText="Max Players" styleClass="sb-text-field-view" GridPane.columnIndex="3" GridPane.rowIndex="1"/>
+                                                                <TextField fx:id="tfMsLatency" editable="false" promptText="Latency" styleClass="sb-text-field-view" GridPane.columnIndex="3" GridPane.rowIndex="2"/>
+                                                                <Label text="Version" GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+                                                                <TextField fx:id="tfMsVersion" editable="false" promptText="Version" styleClass="sb-text-field-view" GridPane.columnIndex="3" GridPane.rowIndex="3"/>
+                                                            </children>
+                                                        </GridPane>
+                                                    </children>
+                                                    <opaqueInsets>
+                                                        <Insets/>
+                                                    </opaqueInsets>
+                                                    <padding>
+                                                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+                                                    </padding>
+                                                </AnchorPane>
+                                            </items>
+                                            <VBox.margin>
+                                                <Insets/>
+                                            </VBox.margin>
+                                        </SplitPane>
                                     </children>
-                                </AnchorPane>
+                                </VBox>
                             </content>
                         </Tab>
                     </tabs>
-                </TabPane>
+                </JFXTabPane>
             </children>
         </AnchorPane>
     </children>

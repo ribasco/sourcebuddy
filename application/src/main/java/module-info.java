@@ -22,6 +22,7 @@ module sourcebuddy.app {
     exports com.ibasco.sourcebuddy.repository.impl to spring.beans, spring.context, spring.data.commons;
     exports com.ibasco.sourcebuddy.components.gson to spring.beans, spring.context;
     exports com.ibasco.sourcebuddy.gui.listeners to spring.beans, spring.context;
+    exports com.ibasco.sourcebuddy.util.converters to org.hibernate.orm.core;
 
     opens com.ibasco.sourcebuddy.repository.impl to spring.core;
     opens com.ibasco.sourcebuddy to spring.core;

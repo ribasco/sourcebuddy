@@ -21,7 +21,7 @@ public class ServerFilterModel {
 
     private SetProperty<Country> countries = new SimpleSetProperty<>(FXCollections.observableSet(new TreeSet<>(countryComparator)));
 
-    private SetProperty<String> maps = new SimpleSetProperty<>(FXCollections.observableSet(new TreeSet<>(Comparator.comparing(String::toLowerCase))));
+    private SetProperty<String> maps = new SimpleSetProperty<>(FXCollections.observableSet(new HashSet<>()));
 
     private SetProperty<Country> selectedCountries = new SimpleSetProperty<>(FXCollections.observableSet(new HashSet<>()));
 

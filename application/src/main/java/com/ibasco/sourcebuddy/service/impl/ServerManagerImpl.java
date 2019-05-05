@@ -3,7 +3,7 @@ package com.ibasco.sourcebuddy.service.impl;
 import com.ibasco.sourcebuddy.domain.ManagedServer;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.model.AppModel;
 import com.ibasco.sourcebuddy.repository.ConfigProfileRepository;
 import com.ibasco.sourcebuddy.repository.ManagedServerRepository;
 import com.ibasco.sourcebuddy.service.ServerManager;
@@ -26,7 +26,7 @@ public class ServerManagerImpl implements ServerManager {
 
     private ConfigProfileRepository configProfileRepository;
 
-    private ServerDetailsModel serverDetailsModel;
+    private AppModel appModel;
 
     @Override
     public ManagedServer addServer(ServerDetails server) {
@@ -35,7 +35,7 @@ public class ServerManagerImpl implements ServerManager {
             return null;
         }
         ManagedServer managedServer = new ManagedServer();
-        managedServer.setProfile(serverDetailsModel.getActiveProfile());
+        managedServer.setProfile(appModel.getActiveProfile());
         managedServer.setServerDetails(server);
         managedServer = managedServerRepository.saveAndFlush(managedServer);
         refreshActiveProfile();
@@ -81,7 +81,7 @@ public class ServerManagerImpl implements ServerManager {
     }
 
     private void refreshActiveProfile() {
-        configProfileRepository.refresh(serverDetailsModel.getActiveProfile());
+        configProfileRepository.refresh(appModel.getActiveProfile());
         //serverDetailsModel.setActiveProfile(configProfileRepository.refresh(serverDetailsModel.getActiveProfile()));
     }
 
@@ -91,8 +91,8 @@ public class ServerManagerImpl implements ServerManager {
     }
 
     @Autowired
-    public void setServerDetailsModel(ServerDetailsModel serverDetailsModel) {
-        this.serverDetailsModel = serverDetailsModel;
+    public void setAppModel(AppModel appModel) {
+        this.appModel = appModel;
     }
 
     @Autowired

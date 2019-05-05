@@ -3,4 +3,5 @@ module sourcebuddy.controls {
     requires javafx.base;
     requires javafx.controls;
     requires slf4j.api;
+    requires org.controlsfx.controls;
 }

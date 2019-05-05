@@ -1,6 +1,6 @@
 package com.ibasco.sourcebuddy.controllers;
 
-import com.ibasco.sourcebuddy.model.ServerDetailsModel;
+import com.ibasco.sourcebuddy.model.AppModel;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
 import javafx.scene.control.TextArea;
@@ -12,7 +12,7 @@ public class ServerLogsController extends BaseController {
     @FXML
     private TextArea taLogs;
 
-    private ServerDetailsModel serverDetailsModel;
+    private AppModel appModel;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
@@ -20,7 +20,7 @@ public class ServerLogsController extends BaseController {
     }
 
     @Autowired
-    public void setServerDetailsModel(ServerDetailsModel serverDetailsModel) {
-        this.serverDetailsModel = serverDetailsModel;
+    public void setAppModel(AppModel appModel) {
+        this.appModel = appModel;
     }
 }
