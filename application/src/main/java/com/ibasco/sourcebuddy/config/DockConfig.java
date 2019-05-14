@@ -33,11 +33,19 @@ public class DockConfig {
 
     public static final String DOCK_GAME_BROWSER = "gameBrowserDock";
 
+    public static final String DOCK_SOURCEMOD = "sourceModDock";
+
+    @Bean
+    public DockNode sourceModDock() {
+        Pane sourceModPane = viewManager.loadView(Views.DOCK_SOURCEMOD);
+        DockNode sourceModDock = new DockNode(sourceModPane, "SourceMod", null);
+        return sourceModDock;
+    }
+
     @Bean
     public DockNode serverBrowserDock() {
         ImageView serverBrowserImage = ResourceUtil.loadIconView(Icons.SERVER_BROWSER_ICON);
         Pane serverBrowserPane = viewManager.loadView(Views.DOCK_SERVER_BROWSER);
-        //SplitPane.setResizableWithParent(serverBrowserPane, true);
         DockNode serverBrowserDock = new DockNode(serverBrowserPane, "Servers", serverBrowserImage);
         SplitPane.setResizableWithParent(serverBrowserDock, true);
         serverBrowserDock.setDockTitleBar(null);

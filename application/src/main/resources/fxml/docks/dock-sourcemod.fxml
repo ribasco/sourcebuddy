@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXTabPane?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<VBox prefHeight="324.0" prefWidth="865.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.ibasco.sourcebuddy.controllers.SourceModController">
+    <children>
+        <AnchorPane VBox.vgrow="ALWAYS">
+            <children>
+                <JFXTabPane AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                    <tabs>
+                        <Tab text="Plugins">
+                            <content>
+                                <VBox>
+                                    <children>
+                                        <ToolBar scaleShape="false" VBox.vgrow="SOMETIMES">
+                                            <items>
+                                                <Button fx:id="btnRefreshSMPlugins" mnemonicParsing="false" text="Refresh"/>
+                                                <Button mnemonicParsing="false" prefHeight="25.0" prefWidth="58.0" text="Load"/>
+                                                <Button mnemonicParsing="false" text="Reload"/>
+                                                <Button mnemonicParsing="false" text="Unload"/>
+                                                <Button mnemonicParsing="false" text="Unload All"/>
+                                                <Button mnemonicParsing="false" text="Lock Plugins"/>
+                                                <Button mnemonicParsing="false" text="Unlock Plugins"/>
+                                            </items>
+                                        </ToolBar>
+                                        <SplitPane dividerPositions="0.6442641946697567" VBox.vgrow="ALWAYS">
+                                            <items>
+                                                <TableView fx:id="tvSourcemodPlugins">
+                                                    <columns>
+                                                        <TableColumn prefWidth="75.0" text="Index"/>
+                                                        <TableColumn prefWidth="75.0" text="Name"/>
+                                                        <TableColumn prefWidth="75.0" text="Version"/>
+                                                        <TableColumn prefWidth="75.0" text="Author"/>
+                                                    </columns>
+                                                </TableView>
+                                                <AnchorPane SplitPane.resizableWithParent="false">
+                                                    <children>
+                                                        <Accordion minWidth="300.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                            <panes>
+                                                                <TitledPane text="Plugin Info">
+                                                                    <content>
+                                                                        <TableView fx:id="tvSMPluginInfo" prefHeight="200.0" prefWidth="200.0">
+                                                                            <columns>
+                                                                                <TableColumn prefWidth="75.0" text="Property"/>
+                                                                                <TableColumn prefWidth="75.0" text="Value"/>
+                                                                            </columns>
+                                                                            <columnResizePolicy>
+                                                                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                                                                            </columnResizePolicy>
+                                                                        </TableView>
+                                                                    </content>
+                                                                </TitledPane>
+                                                                <TitledPane text="Cvars">
+                                                                    <content>
+                                                                        <TableView fx:id="tvSMPluginCvars" prefHeight="200.0" prefWidth="200.0">
+                                                                            <columns>
+                                                                                <TableColumn prefWidth="75.0" text="Name"/>
+                                                                                <TableColumn prefWidth="75.0" text="Value"/>
+                                                                            </columns>
+                                                                            <columnResizePolicy>
+                                                                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                                                                            </columnResizePolicy>
+                                                                        </TableView>
+                                                                    </content>
+                                                                </TitledPane>
+                                                                <TitledPane text="Commands">
+                                                                    <content>
+                                                                        <TableView fx:id="tvSMPluginCommands" prefHeight="200.0" prefWidth="200.0">
+                                                                            <columns>
+                                                                                <TableColumn prefWidth="75.0" text="Name"/>
+                                                                                <TableColumn prefWidth="75.0" text="Type"/>
+                                                                                <TableColumn maxWidth="100.0" minWidth="-1.0" prefWidth="100.0" text="Description"/>
+                                                                            </columns>
+                                                                        </TableView>
+                                                                    </content>
+                                                                </TitledPane>
+                                                            </panes>
+                                                        </Accordion>
+                                                    </children>
+                                                </AnchorPane>
+                                            </items>
+                                        </SplitPane>
+                                    </children>
+                                </VBox>
+                            </content>
+                        </Tab>
+                        <Tab text="Extensions">
+                            <content>
+                                <VBox>
+                                    <children>
+                                        <ToolBar scaleShape="false" VBox.vgrow="SOMETIMES">
+                                            <items>
+                                                <Button fx:id="btnSMExtsRefresh" mnemonicParsing="false" text="Refresh"/>
+                                                <Button fx:id="btnSMExtLoad" mnemonicParsing="false" prefHeight="25.0" prefWidth="58.0" text="Load"/>
+                                                <Button fx:id="tvSMExtReload" mnemonicParsing="false" text="Reload"/>
+                                                <Button fx:id="btnSMExtUnload" mnemonicParsing="false" text="Unload"/>
+                                            </items>
+                                        </ToolBar>
+                                        <SplitPane dividerPositions="0.6442641946697567" VBox.vgrow="ALWAYS">
+                                            <items>
+                                                <TableView fx:id="tvSMExtensions">
+                                                    <columns>
+                                                        <TableColumn prefWidth="75.0" text="Index"/>
+                                                        <TableColumn prefWidth="75.0" text="Name"/>
+                                                        <TableColumn prefWidth="75.0" text="Version"/>
+                                                    </columns>
+                                                </TableView>
+                                                <AnchorPane SplitPane.resizableWithParent="false">
+                                                    <children>
+                                                        <TableView fx:id="tvSMExtensionInfo" prefHeight="200.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                                            <columns>
+                                                                <TableColumn prefWidth="75.0" text="Name"/>
+                                                                <TableColumn prefWidth="75.0" text="Value"/>
+                                                            </columns>
+                                                            <columnResizePolicy>
+                                                                <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                                                            </columnResizePolicy>
+                                                        </TableView>
+                                                    </children>
+                                                </AnchorPane>
+                                            </items>
+                                        </SplitPane>
+                                    </children>
+                                </VBox>
+                            </content>
+                        </Tab>
+                    </tabs>
+                </JFXTabPane>
+            </children>
+        </AnchorPane>
+    </children>
+</VBox>

@@ -3,7 +3,7 @@
 <?import com.ibasco.sourcebuddy.controls.*?>
 <?import com.jfoenix.controls.JFXTabPane?>
 <?import com.jfoenix.controls.JFXToggleButton?>
-<?import javafx.geometry.*?>
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
@@ -117,11 +117,11 @@
                                                     </font>
                                                 </Label>
                                                 <Pane HBox.hgrow="ALWAYS"/>
-                                                <JFXToggleButton fx:id="tbShowDetailPane" prefHeight="8.0" prefWidth="200.0" text="Show settings pane"/>
+                                                <JFXToggleButton fx:id="tbShowDetailPane" prefHeight="8.0" prefWidth="200.0" text="Show settings"/>
                                                 <Button fx:id="btnRefreshManagedServers" mnemonicParsing="false" text="Refresh"/>
                                             </items>
                                         </ToolBar>
-                                        <SplitPane dividerPositions="0.5615212527964206" orientation="VERTICAL" styleClass="pane" VBox.vgrow="ALWAYS">
+                                        <SplitPane fx:id="spManagedServers" dividerPositions="0.5615212527964206" orientation="VERTICAL" styleClass="pane" VBox.vgrow="ALWAYS">
                                             <items>
                                                 <TreeTableView fx:id="ttvManagedServers">
                                                     <columns>
@@ -133,32 +133,37 @@
                                                 <AnchorPane fx:id="apServerSettings" prefWidth="1214.0" SplitPane.resizableWithParent="false">
                                                     <children>
                                                         <Separator layoutX="429.0" layoutY="90.0" orientation="VERTICAL" prefHeight="100.0" prefWidth="8.0" AnchorPane.topAnchor="50.0"/>
-                                                        <GridPane hgap="10.0" layoutX="449.0" layoutY="14.0" prefWidth="288.0" vgap="10.0" AnchorPane.topAnchor="50.0">
+                                                        <GridPane hgap="10.0" layoutX="449.0" layoutY="14.0" prefHeight="154.0" prefWidth="344.0" vgap="10.0" AnchorPane.topAnchor="50.0">
                                                             <columnConstraints>
-                                                                <ColumnConstraints halignment="RIGHT" minWidth="10.0" prefWidth="100.0"/>
-                                                                <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" maxWidth="133.0" minWidth="10.0" prefWidth="130.0"/>
-                                                                <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" maxWidth="85.0" minWidth="10.0" prefWidth="49.0"/>
+                                                                <ColumnConstraints halignment="RIGHT" maxWidth="116.0" minWidth="10.0" prefWidth="116.0"/>
+                                                                <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" maxWidth="151.0" minWidth="10.0" prefWidth="151.0"/>
+                                                                <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" maxWidth="85.0" minWidth="10.0" prefWidth="57.0"/>
                                                             </columnConstraints>
                                                             <rowConstraints>
                                                                 <RowConstraints valignment="CENTER"/>
                                                                 <RowConstraints/>
                                                                 <RowConstraints minHeight="10.0" prefHeight="30.0"/>
+                                                                <RowConstraints minHeight="10.0" prefHeight="30.0"/>
                                                                 <RowConstraints vgrow="ALWAYS"/>
                                                             </rowConstraints>
                                                             <children>
                                                                 <Label text="Rcon Password"/>
-                                                                <Label text="Log listen port" GridPane.rowIndex="1"/>
-                                                                <TextField fx:id="tfMsLogPort" prefHeight="27.0" prefWidth="68.0" promptText="Port" styleClass="sb-text-field" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                                                <Label text="Log listen Port:" GridPane.rowIndex="2"/>
                                                                 <Button fx:id="btnMsTestRcon" mnemonicParsing="false" text="Test" GridPane.columnIndex="2"/>
-                                                                <PasswordField fx:id="tfMsRconPassword" promptText="Password" styleClass="sb-text-field" GridPane.columnIndex="1"/>
+                                                                <PasswordField fx:id="tfMsRconPassword" promptText="Password" styleClass="sb-text-field-view" GridPane.columnIndex="1"/>
+                                                                <Spinner fx:id="spMsLogListenPort" editable="true" prefHeight="29.0" prefWidth="86.0" styleClass="sb-text-field-view" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                                                                <Label text="Log listen IP:" GridPane.rowIndex="1"/>
+                                                                <TextField fx:id="tfMsLogListenIP" promptText="Log listen IP Addess" styleClass="sb-text-field-view" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                                                                <TextField fx:id="tfConsoleBufferSize" prefHeight="27.0" prefWidth="87.0" promptText="Kb" styleClass="sb-text-field-view" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+                                                                <Label text="Console Buffer Size:" GridPane.rowIndex="3"/>
                                                             </children>
                                                         </GridPane>
-                                                        <Label fx:id="lblMsServerName" layoutX="20.0" layoutY="20.0" styleClass="managed-server-name" text="Server Name">
+                                                        <Label fx:id="lblMsServerName" layoutX="14.0" layoutY="14.0" styleClass="managed-server-name" text="Server Name" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0">
                                                             <font>
                                                                 <Font name="System Bold" size="18.0"/>
                                                             </font>
                                                         </Label>
-                                                        <GridPane hgap="10.0" layoutX="14.0" layoutY="14.0" vgap="10.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.topAnchor="50.0">
+                                                        <GridPane hgap="10.0" layoutX="14.0" layoutY="14.0" vgap="10.0" AnchorPane.bottomAnchor="15.0" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="40.0">
                                                             <columnConstraints>
                                                                 <ColumnConstraints halignment="RIGHT" hgrow="NEVER" maxWidth="215.0" minWidth="10.0"/>
                                                                 <ColumnConstraints fillWidth="false" halignment="LEFT" hgrow="ALWAYS" maxWidth="132.0" minWidth="84.0" prefWidth="131.0"/>
@@ -203,13 +208,11 @@
                                                                 <TextField fx:id="tfMsVersion" editable="false" promptText="Version" styleClass="sb-text-field-view" GridPane.columnIndex="3" GridPane.rowIndex="3"/>
                                                             </children>
                                                         </GridPane>
+                                                        <Button fx:id="btnSaveManagedServer" layoutX="1132.0" layoutY="152.0" mnemonicParsing="false" prefHeight="25.0" prefWidth="68.0" text="Save" AnchorPane.bottomAnchor="15.0" AnchorPane.rightAnchor="15.0"/>
                                                     </children>
                                                     <opaqueInsets>
                                                         <Insets/>
                                                     </opaqueInsets>
-                                                    <padding>
-                                                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
-                                                    </padding>
                                                 </AnchorPane>
                                             </items>
                                             <VBox.margin>

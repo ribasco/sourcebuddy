@@ -156,7 +156,7 @@ public class ServerDetails extends AuditableEntity<String> {
         return id;
     }
 
-    @Column(name = STATUS)
+    @Transient
     public ServerStatus getStatus() {
         return status.get();
     }
@@ -234,7 +234,7 @@ public class ServerDetails extends AuditableEntity<String> {
         return operatingSystem;
     }
 
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JoinColumn(name = "app_id")
     public SteamApp getSteamApp() {
         return steamApp.get();

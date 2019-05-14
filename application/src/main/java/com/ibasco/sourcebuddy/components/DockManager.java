@@ -17,6 +17,7 @@ import javafx.scene.Parent;
 import org.dockfx.DockNode;
 import org.dockfx.DockPane;
 import org.dockfx.DockPos;
+import org.dockfx.DockTitleBar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -60,21 +61,17 @@ public class DockManager {
     }
 
     private void initDockEntries() {
-        long total = dockEntryRepository.count();
-        log.info("Checking if dock entries are present in the repository");
-        if (total == 0) {
-            Map<String, DockNode> dockEntries = applicationContext.getBeansOfType(DockNode.class);
-            log.info("Initializing dock entries in repository");
-            for (Map.Entry<String, DockNode> entry : dockEntries.entrySet()) {
+        Map<String, DockNode> dockEntries = applicationContext.getBeansOfType(DockNode.class);
+        log.info("Initializing dock entries in repository");
+        for (Map.Entry<String, DockNode> entry : dockEntries.entrySet()) {
+            if (!dockEntryRepository.existsById(entry.getKey())) {
                 log.info(" - {} = {}", entry.getKey(), entry.getValue());
                 DockEntry dockEntry = new DockEntry();
                 dockEntry.setId(entry.getKey());
                 dockEntry.setName(entry.getValue().getTitle());
                 dockEntryRepository.save(dockEntry);
+                log.info("Added new dock entry: {}", dockEntry);
             }
-            dockEntryRepository.flush();
-        } else {
-            log.info("Dock entries are present in the repository. Skipping");
         }
     }
 
@@ -115,22 +112,22 @@ public class DockManager {
      *
      * @return The {@link DockLayout} created
      */
-    public DockLayout create(DockPane dockPane, String name) {
+    public DockLayout createLayout(DockPane dockPane, String name) {
         log.info("createLayout() :: Creating new layout '{}'", name);
         DockLayout layout = new DockLayout();
-        refreshDockLayoutEntries(dockPane, layout);
+        refreshLayout(dockPane, layout);
         layout.setName(name);
         return layout;
     }
 
-    public DockLayout save(DockLayout layout) {
+    public DockLayout saveLayout(DockLayout layout) {
         return dockLayoutRepository.save(layout);
     }
 
-    public DockLayout update(DockPane dockPane, DockLayout layout) {
+    public DockLayout updateLayout(DockPane dockPane, DockLayout layout) {
         Check.requireNonNull(layout, "Layout cannot be null");
-        refreshDockLayoutEntries(dockPane, layout);
-        return save(layout);
+        refreshLayout(dockPane, layout);
+        return saveLayout(layout);
     }
 
     public void dockNode(DockPane dockPane, DockNode dockNode) {
@@ -170,50 +167,46 @@ public class DockManager {
         dockNode.undock();
     }
 
-    public void refreshDockLayoutEntries(Parent pane, DockLayout layout) {
+    public void lockLayout(DockLayout layout) {
+        beanDockMapping.values().forEach(d -> {
+            d.setDockTitleBar(null);
+        });
+        layout.setLocked(true);
+        List<DockLayout> layoutList = appModel.getActiveProfile().getDockLayouts();
+        int idx = layoutList.indexOf(layout);
+        if (idx > -1)
+            layoutList.set(idx, layout);
+        appModel.setActiveProfile(configService.saveProfile(appModel.getActiveProfile()));
+    }
+
+    public void unlockLayout(DockLayout layout) {
+        beanDockMapping.values().forEach(d -> d.setDockTitleBar(new DockTitleBar(d)));
+        layout.setLocked(false);
+        List<DockLayout> layoutList = appModel.getActiveProfile().getDockLayouts();
+        int idx = layoutList.indexOf(layout);
+        if (idx > -1)
+            layoutList.set(idx, layout);
+        appModel.setActiveProfile(configService.saveProfile(appModel.getActiveProfile()));
+    }
+
+    public void refreshLayout(Parent pane, DockLayout layout) {
         if (layout.getLayoutEntries() == null)
             layout.setLayoutEntries(new HashSet<>());
         layout.getLayoutEntries().clear();
-        refreshDockLayoutEntries(pane, layout, 0);
+        refreshLayout(pane, layout, 0);
         log.info("Refreshed layout entries for '{}' (Total: {})", layout, layout.getLayoutEntries().size());
     }
 
-    private void refreshDockLayoutEntries(Parent pane, DockLayout layout, int level) {
+    private void refreshLayout(Parent pane, DockLayout layout, int level) {
         for (Node child : pane.getChildrenUnmodifiable()) {
             if (child instanceof DockNode) {
                 DockLayoutEntry layoutEntry = createLayoutEntry((DockNode) child, layout);
                 layout.getLayoutEntries().add(layoutEntry);
             }
             if (child instanceof Parent) {
-                refreshDockLayoutEntries((Parent) child, layout, ++level);
+                refreshLayout((Parent) child, layout, ++level);
             }
         }
-    }
-
-    private DockLayoutEntry createLayoutEntry(DockNode dockNode, DockLayout layout) {
-        DockNode dockSibling = null;
-        if (dockNode.getLastDockSibling() instanceof DockNode) {
-            dockSibling = (DockNode) dockNode.getLastDockSibling();
-        }
-        DockPos position = dockNode.getLastDockPos();
-        String fromId = findDockBeanId(dockNode);
-        String toId = findDockBeanId(dockSibling);
-
-        DockLayoutEntry layoutEntry = new DockLayoutEntry();
-        DockEntry fromEntry = Check.requireNonNull(dockEntryRepository.findById(fromId).orElse(null), "From dock cannot be null");
-
-        DockEntry toEntry = null;
-        if (toId != null) {
-            toEntry = dockEntryRepository.findById(toId).orElse(null);
-        }
-
-        layoutEntry.setLayout(layout);
-        layoutEntry.setFrom(fromEntry);
-        layoutEntry.setTo(toEntry);
-        layoutEntry.setPosition(position);
-
-        log.debug("createLayoutEntry() :: Dock: {}, Position: {}, Sibling: {}", fromId, position, dockSibling != null ? toId : "N/A");
-        return layoutEntry;
     }
 
     public void applyLayout(DockPane dockPane, DockLayout dockLayout) {
@@ -250,6 +243,32 @@ public class DockManager {
                 d.undock();
             }
         });
+    }
+
+    private DockLayoutEntry createLayoutEntry(DockNode dockNode, DockLayout layout) {
+        DockNode dockSibling = null;
+        if (dockNode.getLastDockSibling() instanceof DockNode) {
+            dockSibling = (DockNode) dockNode.getLastDockSibling();
+        }
+        DockPos position = dockNode.getLastDockPos();
+        String fromId = findDockBeanId(dockNode);
+        String toId = findDockBeanId(dockSibling);
+
+        DockLayoutEntry layoutEntry = new DockLayoutEntry();
+        DockEntry fromEntry = Check.requireNonNull(dockEntryRepository.findById(fromId).orElse(null), "From dock cannot be null");
+
+        DockEntry toEntry = null;
+        if (toId != null) {
+            toEntry = dockEntryRepository.findById(toId).orElse(null);
+        }
+
+        layoutEntry.setLayout(layout);
+        layoutEntry.setFrom(fromEntry);
+        layoutEntry.setTo(toEntry);
+        layoutEntry.setPosition(position);
+
+        log.debug("createLayoutEntry() :: Dock: {}, Position: {}, Sibling: {}", fromId, position, dockSibling != null ? toId : "N/A");
+        return layoutEntry;
     }
 
     private DockLayout createDefaultLayout() {

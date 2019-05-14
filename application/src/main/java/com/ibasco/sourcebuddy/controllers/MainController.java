@@ -10,6 +10,7 @@ import com.ibasco.sourcebuddy.events.ApplicationInitEvent;
 import com.ibasco.sourcebuddy.gui.skins.CustomTaskProgressViewSkin;
 import com.ibasco.sourcebuddy.model.AppModel;
 import com.ibasco.sourcebuddy.util.ResourceUtil;
+import javafx.beans.binding.Bindings;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.collections.MapChangeListener;
@@ -58,19 +59,6 @@ public class MainController extends BaseController {
 
     @FXML
     private CheckComboBox cbDocks;
-    //</editor-fold>
-
-    private AppModel appModel;
-
-    private PopOver serviceStatusPopOver;
-
-    private TaskManager taskManager;
-
-    private TaskProgressView<Task<?>> taskProgressView;
-
-    private Button btnServiceStatus;
-
-    private DockManager dockManager;
 
     @FXML
     private Menu menuView;
@@ -93,10 +81,26 @@ public class MainController extends BaseController {
     @FXML
     private MenuItem miViewResetLayout;
 
-    private ToggleGroup menuLayoutToggleGroup;
-
     @FXML
     private MenuItem miViewSetDefault;
+
+    @FXML
+    private MenuItem miViewLockLayout;
+    //</editor-fold>
+
+    private AppModel appModel;
+
+    private PopOver serviceStatusPopOver;
+
+    private TaskManager taskManager;
+
+    private TaskProgressView<Task<?>> taskProgressView;
+
+    private Button btnServiceStatus;
+
+    private DockManager dockManager;
+
+    private ToggleGroup menuLayoutToggleGroup;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
@@ -115,6 +119,12 @@ public class MainController extends BaseController {
         appModel.activeLayoutProperty().addListener(this::applyNewLayoutOnSelectionChange);
         log.info("Setting active layout from default: {} (Entries: {})", profile.getDefaultLayout(), profile.getDefaultLayout().getLayoutEntries().size());
         appModel.setActiveLayout(profile.getDefaultLayout());
+
+        miViewLockLayout.textProperty().bind(Bindings.createStringBinding(() -> {
+            if (appModel.getActiveLayout() == null)
+                return "Lock Layout";
+            return appModel.getActiveLayout().isLocked() ? "Unlock Layout" : "Lock Layout";
+        }, appModel.activeLayoutProperty(), appModel.getActiveLayout().lockedProperty()));
     }
 
     private void onDockMenuSelection(ActionEvent actionEvent) {
@@ -128,7 +138,6 @@ public class MainController extends BaseController {
             dockManager.undockNode(dockNode);
         }
         log.info("Dock menu selection: {} (Source: {})", actionEvent, actionEvent.getSource());
-
     }
 
     private void setupMenu() {
@@ -141,9 +150,19 @@ public class MainController extends BaseController {
         miViewSaveLayout.setOnAction(this::saveCurrentLayout);
         miViewSaveLayoutAs.setOnAction(this::saveCurrentLayoutAs);
         miViewSetDefault.setOnAction(this::setCurrentLayoutAsDefault);
-
+        miViewLockLayout.setOnAction(this::toggleLockLayout);
         populateDockMenuItems();
         refreshLayoutMenuItems();
+    }
+
+    private void toggleLockLayout(ActionEvent actionEvent) {
+        if (appModel.getActiveLayout() == null)
+            return;
+        if (!appModel.getActiveLayout().isLocked()) {
+            dockManager.lockLayout(appModel.getActiveLayout());
+        } else {
+            dockManager.unlockLayout(appModel.getActiveLayout());
+        }
     }
 
     private void resetCurrentLayout(ActionEvent actionEvent) {
@@ -163,7 +182,7 @@ public class MainController extends BaseController {
         if (activeLayout == null)
             throw new IllegalStateException("No active layout set");
         log.info("Saving current layout: {}", activeLayout);
-        activeLayout = dockManager.update(dpMainDock, activeLayout);
+        activeLayout = dockManager.updateLayout(dpMainDock, activeLayout);
         appModel.setActiveLayout(activeLayout);
         log.info("Saved active layout with {} entries", activeLayout.getLayoutEntries().size());
     }
@@ -174,7 +193,7 @@ public class MainController extends BaseController {
         textInputDialog.setContentText("Enter layout name");
         Optional<String> res = textInputDialog.showAndWait();
         if (res.isPresent()) {
-            DockLayout newLayout = dockManager.create(dpMainDock, res.get());
+            DockLayout newLayout = dockManager.createLayout(dpMainDock, res.get());
             newLayout.setProfile(appModel.getActiveProfile());
             appModel.getActiveProfile().getDockLayouts().add(newLayout);
             log.info("Saved new layout: {}", newLayout);
@@ -300,6 +319,13 @@ public class MainController extends BaseController {
             taskProgressView.getTasks().remove(change.getKey());
             log.debug("Removed task from task list: {}", change.getKey());
         }
+    }
+
+    @Override
+    protected boolean onStageClosing(Stage stage) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to exit?", ButtonType.YES, ButtonType.NO);
+        Optional<ButtonType> res = alert.showAndWait();
+        return res.filter(ButtonType.YES::equals).isPresent();
     }
 
     private void setupMainToolbar() {

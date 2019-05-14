@@ -4,14 +4,12 @@ import com.ibasco.sourcebuddy.components.GuiHelper;
 import static com.ibasco.sourcebuddy.components.GuiHelper.*;
 import com.ibasco.sourcebuddy.constants.Views;
 import com.ibasco.sourcebuddy.controls.SortedCheckComboBox;
-import com.ibasco.sourcebuddy.domain.ConfigProfile;
-import com.ibasco.sourcebuddy.domain.Country;
-import com.ibasco.sourcebuddy.domain.ServerDetails;
-import com.ibasco.sourcebuddy.domain.SteamApp;
+import com.ibasco.sourcebuddy.domain.*;
 import com.ibasco.sourcebuddy.enums.MiscFilters;
 import com.ibasco.sourcebuddy.enums.OperatingSystem;
 import com.ibasco.sourcebuddy.enums.ServerStatus;
 import com.ibasco.sourcebuddy.gui.converters.MappedObjectStringConverter;
+import com.ibasco.sourcebuddy.gui.listeners.ToggableSplitPaneChangeListener;
 import com.ibasco.sourcebuddy.gui.tableview.factory.ServerBrowserTableViewFactory;
 import com.ibasco.sourcebuddy.gui.tableview.rows.HighlightRow;
 import com.ibasco.sourcebuddy.gui.treetableview.cells.FormattedTreeTableCell;
@@ -35,6 +33,7 @@ import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -54,6 +53,7 @@ import org.springframework.stereotype.Controller;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -190,9 +190,6 @@ public class ServerBrowserController extends BaseController {
     private PasswordField tfMsRconPassword;
 
     @FXML
-    private TextField tfMsLogPort;
-
-    @FXML
     private Button btnMsTestRcon;
 
     @FXML
@@ -203,6 +200,18 @@ public class ServerBrowserController extends BaseController {
 
     @FXML
     private AnchorPane apServerSettings;
+
+    @FXML
+    private Button btnSaveManagedServer;
+
+    @FXML
+    private Spinner<Integer> spMsLogListenPort;
+
+    @FXML
+    private TextField tfMsLogListenIP;
+
+    @FXML
+    private SplitPane spManagedServers;
 
     @Override
     public void initialize(Stage stage, Node rootNode) {
@@ -221,6 +230,36 @@ public class ServerBrowserController extends BaseController {
         steamGamesModel.setSelectedGame(appModel.getActiveProfile().getDefaultGame());
 
         refreshServerListContent();
+        bindToggablePane(spManagedServers, apServerSettings, tbShowDetailPane, appModel.getActiveProfile().showSettingsPaneProperty());
+    }
+
+    private void bindToggablePane(SplitPane splitPane, Node toggableNode, ToggleButton toggleButton, BooleanProperty property) {
+        ToggableSplitPaneChangeListener listener = new ToggableSplitPaneChangeListener(splitPane, toggableNode);
+        property.addListener(listener);
+        toggleButton.selectedProperty().bindBidirectional(property);
+        listener.changed(property, null, property.get());
+    }
+
+    @Override
+    protected boolean onStageClosing(Stage stage) {
+        log.info("onStageClosing() :: Detected stage close request. Cancelling");
+
+        log.info("Saving active profile");
+        ConfigProfile activeProfile = appModel.getActiveProfile();
+        configService.saveProfile(activeProfile);
+
+        if (taskManager.getRunningTasks() > 0) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "There are still tasks running in the background, Are you sure you want to continue?", ButtonType.YES, ButtonType.CANCEL);
+            Optional<ButtonType> res = alert.showAndWait();
+            if (res.isPresent() && ButtonType.YES.equals(res.get())) {
+                for (Task task : taskManager.getAllTasks()) {
+                    log.info("Cancelling task '{}'", task.getClass().getSimpleName());
+                    task.cancel(true);
+                }
+                return true;
+            }
+        }
+        return true;
     }
 
     private void setupManagedServerDetailBindings() {
@@ -233,6 +272,37 @@ public class ServerBrowserController extends BaseController {
         bindManagedServerObservable(tfMsPlayerCount.textProperty(), ServerDetails::getPlayerCount, String::valueOf);
         bindManagedServerObservable(tfMsMaxPlayerCount.textProperty(), ServerDetails::getMaxPlayerCount, String::valueOf);
         bindManagedServerObservable(tfMsLatency.textProperty(), ServerDetails::getLatency, String::valueOf);
+
+        //bindManagedServerDetails(tfMsRconPassword.textProperty(), ManagedServer::getRconPassword, null);
+
+        btnSaveManagedServer.setOnAction(this::saveManagedServerDetails);
+        spMsLogListenPort.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1000, 65535, 43813));
+        appModel.selectedServerProperty().addListener(this::updatePropertyBindingsOnSelection);
+    }
+
+    private void updatePropertyBindingsOnSelection(ObservableValue<? extends ServerDetails> observable, ServerDetails oldValue, ServerDetails newValue) {
+        if (oldValue != null) {
+            tfMsRconPassword.textProperty().unbind();
+            tfMsLogListenIP.textProperty().unbind();
+            spMsLogListenPort.getValueFactory().valueProperty().unbind();
+        }
+        if (newValue != null && serverManager.isManaged(newValue)) {
+            ManagedServer managedServer = serverManager.findManagedServer(newValue);
+            if (managedServer != null) {
+                tfMsRconPassword.textProperty().bindBidirectional(managedServer.rconPasswordProperty());
+                tfMsLogListenIP.textProperty().bindBidirectional(managedServer.logListenIpProperty());
+                spMsLogListenPort.getValueFactory().valueProperty().bindBidirectional(managedServer.logListenPortProperty().asObject());
+                appModel.setSelectedManagedServer(managedServer);
+            }
+        }
+    }
+
+    private void saveManagedServerDetails(ActionEvent actionEvent) {
+        if (appModel.getSelectedManagedServer() == null)
+            return;
+        log.info("Saving managed server details");
+        ManagedServer managedServer = appModel.getSelectedManagedServer();
+        appModel.setSelectedManagedServer(serverManager.save(managedServer));
     }
 
     private <T> void bindManagedServerObservable(Property<String> target, Function<ServerDetails, T> mapper) {
@@ -247,6 +317,20 @@ public class ServerBrowserController extends BaseController {
                     return String.valueOf(mapper.apply(selectedServer));
                 }
                 return converter.apply(mapper.apply(selectedServer));
+            }
+            return "N/A";
+        }, appModel.selectedServerProperty()));
+    }
+
+    private <T> void bindManagedServerDetails(Property<String> target, Function<ManagedServer, T> mapper, Function<T, String> converter) {
+        target.bind(Bindings.createStringBinding(() -> {
+            ServerDetails selectedServer = appModel.getSelectedServer();
+            ManagedServer managedServer = serverManager.findManagedServer(selectedServer);
+            if (tabManagedServers.isSelected() && serverManager.isManaged(selectedServer)) {
+                if (converter == null) {
+                    return String.valueOf(mapper.apply(managedServer));
+                }
+                return converter.apply(mapper.apply(managedServer));
             }
             return "N/A";
         }, appModel.selectedServerProperty()));
@@ -782,8 +866,8 @@ public class ServerBrowserController extends BaseController {
         //createBasicTreeColumn(ttvManagedServers, "Game", "steamApp", bookmarksTreeTableViewFactory);
         createBasicTreeColumn(ttvManagedServers, "Status", "status", bookmarksTreeTableViewFactory::statusIndicator);
         createBasicTreeColumn(ttvManagedServers, "Country", "country", bookmarksTreeTableViewFactory::country);
-        createBasicTreeColumn(ttvManagedServers, "Tags", "serverTags", bookmarksTreeTableViewFactory::serverTags);
         createBasicTreeColumn(ttvManagedServers, "OS", "operatingSystem", bookmarksTreeTableViewFactory::operatingSystem);
+        createBasicTreeColumn(ttvManagedServers, "Tags", "serverTags", bookmarksTreeTableViewFactory::serverTags);
 
         ttvManagedServers.setTreeColumn(nameCol);
         ttvManagedServers.getSelectionModel().selectedItemProperty().addListener(this::updateServerSelection);

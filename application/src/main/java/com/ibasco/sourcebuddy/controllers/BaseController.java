@@ -53,6 +53,8 @@ abstract public class BaseController implements Initializable {
 
     static Map<Stage, NotificationPane> paneCache = new HashMap<>();
 
+    private static boolean stageCloseListenerInitialized = false;
+
     @Override
     public final void initialize(URL location, ResourceBundle resources) {
         this.location = location;
@@ -73,6 +75,9 @@ abstract public class BaseController implements Initializable {
     public final void preInit(Stage stage, Parent node) {
         this.stage = stage;
         this.rootNode = node;
+
+        initializeStageCloseListener(stage);
+
         NotificationPane pane = paneCache.computeIfAbsent(stage, stage1 -> findNotificationPane(node));
 
         if (!(this instanceof PreloadController)) {
@@ -91,6 +96,32 @@ abstract public class BaseController implements Initializable {
         log.debug("STAGE/SCENE INITIALIZE: {}", this.getClass().getSimpleName());
         log.debug("=============================================================");
         initialize(stage, node);
+    }
+
+    private void initializeStageCloseListener(Stage stage) {
+        if (stageCloseListenerInitialized && stage.getOnCloseRequest() != null) {
+            return;
+        }
+        stage.setOnCloseRequest(event -> {
+            Map<String, BaseController> controllerMap = applicationContext.getBeansOfType(BaseController.class);
+            boolean proceed = true;
+            for (BaseController controller : controllerMap.values()) {
+                proceed = controller.onStageClosing(stage);
+                if (!proceed) {
+                    log.info("Controller '{}' has requested to cancel stage close event", controller.getClass().getSimpleName());
+                    break;
+                }
+            }
+            if (!proceed) {
+                event.consume();
+            }
+        });
+        log.info("Stage close listener initialized");
+        stageCloseListenerInitialized = true;
+    }
+
+    protected boolean onStageClosing(Stage stage) {
+        return true;
     }
 
     /**

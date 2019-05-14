@@ -1,5 +1,5 @@
 package com.ibasco.sourcebuddy.service;
 
-public interface ServerLogListenService {
+public interface ServerLogService {
 
 }

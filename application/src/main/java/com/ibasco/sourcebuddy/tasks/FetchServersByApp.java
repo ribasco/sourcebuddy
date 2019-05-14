@@ -7,13 +7,14 @@ import com.ibasco.sourcebuddy.util.Check;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import static org.springframework.beans.factory.config.BeanDefinition.SCOPE_PROTOTYPE;
 import org.springframework.context.annotation.Scope;
 
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-@Scope("prototype")
+@Scope(SCOPE_PROTOTYPE)
 public class FetchServersByApp extends BaseTask<Set<ServerDetails>> {
 
     private static final Logger log = LoggerFactory.getLogger(FetchServersByApp.class);

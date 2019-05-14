@@ -1,19 +1,23 @@
 package com.ibasco.sourcebuddy.domain;
 
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 
-public class RconStatus {
+public class RconAuthStatus {
 
     private BooleanProperty authenticated = new SimpleBooleanProperty();
 
     private StringProperty reason = new SimpleStringProperty();
 
-    public RconStatus(Boolean authenticated, String reason) {
+    private ObjectProperty<Throwable> exception = new SimpleObjectProperty<>();
+
+    public RconAuthStatus(Boolean authenticated, String reason) {
+        this(authenticated, reason, null);
+    }
+
+    public RconAuthStatus(Boolean authenticated, String reason, Throwable exception) {
         setAuthenticated(authenticated);
         setReason(reason);
+        setException(exception);
     }
 
     public boolean isAuthenticated() {
@@ -38,5 +42,17 @@ public class RconStatus {
 
     public void setReason(String reason) {
         this.reason.set(reason);
+    }
+
+    public Throwable getException() {
+        return exception.get();
+    }
+
+    public ObjectProperty<Throwable> exceptionProperty() {
+        return exception;
+    }
+
+    public void setException(Throwable exception) {
+        this.exception.set(exception);
     }
 }

@@ -62,6 +62,12 @@ public class AppConfig implements AsyncConfigurer {
     @Value("${app.public-api-endpoint}")
     private String publicIpApiEndpoint;
 
+    @Value(("${app.concurrent.tasks.max-pool-size}"))
+    private int tasksMaxPoolSize;
+
+    @Value(("${app.concurrent.query.max-pool-size}"))
+    private int queryMaxPoolSize;
+
     private final int DEFAULT_THREADS = Runtime.getRuntime().availableProcessors() + 1;
 
     @Bean

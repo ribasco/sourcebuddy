@@ -19,6 +19,8 @@ public class ConfigProfile extends AuditableEntity<String> {
 
     public static final String SHOW_GAME_THUMBNAILS = "show_game_thumbnails";
 
+    public static final String SHOW_SETTINGS_PANE = "show_settings_pane";
+
     private IntegerProperty id = new SimpleIntegerProperty();
 
     private StringProperty name = new SimpleStringProperty();
@@ -32,6 +34,8 @@ public class ConfigProfile extends AuditableEntity<String> {
     private ObjectProperty<DockLayout> defaultLayout = new SimpleObjectProperty<>();
 
     private List<DockLayout> dockLayouts = new ArrayList<>();
+
+    private BooleanProperty showSettingsPane = new SimpleBooleanProperty();
 
     @Id
     @Column(name = ID)
@@ -118,6 +122,19 @@ public class ConfigProfile extends AuditableEntity<String> {
 
     public void setDockLayouts(List<DockLayout> dockLayouts) {
         this.dockLayouts = dockLayouts;
+    }
+
+    @Column(name = SHOW_SETTINGS_PANE)
+    public Boolean isShowSettingsPane() {
+        return showSettingsPane.getValue();
+    }
+
+    public BooleanProperty showSettingsPaneProperty() {
+        return showSettingsPane;
+    }
+
+    public void setShowSettingsPane(Boolean showSettingsPane) {
+        this.showSettingsPane.setValue(showSettingsPane);
     }
 
     @Override

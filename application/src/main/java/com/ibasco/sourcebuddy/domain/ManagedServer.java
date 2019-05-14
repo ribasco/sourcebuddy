@@ -13,6 +13,12 @@ public class ManagedServer extends AuditableEntity<String> {
 
     public static final String RCON_PASSWORD = "rcon_password";
 
+    public static final String LOG_LISTEN_IP = "log_listen_ip";
+
+    public static final String LOG_LISTEN_PORT = "log_listen_port";
+
+    public static final String CONSOLE_BUFFER_SIZE = "console_buffer_size";
+
     private IntegerProperty id = new SimpleIntegerProperty();
 
     private ObjectProperty<ServerDetails> serverDetails = new SimpleObjectProperty<>();
@@ -20,6 +26,12 @@ public class ManagedServer extends AuditableEntity<String> {
     private ObjectProperty<ConfigProfile> profile = new SimpleObjectProperty<>();
 
     private StringProperty rconPassword = new SimpleStringProperty();
+
+    private StringProperty logListenIp = new SimpleStringProperty();
+
+    private IntegerProperty logListenPort = new SimpleIntegerProperty();
+
+    private IntegerProperty bufferSize = new SimpleIntegerProperty(512000);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -77,6 +89,45 @@ public class ManagedServer extends AuditableEntity<String> {
         this.rconPassword.set(rconPassword);
     }
 
+    @Column(name = LOG_LISTEN_IP)
+    public String getLogListenIp() {
+        return logListenIp.get();
+    }
+
+    public StringProperty logListenIpProperty() {
+        return logListenIp;
+    }
+
+    public void setLogListenIp(String logListenIp) {
+        this.logListenIp.set(logListenIp);
+    }
+
+    @Column(name = LOG_LISTEN_PORT)
+    public Integer getLogListenPort() {
+        return logListenPort.getValue();
+    }
+
+    public IntegerProperty logListenPortProperty() {
+        return logListenPort;
+    }
+
+    public void setLogListenPort(Integer logListenPort) {
+        this.logListenPort.setValue(logListenPort);
+    }
+
+    @Column(name = CONSOLE_BUFFER_SIZE)
+    public Integer getBufferSize() {
+        return bufferSize.getValue();
+    }
+
+    public IntegerProperty bufferSizeProperty() {
+        return bufferSize;
+    }
+
+    public void setBufferSize(Integer bufferSize) {
+        this.bufferSize.setValue(bufferSize);
+    }
+
     @Override
     public String toString() {
         return getServerDetails().toString();
@@ -87,6 +138,11 @@ public class ManagedServer extends AuditableEntity<String> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ManagedServer that = (ManagedServer) o;
+        if (getServerDetails() == null || that.getServerDetails() == null) {
+            return false;
+        }
+        if (getServerDetails() == ((ManagedServer) o).getServerDetails())
+            return true;
         return getServerDetails().equals(that.getServerDetails());
     }
 

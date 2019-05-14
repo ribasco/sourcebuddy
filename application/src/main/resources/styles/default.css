@@ -662,10 +662,12 @@
 
 .styled-text-area {
     -fx-background-color: -sb-control-dark;
+    -fx-font-family: Consolas, "OCR A Extended", Monospaced;
+    -fx-font-size: 14px;
 }
 
 .styled-text-area .text {
-    -fx-fill: -sb-cell-label;
+    -fx-fill: -sb-cell-label-highlight;
 }
 
 

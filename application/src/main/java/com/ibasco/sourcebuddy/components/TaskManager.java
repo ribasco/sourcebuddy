@@ -2,9 +2,7 @@ package com.ibasco.sourcebuddy.components;
 
 import com.ibasco.sourcebuddy.constants.Qualifiers;
 import com.ibasco.sourcebuddy.tasks.BaseTask;
-import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.Property;
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableMap;
@@ -30,8 +28,6 @@ public class TaskManager {
     private static final Logger log = LoggerFactory.getLogger(TaskManager.class);
 
     private ObservableMap<Task<?>, CompletableFuture<?>> taskMap = FXCollections.observableHashMap();
-
-    private IntegerProperty runningTasks = new SimpleIntegerProperty();
 
     private ThreadPoolExecutor executorService;
 
@@ -154,7 +150,6 @@ public class TaskManager {
                 try {
                     log.debug("TASK_FAILED :: {}", taskName);
                     Throwable err = task.getException();
-                    log.error("Exception occured during task run", err);
                     if (taskMap.containsKey(task)) {
                         CompletableFuture<?> cf = taskMap.get(task);
                         cf.completeExceptionally(err);
@@ -191,16 +186,8 @@ public class TaskManager {
         }
     }
 
-    public int getRunningTasks() {
-        return runningTasks.get();
-    }
-
-    public IntegerProperty runningTasksProperty() {
-        return runningTasks;
-    }
-
-    public void setRunningTasks(int runningTasks) {
-        this.runningTasks.set(runningTasks);
+    public long getRunningTasks() {
+        return getAllTasks().stream().filter(Task::isRunning).count();
     }
 
     @Autowired

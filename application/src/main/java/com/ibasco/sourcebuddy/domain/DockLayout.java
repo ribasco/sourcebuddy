@@ -18,6 +18,8 @@ public class DockLayout extends AuditableEntity<String> {
 
     public static final String NAME = "name";
 
+    public static final String LOCKED = "locked";
+
     public static final String TABLE_NAME = "SB_DOCK_LAYOUT";
 
     private IntegerProperty id = new SimpleIntegerProperty();
@@ -27,6 +29,8 @@ public class DockLayout extends AuditableEntity<String> {
     private Set<DockLayoutEntry> layoutEntries = new LinkedHashSet<>();
 
     private ObjectProperty<ConfigProfile> profile = new SimpleObjectProperty<>();
+
+    private BooleanProperty locked = new SimpleBooleanProperty(false);
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -77,6 +81,19 @@ public class DockLayout extends AuditableEntity<String> {
 
     public void setProfile(ConfigProfile profile) {
         this.profile.set(profile);
+    }
+
+    @Column(name = LOCKED)
+    public Boolean isLocked() {
+        return locked.getValue();
+    }
+
+    public BooleanProperty lockedProperty() {
+        return locked;
+    }
+
+    public void setLocked(Boolean locked) {
+        this.locked.setValue(locked);
     }
 
     @Override

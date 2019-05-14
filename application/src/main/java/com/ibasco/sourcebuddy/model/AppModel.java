@@ -2,6 +2,7 @@ package com.ibasco.sourcebuddy.model;
 
 import com.ibasco.sourcebuddy.domain.ConfigProfile;
 import com.ibasco.sourcebuddy.domain.DockLayout;
+import com.ibasco.sourcebuddy.domain.ManagedServer;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.service.ConfigService;
 import javafx.beans.property.*;
@@ -31,11 +32,9 @@ public class AppModel {
 
     private ListProperty<ServerDetails> selectedServers = new SimpleListProperty<>(FXCollections.observableArrayList());
 
-    private ListProperty<ServerDetails> selectedManagedServers = new SimpleListProperty<>(FXCollections.observableArrayList());
-
-    private ObjectProperty<ServerDetails> selectedManagedServer = new SimpleObjectProperty<>();
-
     private ObjectProperty<ServerDetails> selectedServer = new SimpleObjectProperty<>();
+
+    private ObjectProperty<ManagedServer> selectedManagedServer = new SimpleObjectProperty<>();
 
     private ListProperty<ServerDetails> serverDetails = new SimpleListProperty<>();
 
@@ -50,30 +49,6 @@ public class AppModel {
             throw new IllegalStateException("Default profile not set");
         log.debug("Setting active profile: {}", defaultProfile);
         setActiveProfile(defaultProfile);
-    }
-
-    public ServerDetails getSelectedManagedServer() {
-        return selectedManagedServer.get();
-    }
-
-    public ObjectProperty<ServerDetails> selectedManagedServerProperty() {
-        return selectedManagedServer;
-    }
-
-    public void setSelectedManagedServer(ServerDetails selectedManagedServer) {
-        this.selectedManagedServer.set(selectedManagedServer);
-    }
-
-    public ObservableList<ServerDetails> getSelectedManagedServers() {
-        return selectedManagedServers.get();
-    }
-
-    public ListProperty<ServerDetails> selectedManagedServersProperty() {
-        return selectedManagedServers;
-    }
-
-    public void setSelectedManagedServers(ObservableList<ServerDetails> selectedManagedServers) {
-        this.selectedManagedServers.set(selectedManagedServers);
     }
 
     public ObservableList<ServerDetails> getServerDetails() {
@@ -182,6 +157,18 @@ public class AppModel {
 
     public void setActiveLayout(DockLayout activeLayout) {
         this.activeLayout.set(activeLayout);
+    }
+
+    public ManagedServer getSelectedManagedServer() {
+        return selectedManagedServer.get();
+    }
+
+    public ObjectProperty<ManagedServer> selectedManagedServerProperty() {
+        return selectedManagedServer;
+    }
+
+    public void setSelectedManagedServer(ManagedServer selectedManagedServer) {
+        this.selectedManagedServer.set(selectedManagedServer);
     }
 
     @Autowired

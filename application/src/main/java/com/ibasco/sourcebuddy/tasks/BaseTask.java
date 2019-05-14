@@ -46,13 +46,13 @@ public abstract class BaseTask<T> extends Task<T> {
         try {
             return process();
         } catch (Exception ex) {
-            if (ex instanceof CompletionException) {
+            if (ex instanceof CancellationException) {
+                log.warn("Task {} canelled", this);
+            } else if (ex instanceof CompletionException) {
                 if (ex.getCause() instanceof CancellationException) {
-                    log.warn("Task {} canelled", this);
+                    log.warn("Task {} cancelled", this);
                     throw (CancellationException) ex.getCause();
                 }
-            } else {
-                log.debug("Exception occured on task: " + this, ex);
             }
             throw ex;
         } finally {

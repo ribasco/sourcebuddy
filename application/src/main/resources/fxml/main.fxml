@@ -33,6 +33,7 @@
                         <MenuItem fx:id="miViewSaveLayoutAs" mnemonicParsing="false" text="Save Layout As"/>
                         <MenuItem fx:id="miViewResetLayout" mnemonicParsing="false" text="Reset Layout"/>
                         <MenuItem fx:id="miClearLayout" mnemonicParsing="false" text="Clear Layout"/>
+                        <MenuItem fx:id="miViewLockLayout" mnemonicParsing="false" text="Lock Layout"/>
                     </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">

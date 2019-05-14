@@ -16,7 +16,9 @@ public interface ServerManager {
 
     boolean isManaged(ServerDetails server);
 
-    void clear();
+    ManagedServer save(ManagedServer server);
+
+    void deleteAllServers();
 
     List<ManagedServer> findManagedServer();
 

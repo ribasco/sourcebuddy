@@ -30,9 +30,10 @@ public class CustomRepositoryImpl<T, ID extends Serializable> extends SimpleJpaR
 
     @Override
     public T merge(T t) {
+        if (t == null)
+            return null;
         if (!entityManager.contains(t)) {
             t = entityManager.merge(t);
-            log.debug("refresh() :: merged entity to current persistence context ({})", t);
         }
         return t;
     }

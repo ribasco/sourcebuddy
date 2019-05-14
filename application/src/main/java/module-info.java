@@ -3,6 +3,9 @@ module sourcebuddy.app {
     exports com.ibasco.sourcebuddy.events;
     exports com.ibasco.sourcebuddy.repository;
     exports com.ibasco.sourcebuddy.exceptions;
+    exports com.ibasco.sourcebuddy.components.rcon;
+    exports com.ibasco.sourcebuddy.components.rcon.parsers;
+    exports com.ibasco.sourcebuddy.components.rcon.parsers.status;
     exports com.ibasco.sourcebuddy.domain to spring.beans, org.apache.commons.lang3, spring.data.commons;
     exports com.ibasco.sourcebuddy.service to spring.core, spring.beans, spring.aop;
     exports com.ibasco.sourcebuddy.components to spring.beans, spring.core;
@@ -57,7 +60,10 @@ module sourcebuddy.app {
     requires spring.orm;
     requires spring.tx;
     requires javafx.controls;
-    requires logback.classic;
+    //requires org.slf4j;
+    //requires ch.qos.logback.core;
+    //requires ch.qos.logback.classic;
+    requires logback.core;
     requires slf4j.api;
     requires agql.steam.webapi;
     requires agql.source.query;

@@ -13,6 +13,6 @@ public class CacheConfig {
 
     @Bean
     public CacheManager cacheManager() {
-        return new ConcurrentMapCacheManager(Cache.STEAM_APPS);
+        return new ConcurrentMapCacheManager(Cache.STEAM_APPS, Cache.MANAGED_SERVERS);
     }
 }

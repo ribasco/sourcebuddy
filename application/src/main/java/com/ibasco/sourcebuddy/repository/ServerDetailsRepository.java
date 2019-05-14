@@ -3,7 +3,6 @@ package com.ibasco.sourcebuddy.repository;
 import com.ibasco.sourcebuddy.domain.ServerDetails;
 import com.ibasco.sourcebuddy.domain.SteamApp;
 import com.ibasco.sourcebuddy.util.Check;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,10 +10,9 @@ import org.springframework.stereotype.Repository;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
-public interface ServerDetailsRepository extends JpaRepository<ServerDetails, UUID> {
+public interface ServerDetailsRepository extends CustomRepository<ServerDetails, Integer> {
 
     default Optional<ServerDetails> findByAddress(InetSocketAddress address) {
         Check.requireNonNull(address, "Address cannot be null");

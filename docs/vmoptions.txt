@@ -1,0 +1,48 @@
+-Djavafx.preloader=com.ibasco.sourcebuddy.Preloader
+--add-exports=javafx.graphics/com.sun.javafx.css=sourcebuddy.app
+--add-exports=javafx.graphics/com.sun.javafx.stage=com.jfoenix
+--add-exports=javafx.graphics/com.sun.javafx.scene=com.jfoenix
+--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=org.controlsfx.controls
+--add-exports=javafx.graphics/com.sun.javafx.scene=org.controlsfx.controls
+--add-opens=javafx.graphics/javafx.scene=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.css=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.util=dockfx.clearcontrol
+--add-exports=javafx.base/com.sun.javafx.reflect=dockfx.clearcontrol
+--add-exports=javafx.base/com.sun.javafx.beans=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.scene=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.sg.prism=dockfx.clearcontrol
+--add-exports=javafx.base/com.sun.javafx.logging=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.prism=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.glass.ui=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.geom.transform=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.tk=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.glass.utils=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.font=dockfx.clearcontrol
+--add-exports=javafx.controls/com.sun.javafx.scene.control=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.scene.input=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.application=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.geom=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.iio=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.prism.paint=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.scenario.effect=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.scenario.effect.impl=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.scenario.effect.impl.prism=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.text=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.scene=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.scene.text=dockfx.clearcontrol
+--add-exports=javafx.graphics/javafx.scene.paint=dockfx.clearcontrol
+--add-exports=javafx.controls/com.sun.javafx.scene.control.behavior=dockfx.clearcontrol,com.jfoenix
+--add-exports=javafx.controls/com.sun.javafx.scene.control.inputmap=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.scene.traversal=dockfx.clearcontrol
+--add-exports=javafx.graphics/com.sun.javafx.stage=dockfx.clearcontrol
+--add-exports=java.compiler/javax.annotation=sourcebuddy
+--add-opens java.base/java.lang=spring.core
+--add-opens java.base/java.util.concurrent=spring.core
+--add-opens javafx.graphics/javafx.scene.text=richtextfx
+--add-opens javafx.graphics/com.sun.javafx.text=richtextfx
+--add-exports=javafx.graphics/com.sun.javafx.text=richtextfx
+--add-exports=javafx.graphics/com.sun.javafx.scene.text=richtextfx
+--add-exports=javafx.graphics/com.sun.javafx.geom=richtextfx
+--add-exports=javafx.base/com.sun.javafx.event=org.controlsfx.controls
+--add-opens javafx.graphics/javafx.scene=org.controlsfx.controls
+--add-exports=javafx.controls/com.sun.javafx.scene.control=com.jfoenix

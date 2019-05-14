@@ -32,7 +32,7 @@ public class ResourceUtil {
     }
 
     public static InputStream loadResourceAsStream(String resourceName) {
-        URL url = loadResource(resourceName);
+        //URL url = loadResource(resourceName);
         return Bootstrap.class.getResourceAsStream(resourceName);
     }
 

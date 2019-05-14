@@ -1,6 +1,7 @@
 package com.ibasco.sourcebuddy.tasks;
 
 import com.ibasco.sourcebuddy.domain.ServerDetails;
+import com.ibasco.sourcebuddy.enums.ServerStatus;
 import com.ibasco.sourcebuddy.service.SourceServerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import static org.springframework.beans.factory.config.ConfigurableBeanFactory.SCOPE_PROTOTYPE;
 import org.springframework.context.annotation.Scope;
 
+import java.io.BufferedWriter;
+import java.io.StringWriter;
 import java.util.Objects;
 
 @Scope(SCOPE_PROTOTYPE)
@@ -31,15 +34,23 @@ public class UpdateSingleServerDetailsTask extends BaseTask<Void> {
             return null;
         }
 
-        /*sourceServerService.updateServerDetails(details).get();
+        BufferedWriter bw = new BufferedWriter(new StringWriter());
+
+        bw.write("test");
+
+        sourceServerService.updateServerDetails(details).get();
         if (ServerStatus.ACTIVE.equals(details.getStatus())) {
-            if (details.getPlayerCount() > 0)
+            if (details.getPlayerCount() > 0) {
                 sourceServerService.updatePlayerDetails(details).get();
+            } else if (details.getPlayerCount() == 0 && details.getPlayers().size() > 0) {
+                synchronized (details) {
+                    details.getPlayers().clear();
+                }
+            }
             if (details.getRules() == null || details.getRules().isEmpty())
                 sourceServerService.updateServerRules(details).get();
-        }*/
-
-        sourceServerService.updateAllDetails(details).join();
+        }
+        //sourceServerService.updateAllDetails(details).join();
         log.debug("[{}] Updating server details for '{}'", this.hashCode(), details);
         return null;
     }
