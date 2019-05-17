@@ -1,105 +1,147 @@
 package com.ibasco.sourcebuddy.components.rcon;
 
+import javafx.beans.property.*;
+
 public class SourceModExtension {
 
-    private Integer index;
+    private IntegerProperty index = new SimpleIntegerProperty();
 
-    private String name;
+    private StringProperty name = new SimpleStringProperty();
 
-    private String version;
+    private StringProperty version = new SimpleStringProperty();
 
-    private String description;
+    private StringProperty description = new SimpleStringProperty();
 
-    private String filename;
+    private StringProperty filename = new SimpleStringProperty();
 
-    private String fullName;
+    private StringProperty fullName = new SimpleStringProperty();
 
-    private Boolean loaded;
+    private BooleanProperty loaded = new SimpleBooleanProperty();
 
-    private String author;
+    private StringProperty author = new SimpleStringProperty();
 
-    private String binaryInfo;
+    private StringProperty binaryInfo = new SimpleStringProperty();
 
-    private String method;
+    private StringProperty method = new SimpleStringProperty();
 
-    public Integer getIndex() {
+    public int getIndex() {
+        return index.get();
+    }
+
+    public IntegerProperty indexProperty() {
         return index;
     }
 
-    public void setIndex(Integer index) {
-        this.index = index;
+    public void setIndex(int index) {
+        this.index.set(index);
     }
 
     public String getName() {
+        return name.get();
+    }
+
+    public StringProperty nameProperty() {
         return name;
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name.set(name);
     }
 
     public String getVersion() {
+        return version.get();
+    }
+
+    public StringProperty versionProperty() {
         return version;
     }
 
     public void setVersion(String version) {
-        this.version = version;
+        this.version.set(version);
     }
 
     public String getDescription() {
+        return description.get();
+    }
+
+    public StringProperty descriptionProperty() {
         return description;
     }
 
     public void setDescription(String description) {
-        this.description = description;
+        this.description.set(description);
     }
 
     public String getFilename() {
+        return filename.get();
+    }
+
+    public StringProperty filenameProperty() {
         return filename;
     }
 
     public void setFilename(String filename) {
-        this.filename = filename;
+        this.filename.set(filename);
     }
 
     public String getFullName() {
+        return fullName.get();
+    }
+
+    public StringProperty fullNameProperty() {
         return fullName;
     }
 
     public void setFullName(String fullName) {
-        this.fullName = fullName;
+        this.fullName.set(fullName);
     }
 
     public Boolean isLoaded() {
+        return loaded.getValue();
+    }
+
+    public BooleanProperty loadedProperty() {
         return loaded;
     }
 
     public void setLoaded(Boolean loaded) {
-        this.loaded = loaded;
+        this.loaded.setValue(loaded);
     }
 
     public String getAuthor() {
+        return author.get();
+    }
+
+    public StringProperty authorProperty() {
         return author;
     }
 
     public void setAuthor(String author) {
-        this.author = author;
+        this.author.set(author);
     }
 
     public String getBinaryInfo() {
+        return binaryInfo.get();
+    }
+
+    public StringProperty binaryInfoProperty() {
         return binaryInfo;
     }
 
     public void setBinaryInfo(String binaryInfo) {
-        this.binaryInfo = binaryInfo;
+        this.binaryInfo.set(binaryInfo);
     }
 
     public String getMethod() {
+        return method.get();
+    }
+
+    public StringProperty methodProperty() {
         return method;
     }
 
     public void setMethod(String method) {
-        this.method = method;
+        this.method.set(method);
     }
 
     @Override

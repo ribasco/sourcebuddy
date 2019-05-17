@@ -109,7 +109,7 @@ public class AppConfig implements AsyncConfigurer {
     public ExecutorService taskExecutorService() {
         log.info("taskExecutorService() : Using default number of threads: {}", getPoolSize());
         return new ThreadPoolExecutor(getPoolSize(), Integer.MAX_VALUE,
-                                      60L, TimeUnit.SECONDS,
+                                      30, TimeUnit.SECONDS,
                                       new LinkedBlockingDeque<>(),
                                       taskThreadFactory());
     }
@@ -121,7 +121,7 @@ public class AppConfig implements AsyncConfigurer {
     @Bean(destroyMethod = "shutdownNow")
     public ExecutorService steamWebExecutorService() {
         return new ThreadPoolExecutor(getPoolSize(), Integer.MAX_VALUE,
-                                      60L, TimeUnit.SECONDS,
+                                      30, TimeUnit.SECONDS,
                                       new LinkedBlockingDeque<>(),
                                       steamWebApiThreadFactory());
     }
@@ -129,9 +129,16 @@ public class AppConfig implements AsyncConfigurer {
     @Bean(destroyMethod = "shutdownNow")
     public ExecutorService sourceQueryExecutorService() {
         return new ThreadPoolExecutor(getPoolSize() * 2, Integer.MAX_VALUE,
-                                      60L, TimeUnit.SECONDS,
+                                      30, TimeUnit.SECONDS,
                                       new LinkedBlockingDeque<>(),
                                       sourceQueryThreadFactory());
+    }
+
+    @Bean(destroyMethod = "shutdownNow")
+    public ExecutorService rconExecutorService() {
+        return new ThreadPoolExecutor(1, getPoolSize(), 30, TimeUnit.SECONDS,
+                                      new LinkedBlockingDeque<>(),
+                                      rconThreadFactory());
     }
 
     @Bean(destroyMethod = "shutdownNow")
@@ -175,6 +182,15 @@ public class AppConfig implements AsyncConfigurer {
     }
 
     @Bean
+    public ThreadFactory rconThreadFactory() {
+        return r -> {
+            Thread thread = new Thread(rconThreadGroup(), r);
+            thread.setName(String.format("sb-rcon-%d", thread.getId()));
+            return thread;
+        };
+    }
+
+    @Bean
     public ThreadFactory taskThreadFactory() {
         return r -> {
             Thread thread = new Thread(taskThreadGroup(), r);
@@ -212,6 +228,11 @@ public class AppConfig implements AsyncConfigurer {
     @Bean
     public ThreadGroup sourceQueryThreadGroup() {
         return new ThreadGroup("sb-source-query");
+    }
+
+    @Bean
+    public ThreadGroup rconThreadGroup() {
+        return new ThreadGroup("sb-source-rcon");
     }
 
     @Bean

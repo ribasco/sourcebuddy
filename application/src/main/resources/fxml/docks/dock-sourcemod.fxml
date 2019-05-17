@@ -38,7 +38,7 @@
                                                     <children>
                                                         <Accordion minWidth="300.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                                             <panes>
-                                                                <TitledPane text="Plugin Info">
+                                                                <TitledPane fx:id="tpSMPluginInfo" animated="false" text="Plugin Info">
                                                                     <content>
                                                                         <TableView fx:id="tvSMPluginInfo" prefHeight="200.0" prefWidth="200.0">
                                                                             <columns>
@@ -51,7 +51,7 @@
                                                                         </TableView>
                                                                     </content>
                                                                 </TitledPane>
-                                                                <TitledPane text="Cvars">
+                                                                <TitledPane fx:id="tpSMPluginCvars" expanded="false" text="Cvars">
                                                                     <content>
                                                                         <TableView fx:id="tvSMPluginCvars" prefHeight="200.0" prefWidth="200.0">
                                                                             <columns>
@@ -64,7 +64,7 @@
                                                                         </TableView>
                                                                     </content>
                                                                 </TitledPane>
-                                                                <TitledPane text="Commands">
+                                                                <TitledPane fx:id="tpSMPluginCommands" expanded="false" text="Commands">
                                                                     <content>
                                                                         <TableView fx:id="tvSMPluginCommands" prefHeight="200.0" prefWidth="200.0">
                                                                             <columns>

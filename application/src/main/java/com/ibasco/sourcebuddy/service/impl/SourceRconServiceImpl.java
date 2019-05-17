@@ -3,7 +3,6 @@ package com.ibasco.sourcebuddy.service.impl;
 import com.ibasco.agql.core.exceptions.ReadTimeoutException;
 import com.ibasco.agql.protocols.valve.source.query.client.SourceRconClient;
 import com.ibasco.agql.protocols.valve.source.query.exceptions.RconNotYetAuthException;
-import com.ibasco.sourcebuddy.constants.Qualifiers;
 import com.ibasco.sourcebuddy.domain.ManagedServer;
 import com.ibasco.sourcebuddy.domain.RconAuthStatus;
 import com.ibasco.sourcebuddy.exceptions.NotAuthenticatedException;
@@ -12,7 +11,6 @@ import com.ibasco.sourcebuddy.util.Check;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +34,7 @@ public class SourceRconServiceImpl implements RconService {
     @Value("${app.rcon.max-retries}")
     private int maxRetries;
 
-    private ExecutorService taskExecutorService;
+    private ExecutorService rconExecutorService;
 
     @Override
     public CompletableFuture<RconAuthStatus> authenticate(ManagedServer managedServer) {
@@ -68,7 +66,7 @@ public class SourceRconServiceImpl implements RconService {
         try {
             InetSocketAddress address = managedServer.getServerDetails().getAddress();
             return sourceRconClient.execute(address, command).thenApply(result -> {
-                if (result != null && result.contains("Bad Password")) {
+                if (result != null && result.toLowerCase().contains("bad password")) {
                     RconAuthStatus status = authStatus.get(managedServer);
                     status.setAuthenticated(false);
                     status.setReason("Bad Password");
@@ -82,7 +80,6 @@ public class SourceRconServiceImpl implements RconService {
     }
 
     @Override
-    //@Async(Qualifiers.TASK_EXECUTOR_SERVICE)
     public CompletableFuture<String> tryExecute(ManagedServer managedServer, String command) {
         return CompletableFuture.supplyAsync(() -> {
             for (int retryCount = 1; retryCount <= maxRetries; retryCount++) {
@@ -98,13 +95,13 @@ public class SourceRconServiceImpl implements RconService {
                     log.info("tryExecute :: Executing command '{}' on server '{}' (Attempts: {})", command, managedServer.getServerDetails(), retryCount);
                     return execute(managedServer, command).join();
                 } catch (ReadTimeoutException | CompletionException | NotAuthenticatedException ex) {
-                    log.debug("Rcon command execution error {}", ex.getMessage());
+                    log.error("Rcon command execution error {}", ex.getMessage());
                     //log.debug("RconTask :: Server authentication failed: " + managedServer.getServerDetails(), ex);
                 }
             }
             RconAuthStatus authStatus1 = getStatus(managedServer);
             throw new CompletionException(new NotAuthenticatedException(String.format("Failed to authenticate with server (Reason: %s)", authStatus1 != null ? authStatus1.getReason() : "N/A")));
-        }, taskExecutorService);
+        }, rconExecutorService);
     }
 
     @Override
@@ -125,8 +122,7 @@ public class SourceRconServiceImpl implements RconService {
     }
 
     @Autowired
-    @Qualifier(Qualifiers.TASK_EXECUTOR_SERVICE)
-    public void setTaskExecutorService(ExecutorService taskExecutorService) {
-        this.taskExecutorService = taskExecutorService;
+    public void setRconExecutorService(ExecutorService rconExecutorService) {
+        this.rconExecutorService = rconExecutorService;
     }
 }

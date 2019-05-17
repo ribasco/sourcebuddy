@@ -5,6 +5,7 @@ import com.ibasco.sourcebuddy.components.rcon.SourcePlayerStatus;
 import com.ibasco.sourcebuddy.components.rcon.SourceServerStatus;
 import com.ibasco.sourcebuddy.domain.ManagedServer;
 import com.ibasco.sourcebuddy.util.Check;
+import javafx.collections.FXCollections;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,9 +73,9 @@ public class DefaultSourceServerStatusParser extends RconResultLineParser<Source
 
     @Override
     protected void afterParse(ManagedServer server, SourceServerStatus result) {
-        result.setPlayers(new ArrayList<>(playerStatusList));
-        result.setEntries(new HashMap<>(statusEntries));
-        result.setTags(new ArrayList<>(serverTags));
+        result.setPlayers(FXCollections.observableArrayList(playerStatusList));
+        result.setEntries(FXCollections.observableMap(statusEntries));
+        result.setTags(FXCollections.observableArrayList(serverTags));
     }
 
     @Override
@@ -100,7 +101,7 @@ public class DefaultSourceServerStatusParser extends RconResultLineParser<Source
                                 statusHeaderList.add(header);
                             }
                         }
-                        serverStatus.setHeaders(statusHeaderList);
+                        serverStatus.setHeaders(FXCollections.observableArrayList(statusHeaderList));
                         log.info("Processed {} headers", statusHeaderList.size());
                         //statusHeaderList.forEach(h -> log.info("Header: {}", h));
                     }
@@ -124,7 +125,7 @@ public class DefaultSourceServerStatusParser extends RconResultLineParser<Source
                 break;
             }
             case "version": {
-                SourceServerStatus.Version version = new SourceServerStatus.Version();
+                SourceServerStatus.SourceServerVersion version = new SourceServerStatus.SourceServerVersion();
                 Matcher matcher = SERVER_INFO_VERSION.matcher(value);
                 if (matcher.matches()) {
                     String verStr = matcher.group("version");

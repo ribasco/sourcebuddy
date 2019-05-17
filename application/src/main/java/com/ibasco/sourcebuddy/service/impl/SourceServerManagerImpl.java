@@ -13,7 +13,6 @@ import com.ibasco.sourcebuddy.repository.ServerDetailsRepository;
 import com.ibasco.sourcebuddy.service.RconService;
 import com.ibasco.sourcebuddy.service.SourceServerManager;
 import com.ibasco.sourcebuddy.util.Check;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -119,8 +118,6 @@ public class SourceServerManagerImpl implements SourceServerManager {
     public CompletableFuture<SourceModPlugin> updatePluginInfo(SourceModPlugin plugin) {
         if (plugin.getServer() == null)
             throw new IllegalArgumentException("Managed server not specified");
-        if (StringUtils.isNotBlank(plugin.getFilename()))
-            return CompletableFuture.completedFuture(plugin);
         return rconService.tryExecuteAndParse(plugin.getServer(), String.format("sm plugins info %d", plugin.getIndex()), new SourceModPluginInfoParser(plugin));
     }
 

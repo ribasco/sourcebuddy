@@ -28,9 +28,9 @@ import java.net.InetSocketAddress;
 import java.util.function.BiConsumer;
 
 @Component
-public class ServerBrowserTableViewFactory {
+public class ServerDetailsTableViewFactory {
 
-    private static final Logger log = LoggerFactory.getLogger(ServerBrowserTableViewFactory.class);
+    private static final Logger log = LoggerFactory.getLogger(ServerDetailsTableViewFactory.class);
 
     private SourceServerService sourceServerQueryService;
 
@@ -101,7 +101,7 @@ public class ServerBrowserTableViewFactory {
     }
 
     @Autowired
-    public ServerBrowserTableViewFactory(SourceServerService sourceServerQueryService) {
+    public ServerDetailsTableViewFactory(SourceServerService sourceServerQueryService) {
         this.sourceServerQueryService = sourceServerQueryService;
     }
 

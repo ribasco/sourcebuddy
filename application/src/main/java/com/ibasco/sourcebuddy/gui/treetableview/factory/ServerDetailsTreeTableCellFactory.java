@@ -9,8 +9,8 @@ import com.ibasco.sourcebuddy.gui.decorators.ServerCountryCellDecorator;
 import com.ibasco.sourcebuddy.gui.decorators.ServerNameCellDecorator;
 import com.ibasco.sourcebuddy.gui.decorators.ServerStatusCellDecorator;
 import com.ibasco.sourcebuddy.gui.decorators.ServerTagCellDecorator;
-import com.ibasco.sourcebuddy.gui.treetableview.cells.BookmarksTreeTableCell;
 import com.ibasco.sourcebuddy.gui.treetableview.cells.FormattedTreeTableCell;
+import com.ibasco.sourcebuddy.gui.treetableview.cells.ServerDetailsTreeTableCell;
 import javafx.scene.control.TreeTableCell;
 import javafx.scene.control.TreeTableColumn;
 import javafx.util.Callback;
@@ -20,7 +20,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
-public class BookmarksTreeTableCellFactory implements Callback<TreeTableColumn<ServerDetails, Object>, TreeTableCell<ServerDetails, Object>> {
+public class ServerDetailsTreeTableCellFactory implements Callback<TreeTableColumn<ServerDetails, Object>, TreeTableCell<ServerDetails, Object>> {
 
     private ServerCountryCellDecorator countryCellDecorator;
 
@@ -32,15 +32,15 @@ public class BookmarksTreeTableCellFactory implements Callback<TreeTableColumn<S
 
     @SuppressWarnings("Duplicates")
     public TreeTableCell<ServerDetails, ServerStatus> statusIndicator(TreeTableColumn<ServerDetails, ServerStatus> col) {
-        return new BookmarksTreeTableCell<>(serverStatusCellDecorator);
+        return new ServerDetailsTreeTableCell<>(serverStatusCellDecorator);
     }
 
     public TreeTableCell<ServerDetails, Country> country(TreeTableColumn<ServerDetails, Country> column) {
-        return new BookmarksTreeTableCell<>(countryCellDecorator);
+        return new ServerDetailsTreeTableCell<>(countryCellDecorator);
     }
 
     public TreeTableCell<ServerDetails, String> serverTags(TreeTableColumn<ServerDetails, String> column) {
-        return new BookmarksTreeTableCell<>(serverTagCellDecorator);
+        return new ServerDetailsTreeTableCell<>(serverTagCellDecorator);
     }
 
     public TreeTableCell<ServerDetails, String> serverName(TreeTableColumn<ServerDetails, String> column) {
@@ -53,7 +53,7 @@ public class BookmarksTreeTableCellFactory implements Callback<TreeTableColumn<S
 
     @Override
     public TreeTableCell<ServerDetails, Object> call(TreeTableColumn<ServerDetails, Object> param) {
-        return new BookmarksTreeTableCell<>();
+        return new ServerDetailsTreeTableCell<>();
     }
 
     @Autowired

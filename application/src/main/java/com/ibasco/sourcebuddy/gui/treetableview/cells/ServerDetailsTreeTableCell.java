@@ -5,13 +5,13 @@ import com.ibasco.sourcebuddy.gui.cells.DecoratedTreeTableCell;
 import com.ibasco.sourcebuddy.gui.decorators.CellDecorator;
 import org.apache.commons.lang3.StringUtils;
 
-public class BookmarksTreeTableCell<T> extends DecoratedTreeTableCell<ServerDetails, T> {
+public class ServerDetailsTreeTableCell<T> extends DecoratedTreeTableCell<ServerDetails, T> {
 
-    public BookmarksTreeTableCell() {
+    public ServerDetailsTreeTableCell() {
         this(null);
     }
 
-    public BookmarksTreeTableCell(CellDecorator<ServerDetails, T> decorator) {
+    public ServerDetailsTreeTableCell(CellDecorator<ServerDetails, T> decorator) {
         super(decorator);
     }
 

@@ -1,163 +1,253 @@
 package com.ibasco.sourcebuddy.components.rcon;
 
 import com.ibasco.sourcebuddy.domain.ManagedServer;
+import javafx.beans.property.*;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 public class SourceModPlugin {
 
-    private Integer index;
+    private IntegerProperty index = new SimpleIntegerProperty();
 
-    private String name;
+    private StringProperty name = new SimpleStringProperty();
 
-    private String filename;
+    private StringProperty filename = new SimpleStringProperty();
 
-    private String fullName;
+    private StringProperty fullName = new SimpleStringProperty();
 
-    private String version;
+    private StringProperty version = new SimpleStringProperty();
 
-    private String author;
+    private StringProperty author = new SimpleStringProperty();
 
-    private Boolean disabled;
+    private BooleanProperty disabled = new SimpleBooleanProperty();
 
-    private String hash;
+    private StringProperty hash = new SimpleStringProperty();
 
-    private String url;
+    private StringProperty url = new SimpleStringProperty();
 
-    private String status;
+    private StringProperty status = new SimpleStringProperty();
 
-    private LocalDateTime timestamp;
+    private ObjectProperty<LocalDateTime> timestamp = new SimpleObjectProperty<>();
 
-    private ManagedServer server;
+    private ObjectProperty<ManagedServer> server = new SimpleObjectProperty<>();
 
-    private List<SourceModCvar> sourceModCvars;
+    private ListProperty<SourceModCvar> cvars = new SimpleListProperty<>(FXCollections.observableArrayList());
 
-    public Integer getIndex() {
+    private ListProperty<SourceModCommand> commands = new SimpleListProperty<>(FXCollections.observableArrayList());
+
+    private BooleanProperty updating = new SimpleBooleanProperty();
+
+    public int getIndex() {
+        return index.get();
+    }
+
+    public IntegerProperty indexProperty() {
         return index;
     }
 
-    public void setIndex(Integer index) {
-        this.index = index;
+    public void setIndex(int index) {
+        this.index.set(index);
     }
 
     public String getName() {
+        return name.get();
+    }
+
+    public StringProperty nameProperty() {
         return name;
     }
 
     public void setName(String name) {
-        this.name = name;
+        this.name.set(name);
     }
 
     public String getFilename() {
+        return filename.get();
+    }
+
+    public StringProperty filenameProperty() {
         return filename;
     }
 
     public void setFilename(String filename) {
-        this.filename = filename;
+        this.filename.set(filename);
     }
 
     public String getFullName() {
+        return fullName.get();
+    }
+
+    public StringProperty fullNameProperty() {
         return fullName;
     }
 
     public void setFullName(String fullName) {
-        this.fullName = fullName;
+        this.fullName.set(fullName);
     }
 
     public String getVersion() {
+        return version.get();
+    }
+
+    public StringProperty versionProperty() {
         return version;
     }
 
     public void setVersion(String version) {
-        this.version = version;
+        this.version.set(version);
     }
 
     public String getAuthor() {
+        return author.get();
+    }
+
+    public StringProperty authorProperty() {
         return author;
     }
 
     public void setAuthor(String author) {
-        this.author = author;
+        this.author.set(author);
     }
 
-    public Boolean isDisabled() {
+    public boolean isDisabled() {
+        return disabled.get();
+    }
+
+    public BooleanProperty disabledProperty() {
         return disabled;
     }
 
-    public void setDisabled(Boolean disabled) {
-        this.disabled = disabled;
+    public void setDisabled(boolean disabled) {
+        this.disabled.set(disabled);
     }
 
     public String getHash() {
+        return hash.get();
+    }
+
+    public StringProperty hashProperty() {
         return hash;
     }
 
     public void setHash(String hash) {
-        this.hash = hash;
+        this.hash.set(hash);
     }
 
     public String getUrl() {
+        return url.get();
+    }
+
+    public StringProperty urlProperty() {
         return url;
     }
 
     public void setUrl(String url) {
-        this.url = url;
+        this.url.set(url);
     }
 
     public String getStatus() {
+        return status.get();
+    }
+
+    public StringProperty statusProperty() {
         return status;
     }
 
     public void setStatus(String status) {
-        this.status = status;
+        this.status.set(status);
     }
 
     public LocalDateTime getTimestamp() {
+        return timestamp.get();
+    }
+
+    public ObjectProperty<LocalDateTime> timestampProperty() {
         return timestamp;
     }
 
     public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+        this.timestamp.set(timestamp);
     }
 
     public ManagedServer getServer() {
+        return server.get();
+    }
+
+    public ObjectProperty<ManagedServer> serverProperty() {
         return server;
     }
 
     public void setServer(ManagedServer server) {
-        this.server = server;
+        this.server.set(server);
     }
 
-    public List<SourceModCvar> getSourceModCvars() {
-        return sourceModCvars;
+    public ObservableList<SourceModCvar> getCvars() {
+        return cvars.get();
     }
 
-    public List<SourceModCvar> getCommands() {
-        if (sourceModCvars == null || sourceModCvars.isEmpty())
-            return null;
-        return sourceModCvars.stream().filter(SourceModCvar::isCommand).collect(Collectors.toList());
+    public ListProperty<SourceModCvar> cvarsProperty() {
+        return cvars;
     }
 
-    public void setSourceModCvars(List<SourceModCvar> sourceModCvars) {
-        this.sourceModCvars = sourceModCvars;
+    public void setCvars(ObservableList<SourceModCvar> cvars) {
+        this.cvars.set(cvars);
+    }
+
+    public ObservableList<SourceModCommand> getCommands() {
+        return commands.get();
+    }
+
+    public ListProperty<SourceModCommand> commandsProperty() {
+        return commands;
+    }
+
+    public void setCommands(ObservableList<SourceModCommand> commands) {
+        this.commands.set(commands);
+    }
+
+    public boolean isUpdating() {
+        return updating.get();
+    }
+
+    public BooleanProperty updatingProperty() {
+        return updating;
+    }
+
+    public void setUpdating(boolean updating) {
+        this.updating.set(updating);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SourceModPlugin plugin = (SourceModPlugin) o;
+        return getIndex() == plugin.getIndex() &&
+                getServer().equals(plugin.getServer());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getIndex(), getServer());
     }
 
     @Override
     public String toString() {
         return "SourceModPlugin{" +
-                "index=" + index +
-                ", name='" + name + '\'' +
-                ", filename='" + filename + '\'' +
-                ", fullName='" + fullName + '\'' +
-                ", version='" + version + '\'' +
-                ", author='" + author + '\'' +
-                ", disabled=" + disabled +
-                ", hash='" + hash + '\'' +
-                ", url='" + url + '\'' +
-                ", status='" + status + '\'' +
-                ", timestamp=" + timestamp +
+                "index=" + getIndex() +
+                ", name='" + getName() + '\'' +
+                ", filename='" + getFilename() + '\'' +
+                ", fullName='" + getFullName() + '\'' +
+                ", version='" + getVersion() + '\'' +
+                ", author='" + getAuthor() + '\'' +
+                ", disabled=" + isDisabled() +
+                ", hash='" + getHash() + '\'' +
+                ", url='" + getUrl() + '\'' +
+                ", status='" + getStatus() + '\'' +
+                ", timestamp=" + getTimestamp() +
                 '}';
     }
 }

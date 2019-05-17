@@ -10,10 +10,10 @@ import com.ibasco.sourcebuddy.enums.OperatingSystem;
 import com.ibasco.sourcebuddy.enums.ServerStatus;
 import com.ibasco.sourcebuddy.gui.converters.MappedObjectStringConverter;
 import com.ibasco.sourcebuddy.gui.listeners.ToggableSplitPaneChangeListener;
-import com.ibasco.sourcebuddy.gui.tableview.factory.ServerBrowserTableViewFactory;
+import com.ibasco.sourcebuddy.gui.tableview.factory.ServerDetailsTableViewFactory;
 import com.ibasco.sourcebuddy.gui.tableview.rows.HighlightRow;
 import com.ibasco.sourcebuddy.gui.treetableview.cells.FormattedTreeTableCell;
-import com.ibasco.sourcebuddy.gui.treetableview.factory.BookmarksTreeTableCellFactory;
+import com.ibasco.sourcebuddy.gui.treetableview.factory.ServerDetailsTreeTableCellFactory;
 import com.ibasco.sourcebuddy.model.AppModel;
 import com.ibasco.sourcebuddy.model.ServerFilterModel;
 import com.ibasco.sourcebuddy.model.SteamAppsModel;
@@ -142,9 +142,9 @@ public class ServerBrowserController extends BaseController {
 
     private SteamAppsModel steamGamesModel;
 
-    private BookmarksTreeTableCellFactory bookmarksTreeTableViewFactory;
+    private ServerDetailsTreeTableCellFactory serverDetailsTreeTableViewFactory;
 
-    private ServerBrowserTableViewFactory serverBrowserTableCellFactory;
+    private ServerDetailsTableViewFactory serverDetailsTableCellFactory;
 
     private SingleServerDetailsRefreshService singleUpdateService;
 
@@ -228,7 +228,7 @@ public class ServerBrowserController extends BaseController {
         tpServers.setTabDragPolicy(TabPane.TabDragPolicy.REORDER);
         steamGamesModel.selectedGameProperty().addListener(this::updateSteamAppServerEntries);
         steamGamesModel.setSelectedGame(appModel.getActiveProfile().getDefaultGame());
-
+        btnRefreshManagedServers.setOnAction(event -> refreshManagedServersTable());
         refreshServerListContent();
         bindToggablePane(spManagedServers, apServerSettings, tbShowDetailPane, appModel.getActiveProfile().showSettingsPaneProperty());
     }
@@ -725,7 +725,7 @@ public class ServerBrowserController extends BaseController {
 
                     ObservableList<ServerDetails> serverList = FXCollections.observableArrayList();
                     log.debug("Building list from tree...");
-                    buildListFromTree(r, serverList);
+                    buildServerDetailsListFromTree(r, serverList);
 
                     UpdateAllServerDetailsTask task = springHelper.getBean(UpdateAllServerDetailsTask.class, serverList);
                     if (taskManager.contains(task)) {
@@ -745,15 +745,13 @@ public class ServerBrowserController extends BaseController {
 
         taskManager.run(BuildManagedServersTreeTask.class)
                 .thenApply(GuiHelper::convertToTreeItem)
-                .thenCompose(r -> {
+                .thenCompose(serverDetailsTreeItem -> {
                     Platform.runLater(() -> {
-                        ttvManagedServers.setRoot(r);
+                        ttvManagedServers.setRoot(serverDetailsTreeItem);
                         ttvManagedServers.setPlaceholder(null);
                     });
-
                     ObservableList<ServerDetails> serverList = FXCollections.observableArrayList();
-                    buildListFromTree(r, serverList);
-
+                    buildServerDetailsListFromTree(serverDetailsTreeItem, serverList);
                     UpdateAllServerDetailsTask task = springHelper.getBean(UpdateAllServerDetailsTask.class, serverList);
                     if (taskManager.contains(task)) {
                         log.debug("refreshManagedServersTable() :: An existing task is already running. Skipping.");
@@ -763,12 +761,12 @@ public class ServerBrowserController extends BaseController {
                 });
     }
 
-    private void buildListFromTree(TreeItem<ServerDetails> root, List<ServerDetails> servers) {
-        for (TreeItem<ServerDetails> child : root.getChildren()) {
+    private void buildServerDetailsListFromTree(TreeItem<ServerDetails> source, List<ServerDetails> target) {
+        for (TreeItem<ServerDetails> child : source.getChildren()) {
             if (child.getValue() != null && child.getValue().getIpAddress() != null)
-                servers.add(child.getValue());
+                target.add(child.getValue());
             if (child.getChildren().size() > 0) {
-                buildListFromTree(child, servers);
+                buildServerDetailsListFromTree(child, target);
             }
         }
     }
@@ -780,19 +778,19 @@ public class ServerBrowserController extends BaseController {
 
         Bindings.bindContent(appModel.getSelectedServers(), tvServerBrowser.getSelectionModel().getSelectedItems());
 
-        createBasicColumn(tvServerBrowser, "Bookmark", "bookmarked", serverBrowserTableCellFactory::bookmark);
-        createBasicColumn(tvServerBrowser, "Server Name", "name", serverBrowserTableCellFactory::serverName);
+        createBasicColumn(tvServerBrowser, "Bookmark", "bookmarked", serverDetailsTableCellFactory::bookmark);
+        createBasicColumn(tvServerBrowser, "Server Name", "name", serverDetailsTableCellFactory::serverName);
         createBasicColumn(tvServerBrowser, "IP Address", "ipAddress");
         createBasicColumn(tvServerBrowser, "Port", "port");
         createBasicColumn(tvServerBrowser, "Player Count", "playerCount");
         createBasicColumn(tvServerBrowser, "Max Players", "maxPlayerCount");
         createBasicColumn(tvServerBrowser, "Current Map", "mapName");
-        createBasicColumn(tvServerBrowser, "Game", "steamApp", serverBrowserTableCellFactory::steamApp);
-        createBasicColumn(tvServerBrowser, "Status", "status", serverBrowserTableCellFactory::statusInd);
-        createBasicColumn(tvServerBrowser, "Country", "country", serverBrowserTableCellFactory::country);
-        createBasicColumn(tvServerBrowser, "OS", "operatingSystem", serverBrowserTableCellFactory::operatingSystem);
+        createBasicColumn(tvServerBrowser, "Game", "steamApp", serverDetailsTableCellFactory::steamApp);
+        createBasicColumn(tvServerBrowser, "Status", "status", serverDetailsTableCellFactory::statusInd);
+        createBasicColumn(tvServerBrowser, "Country", "country", serverDetailsTableCellFactory::country);
+        createBasicColumn(tvServerBrowser, "OS", "operatingSystem", serverDetailsTableCellFactory::operatingSystem);
         createBasicColumn(tvServerBrowser, "Update Date", "updateDate");
-        createBasicColumn(tvServerBrowser, "Tags", "serverTags", serverBrowserTableCellFactory::tags).setPrefWidth(200);
+        createBasicColumn(tvServerBrowser, "Tags", "serverTags", serverDetailsTableCellFactory::tags).setPrefWidth(200);
 
         tvServerBrowser.setContextMenu(buildServerBrowserContextMenu());
 
@@ -839,15 +837,15 @@ public class ServerBrowserController extends BaseController {
         ttvBookmarkedServers.getColumns().clear();
         ttvBookmarkedServers.setShowRoot(false);
         //ttvBookmarkedServers.setRowFactory(param -> new HighlightRow<>(p -> ServerStatus.TIMED_OUT.equals(p.getStatus()), "timeout"));
-        TreeTableColumn<ServerDetails, String> nameCol = createBasicTreeColumn(ttvBookmarkedServers, "Server Name", "name", bookmarksTreeTableViewFactory::serverName);
-        createBasicTreeColumn(ttvBookmarkedServers, "IP Address", "ipAddress", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvBookmarkedServers, "Port", "port", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvBookmarkedServers, "Player Count", "playerCount", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvBookmarkedServers, "Max Players", "maxPlayerCount", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvBookmarkedServers, "Current Map", "mapName", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvBookmarkedServers, "Status", "status", bookmarksTreeTableViewFactory::statusIndicator);
-        createBasicTreeColumn(ttvBookmarkedServers, "Country", "country", bookmarksTreeTableViewFactory::country);
-        createBasicTreeColumn(ttvBookmarkedServers, "Tags", "serverTags", bookmarksTreeTableViewFactory::serverTags);
+        TreeTableColumn<ServerDetails, String> nameCol = createBasicTreeColumn(ttvBookmarkedServers, "Server Name", "name", serverDetailsTreeTableViewFactory::serverName);
+        createBasicTreeColumn(ttvBookmarkedServers, "IP Address", "ipAddress", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvBookmarkedServers, "Port", "port", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvBookmarkedServers, "Player Count", "playerCount", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvBookmarkedServers, "Max Players", "maxPlayerCount", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvBookmarkedServers, "Current Map", "mapName", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvBookmarkedServers, "Status", "status", serverDetailsTreeTableViewFactory::statusIndicator);
+        createBasicTreeColumn(ttvBookmarkedServers, "Country", "country", serverDetailsTreeTableViewFactory::country);
+        createBasicTreeColumn(ttvBookmarkedServers, "Tags", "serverTags", serverDetailsTreeTableViewFactory::serverTags);
 
         ttvBookmarkedServers.setTreeColumn(nameCol);
         ttvBookmarkedServers.getSelectionModel().selectedItemProperty().addListener(this::updateServerSelection);
@@ -858,16 +856,15 @@ public class ServerBrowserController extends BaseController {
         ttvManagedServers.setShowRoot(false);
 
         TreeTableColumn<ServerDetails, String> nameCol = createBasicTreeColumn(ttvManagedServers, "Server Name", "name", param -> new FormattedTreeTableCell<>("root-col", p -> StringUtils.isBlank(p.getIpAddress())));
-        createBasicTreeColumn(ttvManagedServers, "IP Address", "ipAddress", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvManagedServers, "Port", "port", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvManagedServers, "Player Count", "playerCount", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvManagedServers, "Max Players", "maxPlayerCount", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvManagedServers, "Current Map", "mapName", bookmarksTreeTableViewFactory);
-        //createBasicTreeColumn(ttvManagedServers, "Game", "steamApp", bookmarksTreeTableViewFactory);
-        createBasicTreeColumn(ttvManagedServers, "Status", "status", bookmarksTreeTableViewFactory::statusIndicator);
-        createBasicTreeColumn(ttvManagedServers, "Country", "country", bookmarksTreeTableViewFactory::country);
-        createBasicTreeColumn(ttvManagedServers, "OS", "operatingSystem", bookmarksTreeTableViewFactory::operatingSystem);
-        createBasicTreeColumn(ttvManagedServers, "Tags", "serverTags", bookmarksTreeTableViewFactory::serverTags);
+        createBasicTreeColumn(ttvManagedServers, "IP Address", "ipAddress", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvManagedServers, "Port", "port", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvManagedServers, "Player Count", "playerCount", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvManagedServers, "Max Players", "maxPlayerCount", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvManagedServers, "Current Map", "mapName", serverDetailsTreeTableViewFactory);
+        createBasicTreeColumn(ttvManagedServers, "Status", "status", serverDetailsTreeTableViewFactory::statusIndicator);
+        createBasicTreeColumn(ttvManagedServers, "Country", "country", serverDetailsTreeTableViewFactory::country);
+        createBasicTreeColumn(ttvManagedServers, "OS", "operatingSystem", serverDetailsTreeTableViewFactory::operatingSystem);
+        createBasicTreeColumn(ttvManagedServers, "Tags", "serverTags", serverDetailsTreeTableViewFactory::serverTags);
 
         ttvManagedServers.setTreeColumn(nameCol);
         ttvManagedServers.getSelectionModel().selectedItemProperty().addListener(this::updateServerSelection);
@@ -897,8 +894,8 @@ public class ServerBrowserController extends BaseController {
     }
 
     @Autowired
-    public void setServerBrowserTableCellFactory(ServerBrowserTableViewFactory serverBrowserTableCellFactory) {
-        this.serverBrowserTableCellFactory = serverBrowserTableCellFactory;
+    public void setServerDetailsTableCellFactory(ServerDetailsTableViewFactory serverDetailsTableCellFactory) {
+        this.serverDetailsTableCellFactory = serverDetailsTableCellFactory;
     }
 
     @Autowired
@@ -907,8 +904,8 @@ public class ServerBrowserController extends BaseController {
     }
 
     @Autowired
-    public void setBookmarksTreeTableViewFactory(BookmarksTreeTableCellFactory bookmarksTreeTableViewFactory) {
-        this.bookmarksTreeTableViewFactory = bookmarksTreeTableViewFactory;
+    public void setServerDetailsTreeTableViewFactory(ServerDetailsTreeTableCellFactory serverDetailsTreeTableViewFactory) {
+        this.serverDetailsTreeTableViewFactory = serverDetailsTreeTableViewFactory;
     }
 
     @Autowired
